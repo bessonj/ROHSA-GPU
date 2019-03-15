@@ -1,3 +1,5 @@
+*.fits
+*.raw
 **/bin
 **/mex
 **/lib
