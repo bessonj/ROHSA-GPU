@@ -13,7 +13,7 @@ using namespace CCfits;
 
 std::vector<int> get_dimensions_from_fits(){
 
-       	std::auto_ptr<FITS> pInfile(new FITS("./GHIGLS_DFN_Tb.fits",Read,true));
+       	std::auto_ptr<FITS> pInfile(new FITS("./GHIGLS.fits",Read,true));
 
         PHDU& image = pInfile->pHDU();
         std::valarray<double> contents;
@@ -96,7 +96,7 @@ std::cout<< "MULTIRESOLUTION ERROR : LENGTH/NSIDE IS NOT AN INTEGER, THE FITS FI
 
 int get_binary_from_fits(){
 
-       std::auto_ptr<FITS> pInfile(new FITS("./GHIGLS_DFN_Tb.fits",Read,true));
+       std::auto_ptr<FITS> pInfile(new FITS("./GHIGLS.fits",Read,true));
 
         PHDU& image = pInfile->pHDU();
 	std::valarray<double> contents;

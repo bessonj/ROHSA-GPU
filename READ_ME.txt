@@ -17,6 +17,9 @@ Some particular tools are required to read the FITS file (GHIGLS), such as CCfit
 
 	a "chmod +x run_first.sh" might be needed...
 
+	/!\ ==> You must call put your FITS file into the main directory and call it "GHIGLS.fits"
+
+
 If your system is not compatible please install "cfitsio" first:
 
 	https://heasarc.gsfc.nasa.gov/docs/software/fitsio/
