@@ -5,8 +5,6 @@
 #include <fstream>
 #include <valarray>
 #include <CCfits/CCfits>
-#include <fitsio.h>
-#include <fitsio2.h>
 #include <vector>
 
 
