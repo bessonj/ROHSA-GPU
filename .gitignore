@@ -1,4 +1,6 @@
 *.fits
+*.dat
+parameters.txt
 *.raw
 **/bin
 **/mex
@@ -34,3 +36,4 @@ log
 .nfs*
 **/.cproject
 
+/Release/
