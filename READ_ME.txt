@@ -33,6 +33,6 @@ Compile and execute :
 
 Using gcc you can compile and run the program using : 
 
-	g++ Tool.h Tool.cpp Parse.h Parse.cpp main.cpp -o swap -L/usr/lib/x86_64-linux-gnu/ -std=c++11 -lCCfits -lcfitsio && ./swap
+	g++ Gaussian.h Gaussian.cpp Reshape_data.h Reshape_data.cpp Parse.h Parse.cpp main.cpp -o swap -L/usr/lib/x86_64-linux-gnu/ -std=c++11 -lCCfits -lcfitsio && ./swap
 
 [... pourrait changer à cause de la partie GPU ...]
