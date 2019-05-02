@@ -8,26 +8,17 @@ using namespace CCfits;
 
 Parse::Parse()
 {
-/*
+
 	filename = "./GHIGLS.fits";
 	dim_data=get_dimensions_from_fits();
 		
-	dim_x = dim_data[0];
-	dim_y = dim_data[1];
-	dim_v = dim_data[2];
-
 	get_binary_from_fits();
 	get_vector_from_binary(data);
-*/
-
-	dim_data.vector::push_back(32);
-	dim_data.vector::push_back(32);
-	dim_data.vector::push_back(200);
 	
 	dim_x = dim_data[0];
 	dim_y = dim_data[1];
 	dim_v = dim_data[2];
-	data = use_rubbish_dat_file();
+	//data = use_rubbish_dat_file();
 
 	nside=dim2nside();
 	std::cout<<"__dim_data[0] = "<<dim_data[0]<<std::endl;
