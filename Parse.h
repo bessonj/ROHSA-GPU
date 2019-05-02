@@ -18,35 +18,31 @@ class Parse
 	public:
 
 	Parse();
-	Parse(std::string filename_user);
 	int dim2nside();
 	std::vector<int> get_dimensions_from_fits();
 	void brute_show(const std::vector<std::vector<std::vector<double>>> &z, int depth, int length1, int length2);
 	void multiresolution(int nside);
 	int get_binary_from_fits();
 	void get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z);
-	void show(const std::vector<std::vector<std::vector<double>>> &z);
-	std::vector<std::vector<std::vector<double>>> get_data() const;
+	void show_data();
 	std::vector<int> get_dim_data() const;
 	int get_nside() const;
 	std::vector<int> get_dim_cube() const;
 
 	std::vector<std::vector<std::vector<double>>> use_rubbish_dat_file();
 	std::vector<std::vector<std::vector<double>>> reshape_up();
+	std::vector<std::vector<std::vector<double>>> copy_cube_data();
+
 
 	std::vector<std::vector<std::vector<double>>> cube;
 	std::vector<std::vector<std::vector<double>>> data;
 
 	private:
 
+
 	std::string filename;
 	std::vector<int> dim_data;
 	std::vector<int> dim_cube;
-	int dim_x;
-	int dim_y;
-	int dim_v;
-	int dim_x_cube;
-	int dim_y_cube;
   	int nside;
 };
 
