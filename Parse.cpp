@@ -8,33 +8,110 @@ using namespace CCfits;
 
 Parse::Parse()
 {
+/*
 	filename = "./GHIGLS.fits";
-	tab=get_dimensions_from_fits();
-	//tab.std::push_back(tab[i]);
-	
-	dim_x = tab[0];
-	dim_y = tab[1];
-	dim_v = tab[2];
+	dim_data=get_dimensions_from_fits();
+		
+	dim_x = dim_data[0];
+	dim_y = dim_data[1];
+	dim_v = dim_data[2];
 
 	get_binary_from_fits();
 	get_vector_from_binary(data);
+*/
 
+	dim_data.vector::push_back(32);
+	dim_data.vector::push_back(32);
+	dim_data.vector::push_back(200);
+	
+	dim_x = dim_data[0];
+	dim_y = dim_data[1];
+	dim_v = dim_data[2];
+	data = use_rubbish_dat_file();
+
+	nside=dim2nside();
+	std::cout<<"__dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"__dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"__dim_data[2] = "<<dim_data[2]<<std::endl;
+
+	dim_cube.push_back(int(pow(2.0,nside)));
+	dim_cube.push_back(dim_cube[0]);
+	dim_cube.push_back(dim_v);
+
+	std::cout<<"__dim_cube[0] = "<<dim_cube[0]<<std::endl;
+	std::cout<<"__dim_cube[1] = "<<dim_cube[1]<<std::endl;
+	std::cout<<"__dim_cube[2] = "<<dim_cube[2]<<std::endl;
+
+	std::cout<<"__nside = "<<nside<<std::endl;
+	cube = reshape_up();
 }
 
 Parse::Parse(std::string filename_user)
 {
 	filename = "./"+filename_user;
-	tab=get_dimensions_from_fits();
-	dim_x = tab[0];
-	dim_y = tab[1];
-	dim_v = tab[2];
+	dim_data=get_dimensions_from_fits();
+	dim_x = dim_data[0];
+	dim_y = dim_data[1];
+	dim_v = dim_data[2];
 
 	get_binary_from_fits();
 	get_vector_from_binary(data);
 
+	nside=dim2nside();
+	std::cout<<"__dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"__dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"__dim_data[2] = "<<dim_data[2]<<std::endl;
 
+	dim_cube.push_back(int(pow(2.0,nside)));
+	dim_cube.push_back(dim_cube[0]);
+	dim_cube.push_back(dim_v);
+
+	std::cout<<"__dim_cube[0] = "<<dim_cube[0]<<std::endl;
+	std::cout<<"__dim_cube[1] = "<<dim_cube[1]<<std::endl;
+	std::cout<<"__dim_cube[2] = "<<dim_cube[2]<<std::endl;
 }
 
+std::vector<std::vector<std::vector<double>>> Parse::use_rubbish_dat_file()
+{   
+	int length1(32), length2(32), depth(200);
+   	int x,y,z, length;
+	double lambda;
+
+	std::ifstream fichier("./GHIGLS_DFN_Tb.dat");
+
+	fichier >> depth >> length1 >> length2;
+
+	std::vector<std::vector<std::vector<double>>> data_(length1,std::vector<std::vector<double>>(length2,std::vector<double>(depth,0.)));
+
+	while(!fichier.std::ios::eof())
+	{
+   	fichier >> z >> y >> x >> lambda;
+   	data_[x][y][z] = lambda;
+   	}
+	return data_;
+}
+
+std::vector<std::vector<std::vector<double>>> Parse::get_data() const
+{
+	return data;
+}
+
+
+std::vector<int> Parse::get_dim_data() const
+{
+	return dim_data;
+}
+
+
+int Parse::get_nside() const
+{
+	return nside;
+}
+
+std::vector<int> Parse::get_dim_cube() const
+{
+	return dim_cube;
+}
 /*
 Parse::~Parse()
 {
@@ -49,6 +126,25 @@ int Parse::dim2nside()
 }
 
 
+std::vector<std::vector<std::vector<double>>> Parse::reshape_up()
+{
+	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2],0.)));
+
+	int offset_w = 1/2*(dim_cube[1]-dim_data[1]);
+	int offset_h = 1/2*(dim_cube[0]-dim_data[0]);
+	for(int i(0); i< offset_h+dim_data[0]; i++)
+	{
+		for(int j(0); j<offset_w+dim_data[1]; j++)
+		{
+			for(int k(0); k<dim_data[2]; k++)
+			{
+//			std::cout <<"__i,j,k = "<<i<<","<<j<<","<<k<< std::endl;
+			cube_[offset_h+i][offset_w+j][k]= data[i][j][k];
+			}
+		}
+	}
+	return cube_;
+}
 
 std::vector<int> Parse::get_dimensions_from_fits()
 {
@@ -69,12 +165,16 @@ std::vector<int> Parse::get_dimensions_from_fits()
         long ax3(image.axis(2));
 	long ax4(image.axis(3));
 
-	std::vector<int> tab(3);
-	tab[0]=ax1;//x
-	tab[1]=ax2;//y
-	tab[2]=ax3;//lambda
-
-	return tab;
+	dim_data.vector::push_back(ax1);
+	dim_data.vector::push_back(ax2);
+	dim_data.vector::push_back(ax3);
+/*
+	std::vector<int> dim_data(3);
+	dim_data[0]=ax1;//x
+	dim_data[1]=ax2;//y
+	dim_data[2]=ax3;//lambda
+*/
+	return dim_data;
 }
 
 
@@ -87,7 +187,7 @@ void Parse::brute_show(const std::vector<std::vector<std::vector<double>>> &z, i
 
 	for (int i(0); i<length2; i++){
 
-	std::cout << " résultat["<<j<<"]["<<k<<"]["<<i<<"]= " << z[j][k][i] << std::endl;
+	std::cout << "__résultat["<<i<<"]["<<k<<"]["<<j<<"]= " << z[i][k][j] << std::endl;
 	}
 	}
 	}
@@ -133,7 +233,7 @@ void Parse::get_vector_from_binary(std::vector<std::vector<std::vector<double>>>
 
    	std::ifstream is("./data_test.raw", std::ifstream::binary);
 
-   	std::cout<<"taille :"<<filesize<<std::endl;
+//   	std::cout<<"taille :"<<filesize<<std::endl;
 
    	const size_t count = filesize;
    	std::vector<double> vec(count);
@@ -162,11 +262,11 @@ void Parse::get_vector_from_binary(std::vector<std::vector<std::vector<double>>>
 
 void Parse::show(const std::vector<std::vector<std::vector<double>>> &z)
 {
-	for (int j(0); j<dim_v; j++)
+	for (int j(0); j<dim_x; j++)
 	{
 		for (int k(0); k<dim_y; k++)
 		{
-			for (int i(0); i<dim_x; i++)
+			for (int i(0); i<dim_v; i++)
 			{
 				std::cout << " résultat["<<j<<"]["<<k<<"]["<<i<<"]= " << z[j][k][i] << std::endl;
 			}
@@ -177,13 +277,14 @@ void Parse::show(const std::vector<std::vector<std::vector<double>>> &z)
 
 void Parse::multiresolution(int nside)	//pour faire passer data en argument : const std::vector<std::vector<std::vector<double>>> &data
 {	
-	std::vector<int> dim = get_dimensions_from_fits();
-	if (dim_x%nside!=0 or dim_y%nside!=0)
+//	std::vector<int> dim = get_dimensions_from_fits();
+
+	if (dim_cube[0]%nside!=0 or dim_cube[1]%nside!=0)
 	{
-		std::cout<< "MULTIRESOLUTION ERROR : LENGTH/NSIDE IS NOT AN INTEGER, THE FITS FILE NEEDS TO BE RESIZED" <<std::endl;
+		std::cout<< "MULTIRESOLUTION ERROR : LENGTH/NSIDE IS NOT AN INTEGER, THE CUBE NEEDS TO BE RESIZED" <<std::endl;
 	}
 
-	std::vector<std::vector<std::vector<double>>> cube(dim_v, std::vector<std::vector<double>> (nside, std::vector<double> (nside)));
+	std::vector<std::vector<std::vector<double>>> subcube(nside, std::vector<std::vector<double>> (nside, std::vector<double>(dim_cube[2])));
 
 	double avg(0.),S;
 
@@ -191,25 +292,26 @@ void Parse::multiresolution(int nside)	//pour faire passer data en argument : co
 	{
 		for(int t=0; t<nside; t++)
 		{
-			for(int p=0; p<dim_v; p++)
+			for(int p=0; p<dim_cube[2]; p++)
 			{
 				S=0.;
 
-				for (int m = dim_y/nside*t; m< dim_y/nside*(t+1); m++)
+				for (int m = dim_cube[1]/nside*t; m< dim_cube[1]/nside*(t+1); m++)
 				{
-					for (int n= dim_x/nside*h; n < dim_x/nside*(h+1); n++)
+					for (int n= dim_cube[0]/nside*h; n < dim_cube[0]/nside*(h+1); n++)
 					{
-						S+=data[p][m][n];
+						S+=cube[n][m][p];
 					}
 				}
-				avg = S/(dim_x*dim_y)/pow(nside,2);
-				cube[p][t][h]=avg;
+				avg = S/((dim_cube[0]*dim_cube[1])/pow(nside,2));
+				subcube[h][t][p]=avg;
 			}
 		}
 	}
 
-	brute_show(cube,dim_v,nside,nside); //À ENLEVER, PERMET DE VÉRIFIER LE RÉSULTAT
-	}
+	brute_show(subcube,dim_v,nside,nside); //À ENLEVER, PERMET DE VÉRIFIER LE RÉSULTAT
+}
+
 
 
 

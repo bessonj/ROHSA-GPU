@@ -4,7 +4,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
-#include <math.h>
+//#include <math.h>
 #include <string>
 #include <fstream>
 #include <valarray>
@@ -26,17 +26,28 @@ class Parse
 	int get_binary_from_fits();
 	void get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z);
 	void show(const std::vector<std::vector<std::vector<double>>> &z);
+	std::vector<std::vector<std::vector<double>>> get_data() const;
+	std::vector<int> get_dim_data() const;
+	int get_nside() const;
+	std::vector<int> get_dim_cube() const;
 
+	std::vector<std::vector<std::vector<double>>> use_rubbish_dat_file();
+	std::vector<std::vector<std::vector<double>>> reshape_up();
+
+	std::vector<std::vector<std::vector<double>>> cube;
+	std::vector<std::vector<std::vector<double>>> data;
 
 	private:
 
 	std::string filename;
-	std::vector<int> tab;
+	std::vector<int> dim_data;
+	std::vector<int> dim_cube;
 	int dim_x;
 	int dim_y;
 	int dim_v;
-	std::vector<std::vector<std::vector<double>>> data;
-       
+	int dim_x_cube;
+	int dim_y_cube;
+  	int nside;
 };
 
 #endif
