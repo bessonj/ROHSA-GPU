@@ -28,22 +28,22 @@ class Parse
 	std::vector<int> get_dim_data() const;
 	int get_nside() const;
 	std::vector<int> get_dim_cube() const;
-
-	std::vector<std::vector<std::vector<double>>> use_rubbish_dat_file();
+	std::vector<std::vector<std::vector<double>>> use_dat_file();
 	std::vector<std::vector<std::vector<double>>> reshape_up();
-	std::vector<std::vector<std::vector<double>>> copy_cube_data();
 
 
 	std::vector<std::vector<std::vector<double>>> cube;
 	std::vector<std::vector<std::vector<double>>> data;
+	std::vector<int> dim_data;
+	std::vector<int> dim_cube;
+	int nside;
 
 	private:
 
 
 	std::string filename;
-	std::vector<int> dim_data;
-	std::vector<int> dim_cube;
-  	int nside;
+
+
 };
 
 #endif
