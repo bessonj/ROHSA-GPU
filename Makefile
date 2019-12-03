@@ -1,7 +1,7 @@
 CC=g++
-CFLAGS= -O3 -fopenmp -L/usr/lib/x86_64-linux-gnu/ -std=c++11  
+CFLAGS= -fopenmp -L/usr/lib/x86_64-linux-gnu/ -std=c++11  
 LDFLAGS= 
-SOURCES= main.cpp Gaussian.cpp Parse.cpp /home/bematiste/CPP/ROHSA-GPU_test/L-BFGS-B-C/src/*.c
+SOURCES= main.cpp hypercube.cpp model.cpp algo_rohsa.cpp /L-BFGS-B-C/src/*.c
 EXECNAME= EXEC
 
 all:

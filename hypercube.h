@@ -1,5 +1,5 @@
-#ifndef DEF_PARSE
-#define DEF_PARSE
+#ifndef DEF_HYPERCUBE
+#define DEF_HYPERCUBE
 
 #include <iostream>
 #include <stdio.h>
@@ -13,18 +13,20 @@
 
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 
-class Parse
+class hypercube
 {
 	public:
 
-	Parse();
-	int dim2nside();
+	hypercube();
+	hypercube(std::string filename);
+
+	int dim2nside(); //obtenir les dimensions 2^n
 	std::vector<int> get_dimensions_from_fits();
 	void brute_show(const std::vector<std::vector<std::vector<double>>> &z, int depth, int length1, int length2);
-	void multiresolution(int nside);
+	void multiresolution(int nside); 
 	int get_binary_from_fits();
 	void get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z);
-	void show_data();
+	void show_data(); 
 	std::vector<int> get_dim_data() const;
 	int get_nside() const;
 	std::vector<int> get_dim_cube() const;
@@ -32,20 +34,18 @@ class Parse
 	std::vector<std::vector<std::vector<double>>> reshape_up();
 
 
-	std::vector<std::vector<std::vector<double>>> cube;
-	std::vector<std::vector<std::vector<double>>> data;
+	std::vector<std::vector<std::vector<double>>> cube; //data format 2^n
+	std::vector<std::vector<std::vector<double>>> data; //data brut
 	std::vector<int> dim_data;
 	std::vector<int> dim_cube;
 	int nside;
 
-	private:
-
-
-	std::string filename;
-
-
+	std::string filename; 
 };
 
+
+
+
+
+
 #endif
-
-

@@ -1,27 +1,29 @@
-#include "Parse.h"
-#include "Gaussian.h"
+#include "hypercube.h"
+#include "model.h"
+#include "algo_rohsa.h"
 #include <omp.h>
 
 int main()
 {
+	double temps1 = omp_get_wtime();
+	double temps1_lecture = omp_get_wtime();
+        hypercube file("./GHIGLS.fits"); //Lecture des données
+	model modeles_parametres;
+	double temps2_lecture = omp_get_wtime();
 
-        Parse file; //Lecture des données
-
+	algo_rohsa algo(modeles_parametres, file);
+	double temps2 = omp_get_wtime();
+	std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
+	std::cout<<"Temps total : "<<temps2 - temps1 <<std::endl; 
+}
 //	int nside = file.get_nside();
 //	std::cout << " nside = " << nside <<std::endl;
 
 //	file.multiresolution(nside); //Multirésolution pour nside = 5 (multiple de dim_v, la longueur native du FITS)	
 
-	double temps1_m = omp_get_wtime(); 
-
-	for(int n_size(1); n_size <=32; n_size++)
-	{
-		file.multiresolution(n_size);
-	}
+/*	double temps1_m = omp_get_wtime(); 
 
 	double temps1 = omp_get_wtime(); 
-
-	Gaussian decomposition(file);
 
 	double temps2 = omp_get_wtime(); 
 
@@ -42,10 +44,22 @@ int main()
 // profiler : Valgrind, kyle
 // 
 // multirésolution ht pmn boucle sur cube nmp (merci fortran) 
-
-// combien on gagne sur le total
-// gains 
-// 15h30 : 
+ 
 	return 0;
 }
+*/
 
+
+// hypercube : entrée  sortie
+
+// modèle, hypercube, algorithme
+
+// boucle itérative évidente ==> algo
+
+// template
+
+//this->
+
+//hypercube T : device ou host
+
+// Envoyer un découpage en classe le 28 ou 29

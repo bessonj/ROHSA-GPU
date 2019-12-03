@@ -1,11 +1,13 @@
-#include "Parse.h"
+#include "hypercube.h"
+#include <omp.h>
+
 
 using namespace CCfits;
 
 
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 /*
-Parse::Parse()
+hypercube::hypercube(std::string filename)
 {
 	data = use_rubbish_dat_file();
 
@@ -50,14 +52,21 @@ Parse::Parse()
 }
 */
 
-Parse::Parse()
+hypercube::hypercube() //dummy constructor for initialization of an hypercube object
 {
+
+}
+
+
+hypercube::hypercube(std::string filename)
+{
+	this->filename=filename;
 
 	data = use_dat_file();
 
 	nside = dim2nside();
+
 /*
-	filename = "./GHIGLS.fits";
 	dim_data = get_dimensions_from_fits();
 
 //	get_binary_from_fits(); // WARNING 
@@ -86,7 +95,7 @@ Parse::Parse()
 }
 
 
-std::vector<std::vector<std::vector<double>>> Parse::use_dat_file()
+std::vector<std::vector<std::vector<double>>> hypercube::use_dat_file()
 {
    	int x,y,z;
 	double v;
@@ -110,18 +119,18 @@ std::vector<std::vector<std::vector<double>>> Parse::use_dat_file()
 	return data_;
 }
 
-std::vector<int> Parse::get_dim_data() const
+std::vector<int> hypercube::get_dim_data() const
 {
 	return dim_data;
 }
 
 
-int Parse::get_nside() const
+int hypercube::get_nside() const
 {
 	return nside;
 }
 
-std::vector<int> Parse::get_dim_cube() const
+std::vector<int> hypercube::get_dim_cube() const
 {
 	return dim_cube;
 }
@@ -135,13 +144,13 @@ Parse::~Parse()
 
 // Compute nside value from \(dim_y\) and \(dim_x\) 
 
-int Parse::dim2nside()
+int hypercube::dim2nside()
 {
 	return std::max( 0, std::max(int(ceil( log(double(dim_data[1]))/log(2.))), int(ceil( log(double(dim_data[2]))/log(2.))))  ) ;  
 }
 
 
-std::vector<std::vector<std::vector<double>>> Parse::reshape_up()
+std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 {
 	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2])));
 
@@ -168,7 +177,7 @@ std::vector<std::vector<std::vector<double>>> Parse::reshape_up()
 
 
 
-std::vector<int> Parse::get_dimensions_from_fits()
+std::vector<int> hypercube::get_dimensions_from_fits()
 {
        	std::auto_ptr<FITS> pInfile(new FITS(filename,Read,true)); 
 
@@ -194,7 +203,7 @@ std::vector<int> Parse::get_dimensions_from_fits()
 }
 
 
-void Parse::brute_show(const std::vector<std::vector<std::vector<double>>> &z, int depth, int length1, int length2)
+void hypercube::brute_show(const std::vector<std::vector<std::vector<double>>> &z, int depth, int length1, int length2)
 {
 
 	for (int k(0); k<length1; k++)
@@ -207,7 +216,7 @@ void Parse::brute_show(const std::vector<std::vector<std::vector<double>>> &z, i
 }
 
 
-int Parse::get_binary_from_fits(){
+int hypercube::get_binary_from_fits(){
 
 	std::auto_ptr<FITS> pInfile(new FITS("./GHIGLS.fits",Read,true));
 
@@ -239,7 +248,7 @@ int Parse::get_binary_from_fits(){
 }
 
 
-void Parse::get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z)
+void hypercube::get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z)
 {
    	int filesize = dim_data[0]*dim_data[1]*dim_data[2];
 
@@ -293,7 +302,7 @@ void Parse::get_vector_from_binary(std::vector<std::vector<std::vector<double>>>
 
 }
 
-void Parse::show_data()
+void hypercube::show_data()
 {
 /*
 	for (int j(0); j<dim_data[0]; j++)
@@ -321,24 +330,27 @@ void Parse::show_data()
 }
 
 
-void Parse::multiresolution(int nside)
+void hypercube::multiresolution(int nside)
 {	
 	
 	std::vector<std::vector<std::vector<double>>> subcube(nside, std::vector<std::vector<double>> (nside, std::vector<double>(dim_cube[0])));
-
+	int p;
 	double avg(0.),S;
-
 	for(int h=0; h<nside; h++)
 	{
 		for(int t=0; t<nside; t++)
 		{
-			for(int p=0; p<dim_cube[0]; p++)
+			for(p=0; p<dim_cube[0]; p++)
 			{
+//				#pragma omp parallel shared(nside, dim_cube, cube, subcube,h,t,p)
+//				{
 				S=0.;
-
-				for (int m = dim_cube[1]/nside*t; m< dim_cube[1]/nside*(t+1); m++)
+				int m,n;
+//				#pragma omp for private(m,n,S,avg)
+				for (m = dim_cube[1]/nside*t; m< dim_cube[1]/nside*(t+1); m++)
 				{
-					for (int n= dim_cube[2]/nside*h; n < dim_cube[2]/nside*(h+1); n++)
+
+					for (n= dim_cube[2]/nside*h; n < dim_cube[2]/nside*(h+1); n++)
 					{
 //						std::cout <<"__n,m,p = "<<n<<","<<m<<","<<p<< std::endl;
 						S+=cube[p][m][n];
@@ -346,9 +358,11 @@ void Parse::multiresolution(int nside)
 				}
 				avg = S/((dim_cube[2]*dim_cube[1])/pow(nside,2));
 				subcube[h][t][p]=avg;
+//				}
 			}
 		}
 	}
+
 
 //	brute_show(subcube,dim_cube[2],nside,nside); //À ENLEVER, PERMET DE VÉRIFIER LE RÉSULTAT
 }

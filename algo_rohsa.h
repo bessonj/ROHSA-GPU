@@ -1,8 +1,9 @@
-//#ifndef DEF_GAUSSIAN
-//#define DEF_GAUSSIAN
+#ifndef DEF_ALGO_ROHSA
+#define DEF_ALGO_ROHSA
 
 #include "lbfgsb.h"
-#include "Parse.h"
+#include "hypercube.h"
+#include "model.h"
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
@@ -16,11 +17,11 @@
 
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 
-class Gaussian
+class algo_rohsa
 {
 	public:
 
-	Gaussian(const Parse &file1);	
+	algo_rohsa(model &M, const hypercube &Hypercube);	
 
 //	Computationnal tools
 	void convolution_2D_mirror(const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k);
@@ -38,19 +39,31 @@ class Gaussian
 	void mean_spectrum(int dim_x, int dim_y, int dim_v);
 	void max_spectrum(int dim_x, int dim_y, int dim_v);
 	void max_spectrum_norm(int dim_x, int dim_y, int dim_v, double norm_value);
-	void init_bounds(std::vector<double> line, int n_gauss_local, std::vector<double> lb, std::vector<double> ub, double ub_sig);
+	void init_bounds(model &M, std::vector<double> line, int n_gauss_local, std::vector<double> lb, std::vector<double> ub); // Conditions aux bord du spectre
 
-	void mean_array(int power, std::vector<std::vector<std::vector<double>>> &mean_array_);
+	void mean_array(int power, std::vector<std::vector<std::vector<double>>> &mean_array_); //moyenne du tableau
 
-	void init_spectrum(double ub_sig, std::vector<double> line, std::vector<double> params);
-	double gaussian(int x, double a, double m, double s);
+	void init_spectrum(model &M, std::vector<double> line, std::vector<double> params); 
+	//init spectre descente
+	double model_function(int x, double a, double m, double s); //modèle
 
-	int minloc(std::vector<double> tab);
+	int minloc(std::vector<double> tab); //argmin
 
-	int minimize_spec(long n, long m, std::vector<double> x_v, std::vector<double> lb_v, std::vector<double> ub_v, std::vector<double> line_v);
+	void minimize_spec(model &M, long n, long m, std::vector<double> x_v, std::vector<double> lb_v, std::vector<double> ub_v, std::vector<double> line_v); //LBFGS
+	void old_minimize_spec(model &M, long n, long m, std::vector<double> x_v, std::vector<double> lb_v, std::vector<double> ub_v, std::vector<double> line_v); //LBFGS
+
+	void myresidual(model &M, double params[], int line[], std::vector<double> residual);
 
 	void tab_from_1Dvector_to_double(std::vector<double> vect);
+	double myfunc_spec(std::vector<double> &residual);
 
+	void mygrad_spec(model &M, double gradient[], std::vector<double> &residual, double params[]);
+
+	void upgrade(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> params, int power);
+
+//	void go_up_level(std::vector<std::vector<std::vector<double>>> &cube_params);
+
+//	Computationnal tools
 	private:
 
 	std::vector<std::vector<double>> kernel;
@@ -58,40 +71,9 @@ class Gaussian
 	int dim_x;
 	int dim_y;
 	int dim_v;
-	Parse file;
+	hypercube file;
 
 	int n_gauss_add; //EN DISCUTER AVEC ANTOINE
-	
-
-//	parameters
-	std::string filename;
-	std::string fileout;
-	std::string filename_noise;
-	int n_gauss;
-	double lambda_amp;
-	double lambda_mu;
-	double lambda_sig;
-	double lambda_var_amp;
-	double lambda_var_mu;
-	double lambda_var_sig;
-	double amp_fact_init;
-        double sig_init;
-	std::string init_option;	
-	int maxiter_init;
-	int maxiter;
-	int m;
-	std::string check_noise;
-	std::string check_regul;
-	std::string check_descent;
-	bool noise;
-	bool regul;
-	bool descent;
-	int lstd;
-	int ustd;
-	long iprint;
-	int iprint_init;
-	std::string check_save_grid;
-	bool save_grid;
 
 	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
 	std::vector<std::vector<std::vector<double>>> grid_params;
@@ -114,4 +96,4 @@ class Gaussian
 };
 
 
-
+#endif
