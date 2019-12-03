@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS= -fopenmp -L/usr/lib/x86_64-linux-gnu/ -std=c++11  
 LDFLAGS= 
-SOURCES= main.cpp hypercube.cpp model.cpp algo_rohsa.cpp /L-BFGS-B-C/src/*.c
+SOURCES= main.cpp hypercube.cpp model.cpp algo_rohsa.cpp ./L-BFGS-B-C/src/*.c
 EXECNAME= EXEC
 
 all:
