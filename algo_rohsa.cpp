@@ -87,10 +87,10 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 			file.multiresolution(n+1);
 			double temps2_multiresol = omp_get_wtime();
 			temps_multiresol += temps2_multiresol-temps1_multiresol;
-
+/*
 			std::cout << "fit_params.size() : " << M.fit_params.size() << " , " << M.fit_params[0].size() << " , " << M.fit_params[0][0].size() <<  std::endl;
 	std::cout << "grid_params.size() : "<< M.grid_params.size() << " , " << M.grid_params[0].size()  << " , " << M.grid_params[0][0].size() << std::endl;
-
+*/
 			std::cout << " power = " << power << std::endl;
 
 			std::vector<std::vector<std::vector<double>>> cube_mean(power, std::vector<std::vector<double>>(power,std::vector<double>(dim_v,1.)));
@@ -101,17 +101,20 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 			temps_mean_array+=temps2_mean_array-temps1_mean_array;
 
 			std::vector<double> cube_mean_flat(cube_mean[0][0].size());
-		////
+		
 			for(int e(0); e<cube_mean[0][0].size(); e++) {
 				cube_mean_flat[e] = cube_mean[0][0][e]; //cache
 			}
 
-			for(int e(0); e<M.fit_params.size(); e++) {
+		std::cout<<"TEST_final"<<std::endl;		
+		std::cout<<"dim fit_params = "<<M.fit_params.size()<<std::endl;
+		std::cout<<"dim fit_params_flat = "<<fit_params_flat.size()<<std::endl;
+
+			for(int e(0); e<M.fit_params[0][0].size(); e++) {
 				fit_params_flat[e] = M.fit_params[e][0][0]; //cache
 			}
-			std::cout<<" n = "<<n<<std::endl;
+
 			if (n==0) {
-//				std::cout<<"////taille fit_params_flat : "<<fit_params_flat.size()<<std::endl;
 				//assume option "mean"
 				std::cout<<"Init mean spectrum"<<std::endl;
 				double temps1_init = omp_get_wtime();
@@ -120,7 +123,7 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 				temps_init += temps2_init - temps1_init;
 			for(int i(0); i<M.n_gauss; i++) {
 				b_params[i]= fit_params_flat[2+3*i];
-			}
+				}
 			}
 			if (true) {//regul == false
 				for(int e(0); e<M.fit_params.size(); e++) {
@@ -129,11 +132,13 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 					}
 				double temps1_upgrade = omp_get_wtime();
 				upgrade(M ,cube_mean, M.grid_params, power);
+
 				double temps2_upgrade = omp_get_wtime();
 				temps_upgrade+=temps2_upgrade-temps1_upgrade;
 			}
-			
-//			go_up_level(M.grid_params);
+
+//			go_up_level(M.fit_params);
+
 //		}
 		}
 		double temps2_descente = omp_get_wtime();
@@ -146,11 +151,19 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 	}
 }
 
-void algo_rohsa::upgrade(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> params, int power) {
-        int i,j;
+/*
+	for(int p(0); p<M.grid_params[0].size(); p++) 
+	{
+		for(int u(0); u<M.grid_params[0][0].size(); u++) {
+			for(int o(0); o<M.grid_params.size(); o++){ 
+		std::cout<<"fin grid_params["<< o << "]["<< u << "]["<< p << "] = "<<M.grid_params[o][u][p]<<std::endl;
+	}}}
+*/
 
-        int nb_threads = omp_get_max_threads();
-        printf(">> omp_get_max_thread()\n>> %i\n", nb_threads);
+void algo_rohsa::upgrade(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, int power) {
+        int i,j;
+//        int nb_threads = omp_get_max_threads();
+//        printf(">> omp_get_max_thread()\n>> %i\n", nb_threads);
 
 //      #pragma omp parallel shared(cube,params) shared(power) shared(M)
 //      {
@@ -158,13 +171,10 @@ void algo_rohsa::upgrade(model &M, std::vector<std::vector<std::vector<double>>>
         std::vector<double> x(3*M.n_gauss,0.);
         std::vector<double> lb(3*M.n_gauss,0.);
         std::vector<double> ub(3*M.n_gauss,0.);
-        printf("ou  est l'erreur ???AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         printf("thread:%d\n", omp_get_thread_num());
 //      #pragma omp for private(i,j)
         for(i=0;i<power; i++){
                 for(j=0;j<power; j++){
-
-                        std::cout << "0 ==> TEST"<<  std::endl;
 
                         int p;
                         for(p=0; p<cube[0][0].size();p++){
@@ -184,11 +194,51 @@ void algo_rohsa::upgrade(model &M, std::vector<std::vector<std::vector<double>>>
 //      }
         }
 }
-
 /*
 void algo_rohsa::go_up_level(std::vector<std::vector<std::vector<double>>> &cube_params) {
-	double dimension = cube_params.size();
-	std::vector<std::vector<std::vector<double>>> cube_params_down = cube_params;	
+	int dim[3];
+	dim[0]=cube_params[0][0].size();
+	dim[1]=cube_params[0].size();
+	dim[2]=cube_params.size();
+	std::vector<std::vector<std::vector<double>>> cube_params_down(dim[0],std::vector<std::vector<double>>(dim[1], std::vector<double>(dim[2],0.)));	
+
+	for(int i = 0; i<dim[0]	; i++){
+		for(int j = 0; j<dim[1]; j++){
+			for(int k = 0; k<dim[2]; k++){
+				cube_params_down[i][j][k]=cube_params[i][j][k];
+			}
+		}
+	}
+	 	
+
+//	std::vector<double>().vector::swap(cube_params); 
+//	cube_params.erase(cube_params.begin(), cube_params.end());	
+//	cube_params.shrink_to_fit();
+//	std::vector<std::vector<std::vector<double>>>().swap(cube_params);
+//	cube_params = std::vector<std::vector<std::vector<double>>>();
+	exit(0);
+		std::cout<<"ok"<<std::endl;
+	std::vector<std::vector<double>> tab(dim[1], std::vector<double>(dim[2],0.));
+		std::cout<<"ok"<<std::endl;
+	for(int c = 0; c<dim[0]; c++){
+
+		cube_params.vector::push_back(tab);
+	}
+	exit(0);
+
+
+	for(int i = 0; i<dim[1]; i++){
+		for(int j = 0; j<dim[2]; j++){
+			for(int k = 0; k<2; k++){
+				for(int l = 0; l<2; l++){
+					for(int m = 0; m<dim[0]; m++){
+						std::cout<<"go_up_levelç____"<< cube_params_down[m][i][j] <<std::endl;
+						cube_params[m][k+i*2][l+j*2] = cube_params_down[m][i][j];
+					}
+				}
+			}
+		}
+	}
 }
 */
 
@@ -214,7 +264,7 @@ double algo_rohsa::model_function(int x, double a, double m, double s) {
 
 }
 
-int algo_rohsa::minloc(std::vector<double> tab) {
+int algo_rohsa::minloc(std::vector<double> &tab) {
 	return std::distance(tab.begin(), std::min_element( tab.begin()+1, tab.end() ));
 }
 
@@ -255,6 +305,8 @@ void algo_rohsa::minimize_spec(model &M, long n, long m, std::vector<double> &x_
     double ub[ub_v.size()];
     double line[line_v.size()];
 
+	int compteurX=0;
+
     for(int i(0); i<line_v.size(); i++) {
 	line[i]=line_v[i];
     } 
@@ -284,35 +336,25 @@ void algo_rohsa::minimize_spec(model &M, long n, long m, std::vector<double> &x_
     *task = (long)START;
 /*     s_copy(task, "START", (ftnlen)60, (ftnlen)5); */
     /*        ------- the beginning of the loop ---------- */
-
+L111:
     while(IS_FG(*task) or *task==NEW_X or *task==START){ 
     /*     This is the call to the L-BFGS-B code. */
-    std::cout<<" Début appel BFGS "<<std::endl;
+//    std::cout<<" Début appel BFGS "<<std::endl;
 
     setulb(&n, &m, x, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
             &M.iprint, csave, lsave, isave, dsave);
 
 /*     if (s_cmp(task, "FG", (ftnlen)2, (ftnlen)2) == 0) { */
     if ( IS_FG(*task) ) {
+
 	myresidual(x, line, _residual_, n_gauss_i);
 	f = myfunc_spec(_residual_);
-	std::cout<<"dimensions de n = "<<n<<"  dimensions de g ="<<sizeof(g)/sizeof(g[0])<<std::endl;
-
 	mygrad_spec(g, _residual_, x, n_gauss_i);
-
-	std::cout<<"f = "<<f<<std::endl;
-	for(int p(0); p<n; p++) {
-		std::cout<<"fin g["<< p << "] = "<<g[p]<<std::endl;
-	}	
-	for(int p(0); p<x_v.size(); p++) {
-		std::cout<<"fin x["<< p << "] = "<<x[p]<<std::endl;
-	}	
-/*	for(int p(0); p<_residual_.size(); p++) {
-		std::cout<<"fin residual_["<< p << "] = "<<_residual_[p]<<std::endl;
-	}*/
 
 	}
 //	std::cout << "TEST 2 /!\ fit_params.size() : " << M.fit_params.size() << " , " << M.fit_params[0].size() << " , " << M.fit_params[0][0].size() <<  std::endl;
+	compteurX++;
+/*
     if (*task==NEW_X ) {
 	if (isave[33] >= M.maxiter) {
 		*task = STOP_ITER;
@@ -322,16 +364,19 @@ void algo_rohsa::minimize_spec(model &M, long n, long m, std::vector<double> &x_
 		*task = STOP_GRAD;
 	}
      }
+*/
 
         /*          go back to the minimization routine. */
-//L111:        
-//goto L111;
+//if (compteurX<100000000){        
+//	goto L111;
+//}
 //	std::cout << "BBBBBBBBBBBBBBBBBboucle" <<std::endl; 
+
 	}
-	for(int p(0); p<x_v.size(); p++) {
-		std::cout<<"fin x["<< p << "] = "<<x[p]<<std::endl;
+
+	for(int i(0); i<x_v.size(); i++) {
+		x_v[i]=x[i];
 	}
-	exit(0);
 
 }
 
@@ -367,9 +412,6 @@ void algo_rohsa::mygrad_spec(double gradient[], std::vector<double> &residual, d
 	for(int p(0); p<3*n_gauss_i; p++) {
 		gradient[p]=0.;
 	}
-	for(int p(0); p<3; p++) {
-		std::cout<<params[p]<<std::endl;
-	}
 
 	for(int i(0); i<n_gauss_i; i++) {
 		for(int k(0); k<dim_v; k++) {
@@ -389,7 +431,7 @@ void algo_rohsa::mygrad_spec(double gradient[], std::vector<double> &residual, d
 	}
 }
 
-void algo_rohsa::init_spectrum(model &M, std::vector<double> line, std::vector<double> params) {
+void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<double> &params) {
 	std::vector<double> model_tab(dim_v,0.);
 	std::vector<double> residual(dim_v,0.);
 //	std::cout<<"////taille params : "<<params.size()<<std::endl;
@@ -415,14 +457,10 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> line, std::vector<d
 		
 		std::vector<double> x(3*i,0.);
 
-		for(int p(0); p<3*(i-1); p++){	
+		for(int p(0); p<3*(i); p++){	
 			x[p]=params[p];
 		}
 		
-//		for(int ind(0); ind<residual.size(); ind++){
-//			std::cout<<"residual["<<ind<<"] = "<<residual[ind]<<std::endl;
-//		}
-
 		x[1+3*(i-1)] = minloc(residual)+1;
 		x[0+3*(i-1)] = line[int(x[1+3*(i-1)])-1]*M.amp_fact_init;
 		x[2+3*(i-1)] = M.sig_init;
@@ -431,7 +469,7 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> line, std::vector<d
 
 		minimize_spec(M, 3*i, M.m, x, lb, i, ub, line);
 
-		for(int p(0); p<3*(i-1); p++) {
+		for(int p(0); p<3*(i); p++) {
 			params[p] = x[p];
 		}
 	}
@@ -442,8 +480,7 @@ void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<doubl
 {	
 	std::vector<double> spectrum(file.dim_cube[0],0.);
 	int n = file.dim_cube[1]/power;
-	std::cout << " n = " << n << std::endl;
-	std::cout << " power = " << power << std::endl;
+
 	//std::vector<std::vector<std::vector<double>>> cube_mean(file.dim_cube[0],std::vector<std::vector<double>>(power, std::vector<double>(power)));
 	for(int i(0); i<mean_array_[0].size(); i++)
 	{

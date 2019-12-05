@@ -43,11 +43,11 @@ class algo_rohsa
 
 	void mean_array(int power, std::vector<std::vector<std::vector<double>>> &mean_array_); //moyenne du tableau
 
-	void init_spectrum(model &M, std::vector<double> line, std::vector<double> params); 
+	void init_spectrum(model &M, std::vector<double> &line, std::vector<double> &params); 
 	//init spectre descente
 	double model_function(int x, double a, double m, double s); //modèle
 
-	int minloc(std::vector<double> tab); //argmin
+	int minloc(std::vector<double> &tab); //argmin
 
 	void minimize_spec(model &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i,std::vector<double> &ub_v, std::vector<double> &line_v); //LBFGS
 	void myresidual(double params[], double line[], std::vector<double> &residual, int n_gauss_i);
@@ -57,9 +57,10 @@ class algo_rohsa
 
 	void mygrad_spec(double gradient[], std::vector<double> &residual, double params[], int n_gauss_i);
 
-	void upgrade(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> params, int power);
+	void upgrade(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, int power);
 
-//	void go_up_level(std::vector<std::vector<std::vector<double>>> &cube_params);
+	void go_up_level(std::vector<std::vector<std::vector<double>>> &cube_params);
+
 
 //	Computationnal tools
 	private:
