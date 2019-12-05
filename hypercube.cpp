@@ -65,7 +65,6 @@ hypercube::hypercube(std::string filename)
 	data = use_dat_file();
 
 	nside = dim2nside();
-
 /*
 	dim_data = get_dimensions_from_fits();
 
@@ -92,6 +91,7 @@ hypercube::hypercube(std::string filename)
 	std::cout<<"__nside = "<<nside<<std::endl;
 
 	cube = reshape_up();
+	std::cout<<" test 0 ==>"<<cube[0][0][0]<<std::endl;
 }
 
 
@@ -161,9 +161,9 @@ std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 
 	std::cout<< "L'offset est de "<< offset_w << " en largeur et " << offset_h << " en hauteur" << std::endl;
 
-	for(int i(1); i< dim_data[0]-2; i++)
+	for(int i(0); i< dim_data[0]; i++)
 	{
-		for(int j(1); j<dim_data[1]-2; j++)
+		for(int j(0); j<dim_data[1]; j++)
 		{
 			for(int k(0); k<dim_data[2]; k++)
 			{
