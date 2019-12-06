@@ -106,10 +106,6 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 				cube_mean_flat[e] = cube_mean[0][0][e]; //cache
 			}
 
-		std::cout<<"TEST_final"<<std::endl;		
-		std::cout<<"dim fit_params = "<<M.fit_params.size()<<std::endl;
-		std::cout<<"dim fit_params_flat = "<<fit_params_flat.size()<<std::endl;
-
 			for(int e(0); e<M.fit_params[0][0].size(); e++) {
 				fit_params_flat[e] = M.fit_params[e][0][0]; //cache
 			}
@@ -119,6 +115,12 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 				std::cout<<"Init mean spectrum"<<std::endl;
 				double temps1_init = omp_get_wtime();
 				init_spectrum(M, cube_mean_flat, fit_params_flat);
+
+				init_spectrum(M, cube_mean_flat, std_spect); //option spectre
+				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
+				init_spectrum(M, cube_mean_flat, max_spect_norm); //option norme spectre
+
+
 				double temps2_init = omp_get_wtime();
 				temps_init += temps2_init - temps1_init;
 			for(int i(0); i<M.n_gauss; i++) {
@@ -142,7 +144,8 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 //		}
 		}
 		double temps2_descente = omp_get_wtime();
-		
+		std::cout<<"fit_params_flat["<<5<<"]= 6,28625"<<"  vérif:  "<<fit_params_flat[5]<<std::endl;
+
 		std::cout<<"Temps TOTAL de descente : "<<temps2_descente - temps1_descente <<std::endl;
 		std::cout<<"Temps de upgrade : "<< temps_upgrade <<std::endl;
 		std::cout<<"Temps de multirésolution : "<< temps_multiresol <<std::endl;
@@ -171,7 +174,7 @@ void algo_rohsa::upgrade(model &M, std::vector<std::vector<std::vector<double>>>
         std::vector<double> x(3*M.n_gauss,0.);
         std::vector<double> lb(3*M.n_gauss,0.);
         std::vector<double> ub(3*M.n_gauss,0.);
-        printf("thread:%d\n", omp_get_thread_num());
+//        printf("thread:%d\n", omp_get_thread_num());
 //      #pragma omp for private(i,j)
         for(i=0;i<power; i++){
                 for(j=0;j<power; j++){
@@ -370,7 +373,6 @@ L111:
 //if (compteurX<100000000){        
 //	goto L111;
 //}
-//	std::cout << "BBBBBBBBBBBBBBBBBboucle" <<std::endl; 
 
 	}
 
@@ -408,12 +410,15 @@ void algo_rohsa::mygrad_spec(double gradient[], std::vector<double> &residual, d
 
 	std::vector<std::vector<double>> dF_over_dB(3*n_gauss_i, std::vector<double>(dim_v,0.));
 	double g(0.);
-
+	int i,k;
 	for(int p(0); p<3*n_gauss_i; p++) {
 		gradient[p]=0.;
 	}
 
-	for(int i(0); i<n_gauss_i; i++) {
+//	#pragma omp parallel num_threads(2) shared(dF_over_dB,params)
+//	{
+//	#pragma omp for private(i)
+	for(i=0; i<n_gauss_i; i++) {
 		for(int k(0); k<dim_v; k++) {
 			dF_over_dB[0+3*i][k] += exp(-pow( double(k+1)-params[1+3*i],2.)/(2*pow(params[2+3*i],2.)) );
 
@@ -422,20 +427,29 @@ void algo_rohsa::mygrad_spec(double gradient[], std::vector<double> &residual, d
 			dF_over_dB[2+3*i][k] += params[3*i]*pow( double(k+1) - params[1+3*i] , 2.)/(pow(params[2+3*i],3.)) * exp(-pow( double(k+1)-params[1+3*i],2.)/(2*pow(params[2+3*i],2.)) );
 
 		}
+//	}
 	}
-	for(int i(0); i<dim_v; i++){
-		for(int k(0); k<3*n_gauss_i; k++){
+//	#pragma omp parallel num_threads(2) shared(dF_over_dB, residual ,gradient)
+//	{
+//	#pragma omp for private(k)
+	for(k=0; k<3*n_gauss_i; k++){
+		for(int i=0; i<dim_v; i++){
 			gradient[k]+=dF_over_dB[k][i]*residual[i];
 	//		std::cout<<"dF_over_dB["<<k<<"]["<<i<<"] = "<< dF_over_dB[k][i]<<std::endl;
 		}
+
+//	}
 	}
 }
 
 void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<double> &params) {
+
 	std::vector<double> model_tab(dim_v,0.);
 	std::vector<double> residual(dim_v,0.);
-//	std::cout<<"////taille params : "<<params.size()<<std::endl;
-	for(int i(1); i<=M.n_gauss; i++) {
+
+	int k;
+
+	for(int i=1; i<=M.n_gauss; i++) {
 		std::vector<double> lb(3*i,0.);
 		std::vector<double> ub(3*i,0.);
 		int rang = std::distance(residual.begin(), std::min_element( residual.begin(), residual.end() ));
@@ -443,10 +457,10 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<
 		std::cout<<" argmin residual = "<< rang<<std::endl;
 
 		init_bounds(M, line,i,lb,ub);
-		//std::cout << "n = " << n<< std::endl;
 
 		for(int j(0); j<i; j++) {
-			for(int k(0); k<dim_v; k++) {			
+
+			for(k=0; k<dim_v; k++) {			
 				model_tab[k]+= model_function(k+1,params[3*j], params[1+3*j], params[2+3*j]);
 			}
 		}
@@ -472,7 +486,12 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<
 		for(int p(0); p<3*(i); p++) {
 			params[p] = x[p];
 		}
+		for(int p(0); p<3*(i); p++) {
+			params[p] = params[p];
+		}
+
 	}
+
 }
 
 
