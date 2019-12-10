@@ -91,7 +91,6 @@ hypercube::hypercube(std::string filename)
 	std::cout<<"__nside = "<<nside<<std::endl;
 
 	cube = reshape_up();
-	std::cout<<" test 0 ==>"<<cube[0][0][0]<<std::endl;
 }
 
 

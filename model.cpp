@@ -79,4 +79,3 @@ model::model()
 	kernel[2][2] = 0.;
 
 }
-

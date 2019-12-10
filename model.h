@@ -68,7 +68,6 @@ class model
 	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
 	std::vector<std::vector<std::vector<double>>> grid_params; // sortie
 	std::vector<std::vector<std::vector<double>>> fit_params; //
-	
 
 /*
 	int n_gauss_add;

@@ -59,7 +59,7 @@ class algo_rohsa
 
 	void upgrade(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, int power);
 
-	void go_up_level(std::vector<std::vector<std::vector<double>>> &cube_params);
+	void go_up_level(std::vector<std::vector<std::vector<double>>> &fit_params);
 
 
 //	Computationnal tools
