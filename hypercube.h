@@ -24,7 +24,7 @@ class hypercube
 	std::vector<int> get_dimensions_from_fits();
 	void brute_show(const std::vector<std::vector<std::vector<double>>> &z, int depth, int length1, int length2);
 	void multiresolution(int nside); 
-	int get_binary_from_fits();
+	int get_binary_from_fits(std::string &filename);
 	void get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z);
 	void show_data(); 
 	std::vector<int> get_dim_data() const;

@@ -62,13 +62,16 @@ hypercube::hypercube(std::string filename)
 {
 	this->filename=filename;
 
+
+	std::cout<<filename<<std::endl;
+
 	data = use_dat_file();
 
 	nside = dim2nside();
 /*
 	dim_data = get_dimensions_from_fits();
 
-//	get_binary_from_fits(); // WARNING 
+//	get_binary_from_fits(filename); // WARNING 
 	get_vector_from_binary(data);
 
 	nside = dim2nside()-1;
@@ -215,9 +218,9 @@ void hypercube::brute_show(const std::vector<std::vector<std::vector<double>>> &
 }
 
 
-int hypercube::get_binary_from_fits(){
+int hypercube::get_binary_from_fits(std::string &filename){
 
-	std::auto_ptr<FITS> pInfile(new FITS("./GHIGLS.fits",Read,true));
+	std::auto_ptr<FITS> pInfile(new FITS(filename,Read,true));
 
         PHDU& image = pInfile->pHDU();
 	std::valarray<double> contents;

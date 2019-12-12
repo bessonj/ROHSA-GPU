@@ -7,10 +7,15 @@ int main()
 {
 	double temps1 = omp_get_wtime();
 	double temps1_lecture = omp_get_wtime();
-        hypercube file("./GHIGLS.fits"); //Lecture des données
 	model modeles_parametres;
+        hypercube file("./GHIGLS.fits"); //Lecture des données
+	
 	double temps2_lecture = omp_get_wtime();
 	algo_rohsa algo(modeles_parametres, file);
+
+
+
+
 	double temps2 = omp_get_wtime();
 	std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
 	std::cout<<"Temps total : "<<temps2 - temps1 <<std::endl; 
