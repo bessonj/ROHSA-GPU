@@ -1,7 +1,6 @@
 #include "model.h"
 #include <omp.h>
 
-
 model::model()
 {
 	n_gauss_add = 0;
@@ -11,7 +10,10 @@ model::model()
  
         if(fichier)  // si l'ouverture a fonctionné
         {
-		fichier >> txt >> egal >> filename;
+		fichier >> txt >> egal >> filename_dat;
+		fichier >> txt >> egal >> filename_fits;
+		fichier >> txt >> egal >> file_type_dat_check;
+		fichier >> txt >> egal >> file_type_fits_check;
 		fichier >> txt >> egal >> fileout;
 		fichier >> txt >> egal >> filename_noise;
 		fichier >> txt >> egal >> n_gauss;
@@ -39,6 +41,14 @@ model::model()
 		fichier >> txt >> egal >> lb_sig;
 		fichier >> txt >> egal >> ub_sig_init;
 		fichier >> txt >> egal >> lb_sig_init;
+		if(file_type_dat_check == "true")
+			file_type_dat = true;
+		else 
+			file_type_dat = false;
+		if(file_type_fits_check == "true")
+			file_type_fits = true;
+		else 
+			file_type_fits = false;
 
 		if(check_save_grid == "true")
 			save_grid = true;
@@ -77,5 +87,12 @@ model::model()
 	kernel[2][0] = 0.;
 	kernel[2][1] = -0.25;
 	kernel[2][2] = 0.;
+
+}
+
+
+void model::write_model_in_binary(){
+
+//	
 
 }

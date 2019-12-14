@@ -1,6 +1,7 @@
 #ifndef DEF_HYPERCUBE
 #define DEF_HYPERCUBE
 
+#include "model.h"
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
@@ -11,6 +12,7 @@
 #include <CCfits/CCfits>
 #include <vector>
 
+
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 
 class hypercube
@@ -18,26 +20,36 @@ class hypercube
 	public:
 
 	hypercube();
-	hypercube(std::string filename);
+	hypercube(model &M);
+	hypercube(model &M,int indice_debut, int indice_fin);
+
+	void display_cube(int rang);
+	void display_data(int rang);
+	void display(std::vector<std::vector<std::vector<double>>> &tab, int rang);
+	void plot_line(std::vector<std::vector<std::vector<double>>> &params, int ind_x, int ind_y, int n_gauss_i);
+	double model_function(int x, double a, double m, double s);
+	void display_result(std::vector<std::vector<std::vector<double>>> &params, int rang, int n_gauss_i);
 
 	int dim2nside(); //obtenir les dimensions 2^n
-	std::vector<int> get_dimensions_from_fits();
 	void brute_show(const std::vector<std::vector<std::vector<double>>> &z, int depth, int length1, int length2);
 	void multiresolution(int nside); 
-	int get_binary_from_fits(std::string &filename);
+	int get_binary_from_fits();
 	void get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z);
 	void show_data(); 
-	std::vector<int> get_dim_data() const;
+	std::vector<int> get_dim_data();
+	std::vector<int> get_dim_cube();
 	int get_nside() const;
-	std::vector<int> get_dim_cube() const;
 	std::vector<std::vector<std::vector<double>>> use_dat_file();
 	std::vector<std::vector<std::vector<double>>> reshape_up();
+	std::vector<std::vector<std::vector<double>>> reshape_up(int borne_inf, int borne_sup);
 
-
+	int indice_debut, indice_fin;
 	std::vector<std::vector<std::vector<double>>> cube; //data format 2^n
 	std::vector<std::vector<std::vector<double>>> data; //data brut
-	std::vector<int> dim_data;
-	std::vector<int> dim_cube;
+	int dim_data[3];
+	int dim_cube[3];
+	std::vector<int> dim_data_v;
+	std::vector<int> dim_cube_v;
 	int nside;
 
 	std::string filename; 

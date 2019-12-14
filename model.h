@@ -2,7 +2,6 @@
 #define DEF_MODEL
 
 #include "lbfgsb.h" //needed for the integer and logical type of the minimize_spec function
-#include "hypercube.h"
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
@@ -21,6 +20,8 @@ class model
 	public:
 
 	model();
+	void write_model_in_binary();
+
 
 	std::vector<std::vector<double>> kernel;
 	std::vector<int> dim_data; //inutile : file.dim_data
@@ -32,7 +33,12 @@ class model
 	
 
 //	parameters
-	std::string filename;
+	std::string filename_dat;
+	std::string filename_fits;
+	std::string file_type_dat_check;
+	std::string file_type_fits_check;
+	bool file_type_dat;
+	bool file_type_fits;
 	std::string fileout;
 	std::string filename_noise;
 	int n_gauss;

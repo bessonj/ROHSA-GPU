@@ -21,10 +21,12 @@ class algo_rohsa
 {
 	public:
 
-	algo_rohsa(model &M, const hypercube &Hypercube);	
+	algo_rohsa(model &M, hypercube &Hypercube); //constructeur
+
+	void descente(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //effectue la descente et/ou la régularisation
 
 //	Computationnal tools
-	void convolution_2D_mirror(model &M, std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k);
+	void convolution_2D_mirror(model &M, std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k); //convolution 2D
 	void ravel_2D(const std::vector<std::vector<double>> &map, std::vector<double> &vector, int dim_y, int dim_x);
 	void ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube, double vector[], int dim_v, int dim_y, int dim_x);
 	void ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube, std::vector<double> &vector, int dim_v, int dim_y, int dim_x);
@@ -74,11 +76,14 @@ class algo_rohsa
 	void f_g_cube(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
 
 
+
+	std::vector<std::vector<std::vector<double>>> grid_params;
+	std::vector<std::vector<std::vector<double>>> fit_params;
 //	Computationnal tools
 	private:
 
 	std::vector<std::vector<double>> kernel;
-	std::vector<int> dim_data; //inutile : file.dim_data
+	std::vector<int> dim_cube; //inutile : file.dim_data
 	int dim_x;
 	int dim_y;
 	int dim_v;
@@ -87,8 +92,7 @@ class algo_rohsa
 	int n_gauss_add; //EN DISCUTER AVEC ANTOINE
 
 	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
-	std::vector<std::vector<std::vector<double>>> grid_params;
-	std::vector<std::vector<std::vector<double>>> fit_params;
+	
 	
 
 /*

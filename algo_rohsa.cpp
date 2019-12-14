@@ -3,33 +3,42 @@
 #include <array>
 
 
-algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
+algo_rohsa::algo_rohsa(model &M, hypercube &Hypercube)
 {
-	this->file = Hypercube; //The hypercube is not modified then
-	this->dim_data = Hypercube.get_dim_data();
-	this->dim_x = dim_data[2];
-	this->dim_y = dim_data[1];
-	this->dim_v = dim_data[0];
 
-	double temps1_descente = omp_get_wtime();
+	this->file = Hypercube; //The hypercube is not modified then
+	this->dim_cube = Hypercube.get_dim_cube();
+	this->dim_x = dim_cube[0];
+	this->dim_y = dim_cube[1];
+	this->dim_v = dim_cube[2];
 	
 	std_spectrum(dim_x, dim_y, dim_v); //oublier
 	mean_spectrum(dim_x, dim_y, dim_v);
 	max_spectrum(dim_x, dim_y, dim_v); //oublier
 
-	std::vector<double> b_params(M.n_gauss,0.);
 
 	double max_mean_spect = *std::max_element(mean_spect.begin(), mean_spect.end());
 
-	max_spectrum_norm(dim_x,dim_y, dim_v, max_mean_spect);
+	max_spectrum_norm(this->dim_x,this->dim_y, this->dim_v, max_mean_spect);
 
 	std::cout << " descent : "<< M.descent << std::endl;
 
-	std::vector<std::vector<std::vector<double>>> grid_params(3*(M.n_gauss+(file.nside*M.n_gauss_add)), std::vector<std::vector<double>>(dim_y, std::vector<double>(dim_x,0.)));
+	std::vector<std::vector<std::vector<double>>> grid_params, fit_params;
 
-//	if(M.descent)
-//	{		
-		std::vector<std::vector<std::vector<double>>> fit_params(3*(M.n_gauss+(file.nside*M.n_gauss_add)), std::vector<std::vector<double>>(1, std::vector<double>(1,0.)));
+// can't define the proper variable in the loop 
+	if(M.descent){
+	std::vector<std::vector<std::vector<double>>> grid_params_(3*(M.n_gauss+(file.nside*M.n_gauss_add)), std::vector<std::vector<double>>(dim_y, std::vector<double>(dim_x,0.)));
+	std::vector<std::vector<std::vector<double>>> fit_params_(3*(M.n_gauss+(file.nside*M.n_gauss_add)), std::vector<std::vector<double>>(1, std::vector<double>(1,0.)));
+	grid_params=grid_params_;
+	fit_params=fit_params_;
+	}
+	else{
+	std::vector<std::vector<std::vector<double>>> grid_params_(3*(M.n_gauss+M.n_gauss_add), std::vector<std::vector<double>>(dim_y, std::vector<double>(dim_x,0.)));
+	grid_params=grid_params_;
+	}
+
+	std::vector<double> b_params(M.n_gauss,0.);
+
 
 /*		M.fit_params = fit_params;
 
@@ -39,21 +48,40 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 */				
 //		std::cout << "test fit_params : "<<fit_params[0][0][0]<<std::endl;
 		
-		for(int i(0);i<M.n_gauss; i++){
-			fit_params[0+3*i][0][0] = 0.;
-			fit_params[1+3*i][0][0] = 0.;
-			fit_params[2+3*i][0][0] = 0.;
-		}
-//	}
+	if(M.descent)
+	{
+		descente(M, grid_params, fit_params);
+	}
+/*
+	std::cout << "params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
 
-	std::cout << "fit_params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
+	for(int i(0); i<fit_params.size(); i++) {
+		for(int j(0); j<fit_params[0].size(); j++) {
+			for(int k(0); k<fit_params[0][0].size(); k++) {
+				std::cout<<"Après setulb, params["<<i<<"]["<<j<<"]["<<k<<"] = "<<fit_params[i][j][k]<<std::endl;
+			}
+		}
+	}
+*/
+}
+
+void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
+
+
+
+	for(int i=0;i<M.n_gauss; i++){
+		fit_params[0+3*i][0][0] = 0.;
+		fit_params[1+3*i][0][0] = 0.;
+		fit_params[2+3*i][0][0] = 0.;
+	}
+		std::cout << "fit_params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
 
 	std::cout << "grid_params.size() : "<< grid_params.size() << " , " << grid_params[0].size()  << " , " << grid_params[0][0].size() << std::endl;
 
-	std::vector<double> fit_params_flat(fit_params.size(),0.); //used below
+		double temps1_descente = omp_get_wtime();
 
-	if(M.descent)
-	{
+		std::vector<double> fit_params_flat(fit_params.size(),0.); //used below
+
 		double temps_upgrade=0.;
 		double temps_multiresol=0.;
 		double temps_init = 0.;
@@ -65,11 +93,6 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 		for(n=0; n<file.nside; n++)
 		{
 			int power(pow(2,n));
-
-			double temps1_multiresol = omp_get_wtime();
-//			file.multiresolution(n+1);
-			double temps2_multiresol = omp_get_wtime();
-			temps_multiresol += temps2_multiresol-temps1_multiresol;
 
 			std::cout << " power = " << power << std::endl;
 
@@ -83,15 +106,16 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 			std::vector<double> cube_mean_flat(cube_mean[0][0].size());
 
 			if (n==0) {
-				
 				for(int e(0); e<cube_mean[0][0].size(); e++) {
 					cube_mean_flat[e] = cube_mean[0][0][e]; //cache ok
 					}
 
 				for(int e(0); e<fit_params_flat.size(); e++) {
 					fit_params_flat[e] = fit_params[e][0][0]; //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
-	
 					}
+
+
+
 				//assume option "mean"
 				std::cout<<"Init mean spectrum"<<std::endl;
 				double temps1_init = omp_get_wtime();
@@ -111,7 +135,7 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 //					b_params[i]= fit_params_flat[2+3*i];
 //					}
 				}
-			
+
 			double temps1_upgrade = omp_get_wtime();
 			if(M.regul==false) {
 				for(int e(0); e<fit_params.size(); e++) {
@@ -157,7 +181,7 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 			M.fit_params = fit_params; //updating the model class
 		}
 
-
+/*
 	for(int i(0); i<fit_params.size(); i++) {
 		for(int j(0); j<fit_params[0].size(); j++) {
 			for(int k(0); k<fit_params[0][0].size(); k++) {
@@ -165,19 +189,19 @@ algo_rohsa::algo_rohsa(model &M, const hypercube &Hypercube)
 			}
 		}
 	}
-	exit(0);
-
-
+*/
+/*
 		double temps2_descente = omp_get_wtime();
 		std::cout<<"fit_params_flat["<<0<<"]= "<<"  vérif:  "<<fit_params[0][0][0]<<std::endl;
 
 		std::cout<<"Temps TOTAL de descente : "<<temps2_descente - temps1_descente <<std::endl;
 		std::cout<<"Temps de upgrade : "<< temps_upgrade <<std::endl;
-		std::cout<<"Temps de multirésolution : "<< temps_multiresol <<std::endl;
 		std::cout<<"Temps de mean_array : "<<temps_mean_array<<std::endl;
 		std::cout<<"Temps de init : "<<temps_init<<std::endl;
-	}
+*/
+
 }
+
 
 void algo_rohsa::update(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v) {
 
@@ -252,25 +276,6 @@ void algo_rohsa::update(model &M, std::vector<std::vector<std::vector<double>>> 
 	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
 
-
-/*	for(int i(0); i<n; i++) {
-		std::cout<<"Après setulb, x["<<i<<"] = "<<x[i]<<std::endl;
-	}
-	for(int i(0); i<n; i++) {
-		std::cout<<"Après setulb, lb["<<i<<"] = "<<lb[i]<<std::endl;
-	}
-	for(int i(0); i<n; i++) {
-		std::cout<<"Après setulb, ub["<<i<<"] = "<<ub[i]<<std::endl;
-	}
-	for(int i(0); i<n; i++) {
-		std::cout<<"Après setulb, g["<<i<<"] = "<<g[i]<<std::endl;
-	}
-	for(int i(0); i<n; i++) {
-		std::cout<<"Après setulb, nbd["<<i<<"] = "<<nbd[i]<<std::endl;
-	}
-	std::cout<<"Après setulb, f = "<<std::setprecision (20)<<f<<std::endl;
-	exit(0);
-*/
 }
 
 void algo_rohsa::set_stdmap(std::vector<std::vector<double>> &std_map, std::vector<std::vector<std::vector<double>>> &cube, int lb, int ub){
@@ -751,18 +756,16 @@ double algo_rohsa::myfunc_spec(std::vector<double> &residual) {
 void algo_rohsa::myresidual(double params[], double line[], std::vector<double> &residual, int n_gauss_i) {
 	int k;
 	std::vector<double> model(dim_v,0.);
-
 	for(int i(0); i<n_gauss_i; i++) {
 		for(k=1; k<=dim_v; k++) {
 			model[k-1]+= model_function(k, params[3*i], params[1+3*i], params[2+3*i]);
 		}
 	}
-
 	for(int p=0; p<residual.size(); p++) {
 		residual[p]=model[p]-line[p]; 
 	}
-
 }
+
 void algo_rohsa::myresidual(std::vector<double> &params, std::vector<double> &line, std::vector<double> &residual, int n_gauss_i) {
 	int k;
 	std::vector<double> model(dim_v,0.);
@@ -818,7 +821,6 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<
 
 	std::vector<double> model_tab(dim_v,0.);
 	std::vector<double> residual(dim_v,0.);
-
 	int i;
 
 	for(i=1; i<=M.n_gauss; i++) {
@@ -860,42 +862,45 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<
 			params[p] = params[p];
 		}
 	}
+
+
 }
 
 
-void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<double>>> &mean_array_)
-{	
-	std::vector<double> spectrum(file.dim_cube[0],0.);
+void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<double>>> &cube_mean)
+{
+	std::vector<double> spectrum(file.dim_cube[2],0.);
 	int n = file.dim_cube[1]/power;
-
 	//std::vector<std::vector<std::vector<double>>> cube_mean(file.dim_cube[0],std::vector<std::vector<double>>(power, std::vector<double>(power)));
-	for(int i(0); i<mean_array_[0].size(); i++)
+	for(int i(0); i<cube_mean[0].size(); i++)
 	{
-		for(int j(0); j<mean_array_.size(); j++)
+		for(int j(0); j<cube_mean.size(); j++)
 		{
 			for(int k(0); k<n; k++)
 			{
 				for (int l(0); l<n; l++)
 				{
-					for(int m(0); m<file.dim_cube[0]; m++)
+					for(int m(0); m<file.dim_cube[2]; m++)
 					{
 
 //						std::cout<< "  test __  i,j,k,l,m,n ="<<i<<","<<j<<","<<k <<","<<l<<","<<m<<","<<n<< std::endl;
 //						std::cout << "  test__ "<<k+j*n<<std::endl;
-						spectrum[m] += file.cube[m][l+i*n][k+j*n];
+						spectrum[m] += file.cube[l+i*n][k+j*n][m];
 					}
 				}
 			}
-			for(int m(0); m<file.dim_cube[0]; m++)
+			for(int m(0); m<file.dim_cube[2]; m++)
 			{
-				mean_array_[j][i][m] = spectrum[m]/pow(n,2);
+				cube_mean[j][i][m] = spectrum[m]/pow(n,2);
 			}
-			for(int p(0); p<file.dim_cube[0]; p++)
+			for(int p(0); p<file.dim_cube[2	]; p++)
 			{
 				spectrum[p] = 0.;
 			}
 		}
 	}
+
+
 }
 
 void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k)
