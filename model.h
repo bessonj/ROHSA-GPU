@@ -1,7 +1,7 @@
 #ifndef DEF_MODEL
 #define DEF_MODEL
 
-#include "lbfgsb.h" //needed for the integer and logical type of the minimize_spec function
+#include "./L-BFGS-B-C/src/lbfgsb.h" //needed for the integer and logical type of the minimize_spec function
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
