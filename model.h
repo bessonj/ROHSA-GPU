@@ -72,8 +72,8 @@ class model
 	double lb_sig_init;
 
 	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
-	std::vector<std::vector<std::vector<double>>> grid_params; // sortie
-	std::vector<std::vector<std::vector<double>>> fit_params; //
+	std::vector<std::vector<std::vector<double>>> grid_params; // sortie, paramètres du modèle
+	std::vector<std::vector<std::vector<double>>> fit_params; // paramètres du modèle
 
 /*
 	int n_gauss_add;

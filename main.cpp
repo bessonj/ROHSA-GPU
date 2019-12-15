@@ -12,9 +12,14 @@ int main()
 	double temps1_lecture = omp_get_wtime();
 
 	model modeles_parametres;
+
+//Pour un FITS
+//        hypercube Hypercube_file(modeles_parametres, 0,200); //Lecture des données, on regarde un extrait entre 0 et 200 
+
+//Pour un DAT
         hypercube Hypercube_file(modeles_parametres); //utilise le fichier dat sans couper les données
-//        hypercube Hypercube_file(modeles_parametres, 0,200); //Lecture des données, attentions aux indices en c++
-//which part of the fits do you want to use ?  ind_debut, ind_fin
+
+
 //set dimensions of the cube
 
 ////std::cout<<"aaa"+"bbb"<<std::end; //change filenames
@@ -24,12 +29,12 @@ int main()
 //	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
 	
 	double temps2_lecture = omp_get_wtime();
-
+œ
 	algo_rohsa algo(modeles_parametres, Hypercube_file);
 
 	Hypercube_file.plot_line(modeles_parametres.fit_params, 25, 12, modeles_parametres.n_gauss);
 
-	Hypercube_file.display_result(modeles_parametres.grid_params, 100, modeles_parametres.n_gauss);
+	Hypercube_file.display_result(modeles_parametres.grid_params, 100, modeles_parametres.n_gauss); //affiche une tranche du cube reconstitué du modèle à l'indice 100
 	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
 
 	double temps2 = omp_get_wtime();

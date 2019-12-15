@@ -19,12 +19,12 @@ hypercube::hypercube(model &M, int indice_debut, int indice_fin)
 	if(M.file_type_fits){
 	//	get_dimensions_from_fits();
 		get_binary_from_fits(); // WARNING 
-		get_vector_from_binary(data);
+		get_vector_from_binary(this->data);
 		this->nside = dim2nside()-1;
 std::cout<<" BOUCLE "<<std::endl;
 	}
 	if(M.file_type_dat){
-		data = use_dat_file();
+		this->data = use_dat_file();
 		this->nside = dim2nside();
 	}
 //	std::cout << "	DEBUG " << std::endl;
@@ -64,11 +64,11 @@ hypercube::hypercube(model &M)
 	if(M.file_type_fits){
 //		get_dimensions_from_fits();
 		get_binary_from_fits(); // WARNING 
-		get_vector_from_binary(data);
+		get_vector_from_binary(this->data);
 		this->nside = dim2nside()-1;
 	}
 	if(M.file_type_dat){
-		data = use_dat_file();
+		this->data = use_dat_file();
 		this->nside = dim2nside();
 	}
 //	std::cout << "	DEBUG " << std::endl;
