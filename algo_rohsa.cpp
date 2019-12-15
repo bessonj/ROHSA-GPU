@@ -154,7 +154,7 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 						
 					}
 					else if (M.noise==false){
-						set_stdmap(std_map, cube_mean, M.lstd, M.ustd);
+						set_stdmap_transpose(std_map, cube_mean, M.lstd, M.ustd);
 					}
 
 					update(M, cube_mean, fit_params, std_map, power, power, dim_v);
@@ -181,6 +181,24 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 			M.fit_params = fit_params; //updating the model class
 		}
 
+	std::vector<std::vector<double>> std_map(file.dim_data[0], std::vector<double>(file.dim_data[1],0.));
+
+	if(M.noise){
+
+
+	} else {
+
+		set_stdmap(std_map, this->file.cube, M.lstd, M.ustd);
+	}
+
+	if(M.regul){
+		std::cout<<"Update last level"<<std::endl;
+		update(M, this->file.cube, fit_params, std_map, this->dim_x, this->dim_y, this->dim_v);
+	}
+
+	reshape_down(fit_params, grid_params);
+	M.grid_params = grid_params;
+
 /*
 	for(int i(0); i<fit_params.size(); i++) {
 		for(int j(0); j<fit_params[0].size(); j++) {
@@ -202,6 +220,31 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 
 }
 
+void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<double>>> &tab1, std::vector<std::vector<std::vector<double>>>&tab2)
+{
+	int dim_tab1[3], dim_tab2[3];
+	dim_tab1[0]=tab1.size();
+	dim_tab1[1]=tab1[0].size();
+	dim_tab1[2]=tab1[0][0].size();
+	dim_tab2[0]=tab2.size();
+	dim_tab2[1]=tab2[0].size();
+	dim_tab2[2]=tab2[0][0].size();
+
+	int offset_w = (dim_tab1[1]-dim_tab2[1])/2;
+	int offset_h = (dim_tab1[2]-dim_tab2[2])/2;
+
+	for(int i(0); i< dim_tab1[0]; i++)
+	{
+		for(int j(0); j<dim_tab2[1]; j++)
+		{
+			for(int k(0); k<dim_tab2[2]; k++)
+			{
+				tab2[i][k][j] = tab1[i][offset_w+j][offset_h+k];
+			}
+		}
+	}
+
+}
 
 void algo_rohsa::update(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v) {
 
@@ -294,6 +337,21 @@ void algo_rohsa::set_stdmap(std::vector<std::vector<double>> &std_map, std::vect
 	}
 }
 
+void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<double>> &std_map, std::vector<std::vector<std::vector<double>>> &cube, int lb, int ub){
+	std::vector<double> line(ub-lb+1,0.);
+	int dim[3];
+	dim[2]=cube[0][0].size();
+	dim[1]=cube[0].size();
+	dim[0]=cube.size();
+	for(int j=0; j<dim[1]; j++){
+		for(int i=0; i<dim[0]; i++){
+			for(int p=0; p<line.size(); p++){
+				line[p] = cube[i][j][p+lb];
+			}
+			std_map[j][i] = Std(line);
+		}
+	}
+}
 void algo_rohsa::f_g_cube(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
 
 std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));

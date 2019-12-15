@@ -393,7 +393,7 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
     plt::xlim(0, this->dim_cube[2]);
 
     // Add graph title
-    plt::title("Sample figure");
+    plt::title("Model vs Data Plot");
 
     // Enable legend.
     plt::legend();
