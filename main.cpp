@@ -29,7 +29,7 @@ int main()
 //	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
 	
 	double temps2_lecture = omp_get_wtime();
-œ
+
 	algo_rohsa algo(modeles_parametres, Hypercube_file);
 
 	Hypercube_file.plot_line(modeles_parametres.fit_params, 25, 12, modeles_parametres.n_gauss);
