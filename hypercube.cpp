@@ -161,7 +161,7 @@ std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 	{
 		for(int j(0); j<dim_cube[1]; j++)
 		{
-			for(int k(0); k<dim_data[2]; k++)
+			for(int k(0); k<dim_cube[2]; k++)
 			{
 				cube_[i][j][k]= data[i][j][k];
 			}
@@ -402,6 +402,7 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
     const char* filename = "./plot.png";
     std::cout << "Saving result to " << filename << std::endl;;
     plt::save(filename);
+	//plt::show();
 }
 
 double hypercube::model_function(int x, double a, double m, double s) {
@@ -436,7 +437,85 @@ void hypercube::display_result(std::vector<std::vector<std::vector<double>>> &pa
 	plt::clf();
 	plt::title("Vue en coupe de model");//	plt::title("Vue en coupe de data");
 	plt::imshow(zptr, this->dim_cube[0], this->dim_cube[1], colors);
-
 	plt::save("imshow_result.png");
+//	plt::show();
 	std::cout << "Result saved to 'imshow_result.png'.\n"<<std::endl;
 }
+
+void hypercube::display_result_and_data(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i)
+{
+	std::vector<std::vector<double>> model(this->dim_cube[0],std::vector<double>(this->dim_cube[1],0.));
+
+
+	for(int p(0); p<this->dim_cube[0]; p++) {
+		for(int j(0); j<this->dim_cube[1]; j++) {
+			for(int i(0); i<n_gauss_i; i++) {
+		model[p][j]+= model_function(rang+1, params[3*i][j][p], params[1+3*i][j][p], params[2+3*i][j][p]);
+			}
+		}
+	}
+
+	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
+
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_model[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
+		}
+	}
+
+
+
+	std::vector<float> z_cube(this->dim_cube[0]*this->dim_cube[1],0.);
+
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_cube[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
+		}
+	}
+
+	const float* zptr_model = &(z_model[0]);
+	const float* zptr_cube = &(z_cube[0]);
+	const int colors = 1;
+
+	std::string s = std::to_string(rang);
+	char const *pchar = s.c_str();
+
+	char str[220];
+	strcpy (str,"imshow_data_vs_model_");
+	strcat (str,pchar);
+	strcat (str,".png");
+	puts (str);
+
+
+	plt::clf();
+//	std::cout<<" DEBUG "<<std::endl;
+//	plt::title();
+
+//	plt::suptitle("Données                      Modèle");
+
+	plt::subplot(1, 2, 2);
+		plt::imshow(zptr_model, this->dim_cube[0], this->dim_cube[1], colors);
+//			plt::title("Modèle");
+	plt::subplot(1, 2, 1);
+		plt::imshow(zptr_cube, this->dim_cube[0], this->dim_cube[1], colors);
+//			plt::title("Cube hyperspectral");
+	plt::save(str);
+//	plt::show();
+	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
+
+}
+
+/*	
+void hypercube::print_regulation_on_cube() {
+
+	int number = 33;
+	std::string s = std::to_string(number);
+	char const *pchar = s.c_str();
+
+	char str[220];
+	strcat (str," strings ");
+	strcat (str,pchar);
+	puts (str);
+
+}
+*/
