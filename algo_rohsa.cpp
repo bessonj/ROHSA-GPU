@@ -909,8 +909,6 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<
 		x[0+3*(i-1)] = line[int(x[1+3*(i-1)])-1]*M.amp_fact_init;
 		x[2+3*(i-1)] = M.sig_init;
 
-		std::cout<<"CALLING L-BFGS-B"<<std::endl;
-
 		minimize_spec(M, 3*i, M.m, x, lb, i, ub, line);
 
 		for(int p(0); p<3*(i); p++) {
@@ -929,7 +927,6 @@ void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<doubl
 {
 	std::vector<double> spectrum(file.dim_cube[2],0.);
 	int n = file.dim_cube[1]/power;
-	//std::vector<std::vector<std::vector<double>>> cube_mean(file.dim_cube[0],std::vector<std::vector<double>>(power, std::vector<double>(power)));
 	for(int i(0); i<cube_mean[0].size(); i++)
 	{
 		for(int j(0); j<cube_mean.size(); j++)
