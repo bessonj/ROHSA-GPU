@@ -352,6 +352,104 @@ void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<double>> &std_map,
 		}
 	}
 }
+void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
+
+	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+
+	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
+
+	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<double> b_params(M.n_gauss,0.);
+
+	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+
+	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;//+M.n_gauss;
+
+	for(int i = 0; i< n; i++){
+		g[i]=0.;
+	}
+	f=0.;
+
+	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+
+	for(int i = 0; i<M.n_gauss; i++){
+		b_params[i]=beta[n_beta-M.n_gauss+i];
+	}
+
+//cout.precision(dbl::max_digits10);
+
+	for(int j=0; j<indice_x; j++){
+		for(int i=0; i<indice_y; i++){
+			std::vector<double> residual_1D(indice_v,0.);
+			std::vector<double> params_flat(params.size(),0.);
+			std::vector<double> cube_flat(cube[0][0].size(),0.);
+			for (int p=0;p<params_flat.size();p++){
+				params_flat[p]=params[p][i][j];
+			}
+			for (int p=0;p<cube_flat.size();p++){
+				cube_flat[p]=cube[i][j][p];
+			}
+			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+			for (int p=0;p<residual_1D.size();p++){
+				residual[j][i][p]=residual_1D[p];
+			}
+			if(std_map[i][j]>0.){
+				f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
+			}
+		}
+	}
+	
+	for(int i=0; i<M.n_gauss; i++){
+		for(int p=0; p<indice_y; p++){
+			for(int q=0; q<indice_x; q++){
+				image_amp[p][q]=params[0+3*i][p][q];
+				image_mu[p][q]=params[1+3*i][p][q];
+				image_sig[p][q]=params[2+3*i][p][q];
+			}
+		}
+	
+		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	
+		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+		for(int l=0; l<indice_x; l++){
+			for(int j=0; j<indice_y; j++){
+				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
+				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
+				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
+	
+				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
+	
+				for(int k=0; k<indice_v; k++){
+					if(std_map[j][l]>0.){
+					deriv[0+3*i][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+	
+					deriv[1+3*i][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+	
+					deriv[2+3*i][j][l] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+					}
+				}
+				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
+				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
+				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
+			}
+		}
+	}
+	
+	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	}
 void algo_rohsa::f_g_cube(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
 
 std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
@@ -481,7 +579,7 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
 }
-
+	
 void algo_rohsa::minimize(model &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int indice_x, int indice_y, int indice_v) {
 //int MAIN__(void)
     /* System generated locals */
@@ -557,7 +655,7 @@ L111:
 /*     if (s_cmp(task, "FG", (ftnlen)2, (ftnlen)2) == 0) { */
     if ( IS_FG(*task) ) {
 
-	f_g_cube(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 
 	}
 
