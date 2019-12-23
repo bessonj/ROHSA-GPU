@@ -32,8 +32,13 @@ int main()
 	double temps2_lecture = omp_get_wtime();
 
 	algo_rohsa algo(modeles_parametres, Hypercube_file);
-
-	Hypercube_file.plot_line(modeles_parametres.fit_params, 25, 12, modeles_parametres.n_gauss);
+/*
+	for(int i=0;i<10;i++){
+		for(int j=0;j<32;j++){
+	Hypercube_file.plot_line(modeles_parametres.fit_params, i, j, modeles_parametres.n_gauss);
+		}
+	}
+*/
 
 	Hypercube_file.display_result(modeles_parametres.grid_params, 100, modeles_parametres.n_gauss); //affiche une tranche du cube reconstitué du modèle à l'indice 100
 	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100

@@ -385,8 +385,6 @@ void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vect
 		b_params[i]=beta[n_beta-M.n_gauss+i];
 	}
 
-//cout.precision(dbl::max_digits10);
-
 	for(int j=0; j<indice_x; j++){
 		for(int i=0; i<indice_y; i++){
 			std::vector<double> residual_1D(indice_v,0.);
@@ -655,7 +653,8 @@ L111:
 /*     if (s_cmp(task, "FG", (ftnlen)2, (ftnlen)2) == 0) { */
     if ( IS_FG(*task) ) {
 
-	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+	f_g_cube(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 
 	}
 

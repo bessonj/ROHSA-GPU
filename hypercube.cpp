@@ -398,10 +398,23 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
     // Enable legend.
     plt::legend();
 
+	std::string s_x = std::to_string(ind_x);
+	char const *pchar_x = s_x.c_str();
+	std::string s_y = std::to_string(ind_y);
+	char const *pchar_y = s_y.c_str();
+
+	char str[100];//220
+	strcpy (str,"./plot_");
+	strcat (str,pchar_x);
+	strcat (str,"_");
+	strcat (str,pchar_y);
+	strcat (str,".png");
+	puts (str);
+
+
     // save figure
-    const char* filename = "./plot.png";
-    std::cout << "Saving result to " << filename << std::endl;;
-    plt::save(filename);
+    std::cout << "Saving result to " << str << std::endl;;
+    plt::save(str);
 	//plt::show();
 }
 
