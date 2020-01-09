@@ -93,6 +93,12 @@ class algo_rohsa
 	hypercube file;
 
 	double temps_f_g_cube;
+	double temps_conv;
+	double temps_deriv;
+	double temps_tableaux;
+	double temps_bfgs;
+	double temps_update_beginning;
+	double temps_;
 
 	int n_gauss_add; //EN DISCUTER AVEC ANTOINE
 

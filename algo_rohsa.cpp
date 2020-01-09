@@ -68,6 +68,11 @@ algo_rohsa::algo_rohsa(model &M, hypercube &Hypercube)
 void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
 
 	temps_f_g_cube = 0.; 
+	temps_conv = 0.;
+	temps_deriv = 0.;
+	temps_tableaux = 0.;
+	temps_bfgs = 0.;
+	temps_update_beginning = 0.;
 
 	for(int i=0;i<M.n_gauss; i++){
 		fit_params[0+3*i][0][0] = 0.;
@@ -210,13 +215,16 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 */
 
 		double temps2_descente = omp_get_wtime();
-		std::cout<<"fit_params_flat["<<0<<"]= "<<"  vérif:  "<<fit_params[0][0][0]<<std::endl;
+//		std::cout<<"fit_params_flat["<<0<<"]= "<<"  vérif:  "<<fit_params[0][0][0]<<std::endl;
 
 		std::cout<<"Temps TOTAL de descente : "<<temps2_descente - temps1_descente <<std::endl;
 		std::cout<<"Temps de upgrade : "<< temps_upgrade <<std::endl;
 		std::cout<<"Temps de mean_array : "<<temps_mean_array<<std::endl;
 		std::cout<<"Temps de init : "<<temps_init<<std::endl;
-		std::cout<< "temps d'exécution dF/dB : "<<temps_f_g_cube<<std::endl;
+	std::cout<< "temps d'exécution dF/dB : "<<temps_f_g_cube<<std::endl;
+	std::cout<< "Temps d'exécution convolution : " << temps_conv <<std::endl;
+	std::cout<< "Temps d'exécution deriv : " << temps_deriv  <<std::endl;
+	std::cout<< "Temps d'exécution tableaux : " << temps_tableaux <<std::endl;
 
 
 }
@@ -607,12 +615,11 @@ for(int k=0; k<M.n_gauss; k++){
 	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
 
 	double temps2_conv = omp_get_wtime();
-/*
-	std::cout<< "Temps de calcul convolution : " << temps2_conv - temps1_conv<<std::endl;
-	std::cout<< "Temps de calcul deriv : " << temps2_deriv - temps1_deriv <<std::endl;
-	std::cout<< "Temps de calcul dF_dB : " << temps2_dF_dB - temps1_dF_dB <<std::endl;
-	std::cout<< "Temps de calcul tableaux : " << temps2_tableaux - temps1_tableaux <<std::endl;
-*/
+
+	temps_conv+= temps2_conv - temps1_conv;
+	temps_deriv+= temps2_deriv - temps1_deriv;
+	temps_tableaux += temps2_tableaux - temps1_tableaux;
+
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 }
 	
