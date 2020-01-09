@@ -75,7 +75,7 @@ class algo_rohsa
 
 	void f_g_cube(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
 
-	void f_g_cube_fast(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_fast(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double mesure_temps);
 
 	void reshape_down(std::vector<std::vector<std::vector<double>>> &tab1, std::vector<std::vector<std::vector<double>>>&tab2);
 
@@ -91,6 +91,8 @@ class algo_rohsa
 	int dim_y;
 	int dim_v;
 	hypercube file;
+
+	double temps_f_g_cube;
 
 	int n_gauss_add; //EN DISCUTER AVEC ANTOINE
 

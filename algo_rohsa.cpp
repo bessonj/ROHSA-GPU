@@ -67,7 +67,7 @@ algo_rohsa::algo_rohsa(model &M, hypercube &Hypercube)
 
 void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
 
-
+	temps_f_g_cube = 0.; 
 
 	for(int i=0;i<M.n_gauss; i++){
 		fit_params[0+3*i][0][0] = 0.;
@@ -208,7 +208,7 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 		}
 	}
 */
-/*
+
 		double temps2_descente = omp_get_wtime();
 		std::cout<<"fit_params_flat["<<0<<"]= "<<"  vérif:  "<<fit_params[0][0][0]<<std::endl;
 
@@ -216,7 +216,8 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 		std::cout<<"Temps de upgrade : "<< temps_upgrade <<std::endl;
 		std::cout<<"Temps de mean_array : "<<temps_mean_array<<std::endl;
 		std::cout<<"Temps de init : "<<temps_init<<std::endl;
-*/
+		std::cout<< "temps d'exécution dF/dB : "<<temps_f_g_cube<<std::endl;
+
 
 }
 
@@ -352,7 +353,7 @@ void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<double>> &std_map,
 		}
 	}
 }
-void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
+void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double mesure_temps){
 
 	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
@@ -477,6 +478,8 @@ for(int i = 0; i< n; i++){
 }
 f=0.;
 
+double temps1_tableaux = omp_get_wtime();
+
 unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
 /*for(int i = 0; i<M.n_gauss; i++){
@@ -501,16 +504,19 @@ for(int j=0; j<indice_x; j++){
 		}
 		if(std_map[i][j]>0.){
 			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
-
-
 		}
 	}
 }
+double temps2_tableaux = omp_get_wtime();
 
-for(int l=0; l<indice_x; l++){
-	for(int j=0; j<indice_y; j++){
-		for(int i=0; i<M.n_gauss; i++){
-			for(int k=0; k<indice_v; k++){
+double temps1_dF_dB = omp_get_wtime();
+
+/*
+//ANCIEN CODE (à tester) sans optim cache
+for(int i=0; i<M.n_gauss; i++){
+	for(int k=0; k<indice_v; k++){
+		for(int j=0; j<indice_y; j++){
+			for(int l=0; l<indice_x; l++){
 				dF_over_dB[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
 
 				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
@@ -520,6 +526,26 @@ for(int l=0; l<indice_x; l++){
 		}
 	}
 }
+*/
+
+//nouveau code
+for(int i=0; i<M.n_gauss; i++){
+	for(int k=0; k<indice_v; k++){
+		for(int j=0; j<indice_y; j++){
+			for(int l=0; l<indice_x; l++){
+				dF_over_dB[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+
+				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+
+				dF_over_dB[2+3*i][k][j][l] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+			}
+		}
+	}
+}
+
+double temps2_dF_dB = omp_get_wtime();
+
+double temps1_deriv = omp_get_wtime();
 
 for(int k=0; k<indice_v; k++){
 	for(int j=0; j<indice_x; j++){
@@ -532,7 +558,9 @@ for(int k=0; k<indice_v; k++){
 		}
 	}
 }
+double temps2_deriv = omp_get_wtime();
 
+double temps1_conv = omp_get_wtime();
 
 for(int k=0; k<M.n_gauss; k++){
 
@@ -576,6 +604,15 @@ for(int k=0; k<M.n_gauss; k++){
 		}
 	}
 	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
+
+	double temps2_conv = omp_get_wtime();
+/*
+	std::cout<< "Temps de calcul convolution : " << temps2_conv - temps1_conv<<std::endl;
+	std::cout<< "Temps de calcul deriv : " << temps2_deriv - temps1_deriv <<std::endl;
+	std::cout<< "Temps de calcul dF_dB : " << temps2_dF_dB - temps1_dF_dB <<std::endl;
+	std::cout<< "Temps de calcul tableaux : " << temps2_tableaux - temps1_tableaux <<std::endl;
+*/
+	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 }
 	
 void algo_rohsa::minimize(model &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int indice_x, int indice_y, int indice_v) {
@@ -642,6 +679,7 @@ void algo_rohsa::minimize(model &M, long n, long m, std::vector<double> &x_v, st
     /*        ------- the beginning of the loop ---------- */
 L111:
 
+	double temps1_f_g_cube = omp_get_wtime();
 
     while(IS_FG(*task) or *task==NEW_X or *task==START){ 
     /*     This is the call to the L-BFGS-B code. */
@@ -672,6 +710,10 @@ L111:
 	for(int i(0); i<x_v.size(); i++) {
 		x_v[i]=x[i];
 	}
+
+	double temps2_f_g_cube = omp_get_wtime();
+
+	std::cout<< "Temps de calcul gradient : " << temps2_f_g_cube - temps1_f_g_cube<<std::endl;
 }
 
 
