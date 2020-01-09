@@ -528,6 +528,7 @@ for(int i=0; i<M.n_gauss; i++){
 }
 */
 
+
 //nouveau code
 for(int i=0; i<M.n_gauss; i++){
 	for(int k=0; k<indice_v; k++){
