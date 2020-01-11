@@ -204,7 +204,31 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 	reshape_down(fit_params, grid_params);
 	M.grid_params = grid_params;
 
-/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	for(int i(0); i<fit_params.size(); i++) {
 		for(int j(0); j<fit_params[0].size(); j++) {
 			for(int k(0); k<fit_params[0][0].size(); k++) {
@@ -212,7 +236,7 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 			}
 		}
 	}
-*/
+
 
 		double temps2_descente = omp_get_wtime();
 //		std::cout<<"fit_params_flat["<<0<<"]= "<<"  vérif:  "<<fit_params[0][0][0]<<std::endl;
@@ -536,10 +560,14 @@ for(int i=0; i<M.n_gauss; i++){
 }
 */
 
+int i,k,j,l;
 
 //nouveau code
+#pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
+{
+#pragma omp for
 for(int i=0; i<M.n_gauss; i++){
-	for(int k=0; k<indice_v; k++){
+	for(k=0; k<indice_v; k++){
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
 				dF_over_dB[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
@@ -551,21 +579,25 @@ for(int i=0; i<M.n_gauss; i++){
 		}
 	}
 }
+}
 
 double temps2_dF_dB = omp_get_wtime();
 
 double temps1_deriv = omp_get_wtime();
-
-for(int k=0; k<indice_v; k++){
-	for(int j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			for(int l=0; l<3*M.n_gauss; l++){
+#pragma omp parallel private(k,l) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
+{
+#pragma omp for
+for(k=0; k<indice_v; k++){
+	for(l=0; l<3*M.n_gauss; l++){
+		for(i=0; i<indice_y; i++){
+			for(j=0; j<indice_x; j++){
 				if(std_map[i][j]>0.){
 					deriv[l][i][j]+= dF_over_dB[l][k][i][j]*residual[j][i][k]/pow(std_map[i][j],2);
 				}
 			}
 		}
 	}
+}
 }
 double temps2_deriv = omp_get_wtime();
 
