@@ -228,7 +228,7 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 
 
 
-
+/*
 	for(int i(0); i<fit_params.size(); i++) {
 		for(int j(0); j<fit_params[0].size(); j++) {
 			for(int k(0); k<fit_params[0][0].size(); k++) {
@@ -236,6 +236,7 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 			}
 		}
 	}
+*/
 
 
 		double temps2_descente = omp_get_wtime();
@@ -481,6 +482,8 @@ void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vect
 	
 	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	}
+
+
 void algo_rohsa::f_g_cube(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
 
 std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
@@ -505,6 +508,8 @@ std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x
 
 int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
 
+int i,k,j,l,p;
+
 for(int i = 0; i< n; i++){
 	g[i]=0.;
 }
@@ -519,26 +524,36 @@ unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 }*/
 //cout.precision(dbl::max_digits10);
 
-for(int j=0; j<indice_x; j++){
-	for(int i=0; i<indice_y; i++){
+
+//#pragma omp parallel private(j,i) shared(cube,params,std_map,residual,indice_x,indice_y,indice_v,M,f)
+//{
+//#pragma omp for
+for(j=0; j<indice_x; j++){
+	for(i=0; i<indice_y; i++){
 		std::vector<double> residual_1D(indice_v,0.);
 		std::vector<double> params_flat(params.size(),0.);
 		std::vector<double> cube_flat(cube[0][0].size(),0.);
-		for (int p=0;p<params_flat.size();p++){
+		for (p=0;p<params_flat.size();p++){
 			params_flat[p]=params[p][i][j];
 		}
-		for (int p=0;p<cube_flat.size();p++){
+		for (p=0;p<cube_flat.size();p++){
 			cube_flat[p]=cube[i][j][p];
 		}
 		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (int p=0;p<residual_1D.size();p++){
+		for (p=0;p<residual_1D.size();p++){
 			residual[j][i][p]=residual_1D[p];
 		}
 		if(std_map[i][j]>0.){
 			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
 		}
 	}
+
+//}
+
 }
+
+
+
 double temps2_tableaux = omp_get_wtime();
 
 double temps1_dF_dB = omp_get_wtime();
@@ -559,8 +574,6 @@ for(int i=0; i<M.n_gauss; i++){
 	}
 }
 */
-
-int i,k,j,l;
 
 //nouveau code
 #pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
@@ -623,8 +636,8 @@ for(int k=0; k<M.n_gauss; k++){
 
 
 
-	for(int j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
+	for(int j=0; i<indice_y; j++){
+		for(int i=0; j<indice_x; i++){
 			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2) + 0.5*M.lambda_var_amp*pow(image_amp[i][j]-mean_amp[k],2);
 			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2) + 0.5*M.lambda_var_mu*pow(image_mu[i][j]-mean_mu[k],2);
 			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-mean_sig[k],2);
@@ -637,9 +650,9 @@ for(int k=0; k<M.n_gauss; k++){
 
 } 
 
-	for(int j=0; j<indice_x; j++){
+	for(int l=0; l<3*M.n_gauss; l++){
 		for(int i=0; i<indice_y; i++){
-			for(int l=0; l<3*M.n_gauss; l++){
+			for(int j=0; j<indice_x; j++){
 				g_3D[l][i][j] = deriv[l][i][j] + dR_over_dB[l][i][j];
 			}
 		}
@@ -991,13 +1004,17 @@ double algo_rohsa::myfunc_spec(std::vector<double> &residual) {
 }
 
 void algo_rohsa::myresidual(double params[], double line[], std::vector<double> &residual, int n_gauss_i) {
-	int k;
+	int i,k;
 	std::vector<double> model(dim_v,0.);
-	for(int i(0); i<n_gauss_i; i++) {
+//	#pragma omp parallel private(i,k) shared(params)
+//	{
+//	#pragma omp for
+	for(i=0; i<n_gauss_i; i++) {
 		for(k=1; k<=dim_v; k++) {
 			model[k-1]+= model_function(k, params[3*i], params[1+3*i], params[2+3*i]);
 		}
 	}
+//	}
 	for(int p=0; p<residual.size(); p++) {
 		residual[p]=model[p]-line[p]; 
 	}
@@ -1311,18 +1328,20 @@ void algo_rohsa::ravel_3D_abs(const std::vector<std::vector<std::vector<double>>
 void algo_rohsa::unravel_3D(const std::vector<double> &vector, std::vector<std::vector<std::vector<double>>> &cube, int dim_v, int dim_y, int dim_x)
 {
 	int i__(0);
+	int k,j,i;
 
-	for(int k(0); k<dim_x; k++)
+	for(k=0; k<dim_x; k++)
 	{
-		for(int j(0); j<dim_y; j++)
+		for(j=0; j<dim_y; j++)
 		{
-			for(int i(0); i<dim_v; i++)
+			for(i=0; i<dim_v; i++)
 			{
 				cube[i][j][k] = vector[i__];
 				i__++;
 			}
 		}
 	}
+
 }
 
 void algo_rohsa::unravel_3D(double vector[], std::vector<std::vector<std::vector<double>>> &cube, int dim_v, int dim_y, int dim_x)

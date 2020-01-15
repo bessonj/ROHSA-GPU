@@ -33,25 +33,28 @@ int main()
 
 	algo_rohsa algo(modeles_parametres, Hypercube_file);
 
-/*
-	for(int i=0;i<10;i++){
-		for(int j=0;j<32;j++){
+        double temps2 = omp_get_wtime();
+        std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
+        std::cout<<"Temps total (hors enregistrement): "<<temps2 - temps1 <<std::endl;
+
+
+	int i_max = 4;
+	int j_max = 5;
+
+	for(int i=0;i<i_max;i++){
+		for(int j=0;j<j_max;j++){
 	Hypercube_file.plot_line(modeles_parametres.fit_params, i, j, modeles_parametres.n_gauss);
 		}
 	}
-*/
 
 //	Hypercube_file.display_result(modeles_parametres.grid_params, 100, modeles_parametres.n_gauss); //affiche une tranche du cube reconstitué du modèle à l'indice 100
 //	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
-/*
+
 	for(int p = 70; p<140; p++){
 		Hypercube_file.display_result_and_data(modeles_parametres.grid_params, p, modeles_parametres.n_gauss); //affiche cote à cote les données et le modèle
 	}
 
-*/
-	double temps2 = omp_get_wtime();
-	std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
-	std::cout<<"Temps total : "<<temps2 - temps1 <<std::endl; 
+
 
 }
 
