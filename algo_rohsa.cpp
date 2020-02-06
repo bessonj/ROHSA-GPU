@@ -830,13 +830,13 @@ void algo_rohsa::upgrade(model &M, std::vector<std::vector<std::vector<double>>>
 //        printf(">> omp_get_max_thread()\n>> %i\n", nb_threads);
 
 //      #pragma omp parallel shared(cube,params) shared(power) shared(M)
-//      {
+//       {
         std::vector<double> line(dim_v,0.);
         std::vector<double> x(3*M.n_gauss,0.);
         std::vector<double> lb(3*M.n_gauss,0.);
         std::vector<double> ub(3*M.n_gauss,0.);
-//        printf("thread:%d\n", omp_get_thread_num());
-//      #pragma omp for private(i,j)
+        printf("thread:%d\n", omp_get_thread_num());
+//        #pragma omp for private(i,j)
         for(i=0;i<power; i++){
                 for(j=0;j<power; j++){
 
@@ -855,7 +855,7 @@ void algo_rohsa::upgrade(model &M, std::vector<std::vector<std::vector<double>>>
 //                              std::cout << "p = "<<p<<  std::endl;
                         }
                 }
-//      }
+//        }
         }
 }
 

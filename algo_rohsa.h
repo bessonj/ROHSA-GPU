@@ -99,6 +99,11 @@ class algo_rohsa
 	double temps_bfgs;
 	double temps_update_beginning;
 	double temps_;
+	double temps_f_g_cube_tot;
+	double temps_1_tot;
+	double temps_2_tot;
+	double temps_3_tot;
+
 
 	int n_gauss_add; //EN DISCUTER AVEC ANTOINE
 
