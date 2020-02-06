@@ -29,6 +29,7 @@
 log
 **/Default
 **/Release
+**/Debug
 **/.settings
 ._*
 *.d
