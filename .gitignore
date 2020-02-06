@@ -34,6 +34,5 @@ log
 *.d
 .DS_Store
 .nfs*
-**/.cproject
 
 /Release/
