@@ -6,17 +6,17 @@
 
 #IncludeRegexTransform: 
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/./L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/./L-BFGS-B-C/src/lbfgsb.h
 math.h
 -
 stdio.h
 -
 mex.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/./L-BFGS-B-C/src/mex.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/./L-BFGS-B-C/src/mex.h
 float.h
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/./matplotlib-cpp/matplotlibcpp.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/./matplotlib-cpp/matplotlibcpp.h
 vector
 -
 map
@@ -44,61 +44,61 @@ numpy/arrayobject.h
 opencv2/opencv.hpp
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp
 lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 math.h
 -
 stdio.h
 -
 mex.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/mex.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/mex.h
 float.h
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp
 lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp
 lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp
 lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/print.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/print.cpp
 lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp
 lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp
 lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.h
 time.h
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/algo_rohsa.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/algo_rohsa.cpp
 algo_rohsa.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/algo_rohsa.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/algo_rohsa.h
 omp.h
 -
 array
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/algo_rohsa.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/algo_rohsa.h
 ./L-BFGS-B-C/src/lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/./L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/./L-BFGS-B-C/src/lbfgsb.h
 hypercube.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.h
 model.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/model.h
 iostream
 -
 stdio.h
@@ -116,9 +116,9 @@ CCfits/CCfits
 vector
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.cpp
 hypercube.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.h
 omp.h
 -
 cmath
@@ -126,11 +126,11 @@ cmath
 iostream
 -
 ./matplotlib-cpp/matplotlibcpp.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/./matplotlib-cpp/matplotlibcpp.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/./matplotlib-cpp/matplotlibcpp.h
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.h
 model.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/model.h
 iostream
 -
 stdio.h
@@ -148,13 +148,13 @@ CCfits/CCfits
 vector
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/main.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/main.cpp
 hypercube.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.h
 model.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/model.h
 algo_rohsa.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/algo_rohsa.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/algo_rohsa.h
 omp.h
 -
 cmath
@@ -164,15 +164,15 @@ iostream
 string.h
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.cpp
+/home/bematiste/test_git_after_push/ROHSA-GPU/model.cpp
 model.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/model.h
 omp.h
 -
 
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/model.h
 ./L-BFGS-B-C/src/lbfgsb.h
-/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/./L-BFGS-B-C/src/lbfgsb.h
+/home/bematiste/test_git_after_push/ROHSA-GPU/./L-BFGS-B-C/src/lbfgsb.h
 iostream
 -
 stdio.h

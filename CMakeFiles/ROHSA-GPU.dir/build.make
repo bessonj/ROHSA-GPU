@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU
+CMAKE_SOURCE_DIR = /home/bematiste/test_git_after_push/ROHSA-GPU
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU
+CMAKE_BINARY_DIR = /home/bematiste/test_git_after_push/ROHSA-GPU
 
 # Include any dependencies generated for this target.
 include CMakeFiles/ROHSA-GPU.dir/depend.make
@@ -59,146 +59,146 @@ include CMakeFiles/ROHSA-GPU.dir/flags.make
 
 CMakeFiles/ROHSA-GPU.dir/main.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/main.cpp.o: main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/ROHSA-GPU.dir/main.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/main.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/ROHSA-GPU.dir/main.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/main.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/main.cpp
 
 CMakeFiles/ROHSA-GPU.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/main.cpp > CMakeFiles/ROHSA-GPU.dir/main.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/main.cpp > CMakeFiles/ROHSA-GPU.dir/main.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/main.cpp -o CMakeFiles/ROHSA-GPU.dir/main.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/main.cpp -o CMakeFiles/ROHSA-GPU.dir/main.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.o: algo_rohsa.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/algo_rohsa.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/algo_rohsa.cpp
 
 CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/algo_rohsa.cpp > CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/algo_rohsa.cpp > CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/algo_rohsa.cpp -o CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/algo_rohsa.cpp -o CMakeFiles/ROHSA-GPU.dir/algo_rohsa.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.o: hypercube.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.cpp
 
 CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.cpp > CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.cpp > CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/hypercube.cpp -o CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/hypercube.cpp -o CMakeFiles/ROHSA-GPU.dir/hypercube.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/model.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/model.cpp.o: model.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/ROHSA-GPU.dir/model.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/model.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/ROHSA-GPU.dir/model.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/model.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/model.cpp
 
 CMakeFiles/ROHSA-GPU.dir/model.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/model.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.cpp > CMakeFiles/ROHSA-GPU.dir/model.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/model.cpp > CMakeFiles/ROHSA-GPU.dir/model.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/model.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/model.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/model.cpp -o CMakeFiles/ROHSA-GPU.dir/model.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/model.cpp -o CMakeFiles/ROHSA-GPU.dir/model.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.o: L-BFGS-B-C/src/lbfgsb.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/lbfgsb.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/lbfgsb.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.o: L-BFGS-B-C/src/linesearch.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linesearch.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linesearch.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.o: L-BFGS-B-C/src/linpack.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/linpack.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/linpack.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.o: L-BFGS-B-C/src/miniCBLAS.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/miniCBLAS.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/miniCBLAS.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.o: L-BFGS-B-C/src/print.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/print.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/print.cpp
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/print.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/print.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/print.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/print.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/print.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.o: L-BFGS-B-C/src/subalgorithms.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/subalgorithms.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/subalgorithms.cpp.s
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.o: CMakeFiles/ROHSA-GPU.dir/flags.make
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.o: L-BFGS-B-C/src/timer.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.o -c /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.o -c /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp > CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.i
 
 CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bematiste/test_git_after_push/ROHSA-GPU/L-BFGS-B-C/src/timer.cpp -o CMakeFiles/ROHSA-GPU.dir/L-BFGS-B-C/src/timer.cpp.s
 
 # Object files for target ROHSA-GPU
 ROHSA__GPU_OBJECTS = \
@@ -232,7 +232,7 @@ ROHSA-GPU: CMakeFiles/ROHSA-GPU.dir/build.make
 ROHSA-GPU: /usr/lib/gcc/x86_64-linux-gnu/8/libgomp.so
 ROHSA-GPU: /usr/lib/x86_64-linux-gnu/libpthread.so
 ROHSA-GPU: CMakeFiles/ROHSA-GPU.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable ROHSA-GPU"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable ROHSA-GPU"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ROHSA-GPU.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -245,6 +245,6 @@ CMakeFiles/ROHSA-GPU.dir/clean:
 .PHONY : CMakeFiles/ROHSA-GPU.dir/clean
 
 CMakeFiles/ROHSA-GPU.dir/depend:
-	cd /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/CMakeFiles/ROHSA-GPU.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/bematiste/test_git_after_push/ROHSA-GPU && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/bematiste/test_git_after_push/ROHSA-GPU /home/bematiste/test_git_after_push/ROHSA-GPU /home/bematiste/test_git_after_push/ROHSA-GPU /home/bematiste/test_git_after_push/ROHSA-GPU /home/bematiste/test_git_after_push/ROHSA-GPU/CMakeFiles/ROHSA-GPU.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/ROHSA-GPU.dir/depend
 

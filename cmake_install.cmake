@@ -1,4 +1,4 @@
-# Install script for directory: /home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU
+# Install script for directory: /home/bematiste/test_git_after_push/ROHSA-GPU
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/bematiste/test_git_after_push/test_L-BFGS/ROHSA-GPU/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/bematiste/test_git_after_push/ROHSA-GPU/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
