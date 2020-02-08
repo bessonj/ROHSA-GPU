@@ -1,10 +1,8 @@
 I. Instructions before use :
 
-	In order to satisfy the requirements below, 3 unix scripts are given :
-	    install_L-BFGS-B.sh
+	In order to satisfy the requirements below, a unix script is given :
 	    install_CCfits.sh
-	    install_matplotlib.sh
-	(in some cases chmod +x *.sh could be required)
+	(you may run it as root/sudo; in some cases chmod +x *.sh could be required)
 
 	Requirements :
 
