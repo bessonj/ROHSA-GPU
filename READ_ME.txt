@@ -8,8 +8,6 @@ I. Instructions before use :
 
 	  -  cfitsio
 	  -  CCfits
-	  -  L-BFGS-B-C (Stephen Becker)
-	  -  matplotlibcpp (Benno Evers)
 
 	  And the following packages :
 
@@ -21,7 +19,7 @@ I. Instructions before use :
 
 II. Compiling and launching the program :
 
-	A cmake file is written in the root directory, you can produce the Makefile in this directory with :
+	A cmake file is written in the root directory, you can get the Makefile with :
 
 		cmake .
 
@@ -29,7 +27,7 @@ II. Compiling and launching the program :
 
 		make 
 
-	You will get a binary file, ROHSA-GPU
+	You will get a binary file, ROHSA-GPU :
 
 		./ROHSA-GPU
 
@@ -39,11 +37,15 @@ II. Instructions for use (WARNING) :
 
 	You may put a at least a .fits or .dat file and specify true or false for the criteria below
 
+	You will get pictures of the results with the binary file of the results.
+
+	Commentary :
+
 		filename_dat = ./GHIGLS_DFN_NH.dat  <-- the location of the .dat file with respect to the root ./
 		filename_fits = ./GHIGLS_DFN_Tb.fits  <-- the location of the .fits file with respect to the root .
 		file_type_is_dat = true <-- the file is a .dat one
 		file_type_is_fits = false <-- the file is a .fits one
-		fileout = GHIGLS_DFN_Tb_gauss_run_0 <-- the outpout binary result
+		fileout = GHIGLS_DFN_Tb_gauss_run_0.bin <-- the outpout binary result
 		filename_noise =  '' <-- the name of the noise file
 		n_gauss =  3 <-- number of gaussians to be considered
 		lambda_amp =  1. 
@@ -70,3 +72,4 @@ II. Instructions for use (WARNING) :
 		lb_sig = 0.001
 		ub_sig_init = 1.
 		lb_sig_init = 100.
+
