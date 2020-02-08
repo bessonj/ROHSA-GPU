@@ -1,4 +1,4 @@
-sudo apt-get install python-matplotlib python-numpy python2.7-dev
+sudo apt-get install python-matplotlib python-numpy python2.7-dev cmake make gcc g++ libomp-dev
 tar -xvf default_data.tar.xz
 mkdir ccfits_and_cfitsio
 cd ccfits_and_cfitsio
