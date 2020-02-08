@@ -1,3 +1,4 @@
+sudo apt-get install python-matplotlib python-numpy python2.7-dev
 mkdir ccfits_and_cfitsio
 cd ccfits_and_cfitsio
 wget https://heasarc.gsfc.nasa.gov/fitsio/CCfits/CCfits-2.5.tar.gz
