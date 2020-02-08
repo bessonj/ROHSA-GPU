@@ -17,14 +17,14 @@ hypercube::hypercube(model &M, int indice_debut, int indice_fin)
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
 	if(M.file_type_fits){
-	//	get_dimensions_from_fits();
-		get_binary_from_fits(); // WARNING 
-		get_vector_from_binary(this->data);
+		get_array_from_fits(M);
+	//	get_dimensions_from_fits(); //inutile
+//		get_binary_from_fits(); // WARNING 
+//		get_vector_from_binary(this->data);
 		this->nside = dim2nside()-1;
-std::cout<<" BOUCLE "<<std::endl;
 	}
 	if(M.file_type_dat){
-		this->data = use_dat_file();
+		this->data = use_dat_file(M);
 		this->nside = dim2nside();
 	}
 //	std::cout << "	DEBUG " << std::endl;
@@ -39,20 +39,20 @@ std::cout<<" BOUCLE "<<std::endl;
 	std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
 	std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
 
-	
 	std::cout<<"dim_cube[0] = "<<dim_cube[0]<<std::endl;
 	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
 	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
 
 	cube = reshape_up(indice_debut, indice_fin);
 
-/*	for(int k(0); k<dim_cube[2]; k++)
+/*
+	for(int k(0); k<dim_cube[0]; k++)
 	{
 		for(int j(0); j<dim_cube[1]; j++)
 		{
-			for(int i(0); i< dim_cube[0]; i++)
+			for(int i(0); i< dim_cube[2]; i++)
 			{
-				std::cout<<"cube["<<i<<"]["<<j<<"]["<<k<<"] = "<<cube[i][j][k]<<std::endl;
+			std::cout<<"cube["<<k<<"]["<<j<<"]["<<i<<"] = "<<cube[k][j][i]<<std::endl;
 			}
 		}
 	}
@@ -62,13 +62,14 @@ std::cout<<" BOUCLE "<<std::endl;
 hypercube::hypercube(model &M)
 {
 	if(M.file_type_fits){
+		get_array_from_fits(M);
 //		get_dimensions_from_fits();
-		get_binary_from_fits(); // WARNING 
-		get_vector_from_binary(this->data);
+//		get_binary_from_fits(); // WARNING 
+//		get_vector_from_binary(this->data);
 		this->nside = dim2nside()-1;
 	}
 	if(M.file_type_dat){
-		this->data = use_dat_file();
+		this->data = use_dat_file(M);
 		this->nside = dim2nside();
 	}
 //	std::cout << "	DEBUG " << std::endl;
@@ -84,7 +85,18 @@ hypercube::hypercube(model &M)
 	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
 
 	cube = reshape_up();
-
+/*
+	for(int k(0); k<dim_cube[2]; k++)
+	{
+		for(int j(0); j<dim_cube[1]; j++)
+		{
+			for(int i(0); i< dim_cube[0]; i++)
+			{
+				std::cout<<"cube["<<i<<"]["<<j<<"]["<<k<<"] = "<<cube[i][j][k]<<std::endl;
+			}
+		}
+	}
+*/
 }
 
 hypercube::hypercube() //dummy constructor for initialization of an hypercube object
@@ -92,12 +104,12 @@ hypercube::hypercube() //dummy constructor for initialization of an hypercube ob
 
 }
 
-std::vector<std::vector<std::vector<double>>> hypercube::use_dat_file()
+std::vector<std::vector<std::vector<double>>> hypercube::use_dat_file(model &M)
 {
    	int x,y,z;
 	double v;
 
-	std::ifstream fichier("./GHIGLS_DFN_Tb.dat");
+	std::ifstream fichier(M.filename_dat);
 
 	fichier >> z >> x >> y;
 
@@ -167,6 +179,7 @@ std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 			}
 		}
 	}
+
 	return cube_;
 }
 
@@ -180,15 +193,16 @@ std::vector<std::vector<std::vector<double>>> hypercube::reshape_up(int borne_in
 	int indice_debut_y = center_y - dim_cube[1]/2+1;
 	int indice_fin_y = indice_debut_y + dim_cube[1];//
 */
-	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2])));
 
-	for(int i(0); i< dim_cube[0]; i++)
+	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2],0.)));
+
+	for(int i=0; i< this->dim_cube[0]; i++)
 	{
-		for(int j(0); j<dim_cube[1]; j++)
+		for(int j=0; j<this->dim_cube[1]; j++)
 		{
-			for(int k(0); k<dim_cube[2]; k++)
+			for(int k=0; k<this->dim_cube[2]; k++)
 			{
-				cube_[i][j][k]= data[i][j][borne_inf+k];
+				cube_[i][j][k]= this->data[i][j][borne_inf+k];
 			}
 		}
 	}
@@ -208,10 +222,66 @@ void hypercube::brute_show(const std::vector<std::vector<std::vector<double>>> &
 	}
 }
 
+// M.grid_params is written into a binary after the process in algo_rohsa
+void hypercube::write_into_binary(model &M){
+
+	std::ofstream objetfichier;
+
+ 	objetfichier.open(M.fileout, std::ios::out | std::ofstream::binary); //on ouvre le fichier en ecriture
+	if (objetfichier.bad()) //permet de tester si le fichier s'est ouvert sans probleme
+		std::cout<<"ERREUR À L'OUVERTURE DU FICHIER RAW AVANT ÉCRITURE"<< std::endl;
+
+	int n(sizeof(double) * M.grid_params.size());
+
+	objetfichier.write((char*)&(M.grid_params)[0], n);
+
+	objetfichier.close();
+}
 
 int hypercube::get_binary_from_fits(){
 
 	std::auto_ptr<FITS> pInfile(new FITS("./GHIGLS_DFN_Tb.fits",Read,true));
+
+        PHDU& image = pInfile->pHDU();
+	std::valarray<double> contents;
+        image.readAllKeys();
+
+        image.read(contents);
+
+        // this doesn't print the data, just header info. The Late Show with Stephen Colbert
+
+        // std::cout << image << std::endl;
+
+        long ax1(image.axis(0));
+        long ax2(image.axis(1));
+        long ax3(image.axis(2));
+	long ax4(image.axis(3));
+
+	this->dim_data[0]=ax1;
+	this->dim_data[1]=ax2;
+	this->dim_data[2]=ax3;
+
+//	std::vector <double> x;
+//	std::vector <std::vector<double>> y;
+//	std::vector <std::vector<std::vector<double>>> z;
+
+	std::ofstream objetfichier;
+ 	objetfichier.open("./data.raw", std::ios::out | std::ofstream::binary ); //on ouvre le fichier en ecriture
+	if (objetfichier.bad()) //permet de tester si le fichier s'est ouvert sans probleme
+		std::cout<<"ERREUR À L'OUVERTURE DU FICHIER RAW AVANT ÉCRITURE"<< std::endl;
+
+	int n(sizeof(double) * contents.size());
+
+	objetfichier.write((char*)&contents[0], n);
+
+	objetfichier.close();
+
+	return n;
+}
+
+
+void hypercube::get_array_from_fits(model &M){
+	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
 
         PHDU& image = pInfile->pHDU();
 	std::valarray<double> contents;
@@ -231,22 +301,24 @@ int hypercube::get_binary_from_fits(){
 	this->dim_data[1]=ax2;
 	this->dim_data[2]=ax3;
 
-	std::vector <double> x;
-	std::vector <std::vector<double>> y;
-	std::vector <std::vector<std::vector<double>>> z;
+	std::vector <std::vector<std::vector<double>>> z(dim_data[0], std::vector<std::vector<double>>(dim_data[1], std::vector<double>(dim_data[2],0.)));
+	int i__=0;
 
-	std::ofstream objetfichier;
- 	objetfichier.open("./data.raw", std::ios::out | std::ofstream::binary ); //on ouvre le fichier en ecriture
-	if (objetfichier.bad()) //permet de tester si le fichier s'est ouvert sans probleme
-		std::cout<<"ERREUR À L'OUVERTURE DU FICHIER RAW AVANT ÉCRITURE"<< std::endl;
+	for(int i=0; i<dim_data[2]; i++)
+	{
+		for(int j=0; j<dim_data[1]; j++)
+		{
+		for(int k=0; k<dim_data[0]; k++)
+			{
+				z[k][j][i] = contents[i__];
+				i__++;
+//				std::cout<<"k,j,i = "<<k<<","<<j<<","<<i<<std::endl;
+			}
+		}
+	}
 
-	int n(sizeof(double) * contents.size());
-
-	objetfichier.write((char*)&contents[0], n);
-
-	objetfichier.close();
-
-	return n;
+	this->data=z;
+	z=std::vector<std::vector<std::vector<double>>>();
 }
 
 
@@ -266,7 +338,7 @@ void hypercube::get_vector_from_binary(std::vector<std::vector<std::vector<doubl
 	std::vector <std::vector<double>> y;
 	std::vector <double> x;
 	int compteur(0);
-
+/*
 	for (int j(0); j<dim_data[2]; j++)
 	{
 		for (int k(j*dim_data[1]); k<(j+1)*dim_data[1]; k++)
@@ -281,7 +353,36 @@ void hypercube::get_vector_from_binary(std::vector<std::vector<std::vector<doubl
 		z.vector::push_back(y);
 		y.clear();
 	}
+*/
+	int i__(0);
+	int k,j,i;
 
+	for(k=0; k<dim_data[0]; k++)
+	{
+		for(j=0; j<dim_data[1]; j++)
+		{
+			for(i=0; i<dim_data[2]; i++)
+			{
+				z[k][j][i] = vec[i__];
+				i__++;
+			}
+		}
+	}
+
+/*
+	for(int k(0); k<dim_data[0]; k++)
+	{
+		for(int j(0); j<dim_data[1]; j++)
+		{
+			for(int i(0); i< dim_data[2]; i++)
+			{
+				std::cout<<"cube["<<i<<"]["<<j<<"]["<<k<<"] = "<<z[k][j][i]<<std::endl;
+			}
+		}
+	}
+*/
+
+	exit(0);
 
 }
 
@@ -328,9 +429,9 @@ void hypercube::display_data(int rang)
 void hypercube::display(std::vector<std::vector<std::vector<double>>> &tab, int rang)
 {
 	int dim_[3];
-	dim_[2]=tab.size();
+	dim_[0]=tab.size();
 	dim_[1]=tab[0].size();
-	dim_[0]=tab[0][0].size();
+	dim_[2]=tab[0][0].size();
 	std::vector<float> z(dim_[0]*dim_[1],0.);
 
 	for(int i=0;i<dim_[0];i++){
@@ -339,6 +440,7 @@ void hypercube::display(std::vector<std::vector<std::vector<double>>> &tab, int 
 		}
 	}
 
+	std::cout<<"DEBUG"<<std::endl;
 	const float* zptr = &(z[0]);
 	const int colors = 1;
 	plt::clf();

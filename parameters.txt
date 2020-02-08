@@ -1,7 +1,9 @@
-filename_dat = ./GHIGLS_DFN_NH.dat
+filename_dat = ./GHIGLS_DFN_Tb.dat
 filename_fits = ./GHIGLS_DFN_Tb.fits
-file_type_is_dat = true
-file_type_is_fits = false
+file_type_is_dat = false
+file_type_is_fits = true
+slice_index_min = 149
+slice_index_max = 349
 fileout = GHIGLS_DFN_Tb_gauss_run_0.dat
 filename_noise =  ''
 n_gauss =  3

@@ -37,6 +37,8 @@ class model
 	std::string filename_fits;
 	std::string file_type_dat_check;
 	std::string file_type_fits_check;
+	int slice_index_min;
+	int slice_index_max;
 	bool file_type_dat;
 	bool file_type_fits;
 	std::string fileout;

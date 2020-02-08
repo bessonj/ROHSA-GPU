@@ -63,6 +63,9 @@ algo_rohsa::algo_rohsa(model &M, hypercube &Hypercube)
 		}
 	}
 */
+
+	this->file.write_into_binary(M);
+
 }
 
 void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
@@ -203,20 +206,6 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 
 	reshape_down(fit_params, grid_params);
 	M.grid_params = grid_params;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -14,6 +14,8 @@ model::model()
 		fichier >> txt >> egal >> filename_fits;
 		fichier >> txt >> egal >> file_type_dat_check;
 		fichier >> txt >> egal >> file_type_fits_check;
+		fichier >> txt >> egal >> slice_index_min;
+		fichier >> txt >> egal >> slice_index_max;
 		fichier >> txt >> egal >> fileout;
 		fichier >> txt >> egal >> filename_noise;
 		fichier >> txt >> egal >> n_gauss;
