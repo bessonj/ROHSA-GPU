@@ -36,5 +36,8 @@ log
 *.d
 .DS_Store
 .nfs*
-
+cmake_install.cmake
+/CMakeFiles
 /Release/
+Makefile
+CMakeCache.txt
