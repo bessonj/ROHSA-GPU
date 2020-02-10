@@ -48,7 +48,7 @@ int main()
 //	Hypercube_file.display_result(modeles_parametres.grid_params, 100, modeles_parametres.n_gauss); //affiche une tranche du cube reconstitué du modèle à l'indice 100
 //	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
 
-	for(int p = 70; p<140; p++){
+	for(int p = 0; p<modeles_parametres.slice_index_max-modeles_parametres.slice_index_min-1; p++){
 		Hypercube_file.display_result_and_data(modeles_parametres.grid_params, p, modeles_parametres.n_gauss); //affiche cote à cote les données et le modèle
 	}
 
@@ -89,7 +89,7 @@ int main()
 //	Hypercube_file.display_result(modeles_parametres.grid_params, 100, modeles_parametres.n_gauss); //affiche une tranche du cube reconstitué du modèle à l'indice 100
 //	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
 
-	for(int p = 70; p<140; p++){
+	for(int p = 70; p<modeles_parametres.slice_index_max-modeles_parametres.slice_index_min-1; p++){
 		Hypercube_file.display_result_and_data(modeles_parametres.grid_params, p, modeles_parametres.n_gauss); //affiche cote à cote les données et le modèle
 	}
 

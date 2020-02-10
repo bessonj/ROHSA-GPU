@@ -97,7 +97,7 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 		int n;
 //		#pragma omp parallel private(n) shared(temps_upgrade, temps_multiresol, temps_init, temps_mean_array,M, fit_params_flat,file)
 //		{
-//		#pragma omp for 
+//		#pragma omp for
 		for(n=0; n<file.nside; n++)
 		{
 			int power(pow(2,n));
@@ -271,7 +271,6 @@ void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<double>>> &tab
 
 void algo_rohsa::update(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v) {
 
-
 	int n_beta = 3*M.n_gauss * indice_y * indice_x;
 
 	std::vector<double> lb(n_beta);
@@ -336,9 +335,7 @@ void algo_rohsa::update(model &M, std::vector<std::vector<std::vector<double>>> 
 		mean_sig[i]=mean(ravel_sig);
 	}
 
-
 	minimize(M, n_beta, M.m, beta, lb, ub, cube, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v); 
-
 	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
 
@@ -658,18 +655,29 @@ for(int k=0; k<M.n_gauss; k++){
 }
 	
 void algo_rohsa::minimize(model &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int indice_x, int indice_y, int indice_v) {
-//int MAIN__(void)
+
     /* System generated locals */
     int i__1;
     double d__1, d__2;
     /* Local variables */
-    double f, g[n];
+    double t1, t2, f, g[n];
     int i__;
 
     int taille_wa = 2*M.m*n+5*n+11*M.m*M.m+8*M.m;
     int taille_iwa = 3*n;
-    double t1, t2, wa[taille_wa];
     long nbd[n], iwa[taille_iwa];
+std::cout << " DEBUG  TEST 64 ; n = " <<n<< std::endl;
+std::cout << " ; taille_wa = " <<taille_wa<< std::endl;
+/*
+int* memoireAllouee = NULL; // On crée un pointeur sur int
+
+memoireAllouee = malloc(sizeof(int)); // La fonction malloc inscrit dans notre pointeur l'adresse qui a été reservée.
+*/
+    double* wa = NULL;
+    wa = (double*)malloc(taille_wa*sizeof(double)); 
+//    double wa[taille_wa];
+std::cout << " DEBUG  TEST 64" << std::endl;
+
 /*     char task[60]; */
     long taskValue;
     long *task=&taskValue; /* must initialize !! */
@@ -711,6 +719,8 @@ void algo_rohsa::minimize(model &M, long n, long m, std::vector<double> &x_v, st
 /*                    l   specifies the lower bounds, */
 /*                    u   specifies the upper bounds. */
 /*     First set bounds on the odd-numbered variables. */
+
+
     for (i__ = 0; i__ < n; i__ ++) {
         nbd[i__] = 2;
     }
@@ -735,7 +745,6 @@ L111:
 
 	f_g_cube(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 //	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-
 	}
 
 	if (*task==NEW_X ) {
@@ -756,6 +765,23 @@ L111:
 	double temps2_f_g_cube = omp_get_wtime();
 
 	std::cout<< "Temps de calcul gradient : " << temps2_f_g_cube - temps1_f_g_cube<<std::endl;
+
+
+    /* System generated locals */
+
+	free(wa);
+/*
+	free(g);
+	free(nbd);
+	free(iwa);
+
+	free(dsave);
+	free(isave);
+	free(lsave);
+	free(x);
+	free(lb);
+	free(ub);
+*/
 }
 
 
