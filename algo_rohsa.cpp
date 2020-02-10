@@ -680,7 +680,7 @@ memoireAllouee = malloc(sizeof(int)); // La fonction malloc inscrit dans notre p
     wa = (double*)malloc(taille_wa*sizeof(double)); 
 //    double wa[taille_wa];
 
-std::cout << " DEBUG  TEST 1" << std::endl;
+//std::cout << " DEBUG  TEST 1" << std::endl;
 /*     char task[60]; */
     long taskValue;
     long *task=&taskValue; /* must initialize !! */
@@ -692,7 +692,7 @@ std::cout << " DEBUG  TEST 1" << std::endl;
     long isave[44];
     logical lsave[4];
     double pgtol;
-std::cout << " DEBUG  TEST 2" << std::endl;
+//std::cout << " DEBUG  TEST 2" << std::endl;
 
 // converts the vectors into a regular list
     double x[x_v.size()];
@@ -724,7 +724,7 @@ std::cout << " DEBUG  TEST 2" << std::endl;
 /*                    u   specifies the upper bounds. */
 /*     First set bounds on the odd-numbered variables. */
 
-std::cout << " DEBUG  TEST 3" << std::endl;
+//std::cout << " DEBUG  TEST 3" << std::endl;
     for (i__ = 0; i__ < n; i__ ++) {
         nbd[i__] = 2;
     }
@@ -736,7 +736,7 @@ std::cout << " DEBUG  TEST 3" << std::endl;
 L111:
 
 	double temps1_f_g_cube = omp_get_wtime();
-std::cout << " DEBUG  TEST 4" << std::endl;
+//std::cout << " DEBUG  TEST 4" << std::endl;
     while(IS_FG(*task) or *task==NEW_X or *task==START){ 
     /*     This is the call to the L-BFGS-B code. */
 //    std::cout<<" Début appel BFGS "<<std::endl;
