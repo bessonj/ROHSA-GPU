@@ -161,7 +161,7 @@ Parse::~Parse()
 
 int hypercube::dim2nside()
 {
-	return std::max( 0, std::max(int(ceil( log(double(dim_data[0]))/log(2.))), int(ceil( log(double(dim_data[1]))/log(2.))))  ) ;  
+	return std::max( 0, std::min(int(ceil( log(double(dim_data[0]))/log(2.))), int(ceil( log(double(dim_data[1]))/log(2.))))  ) ;  
 }
 
 

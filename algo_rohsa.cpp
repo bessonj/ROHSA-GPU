@@ -11,7 +11,7 @@ algo_rohsa::algo_rohsa(model &M, hypercube &Hypercube)
 	this->dim_x = dim_cube[0];
 	this->dim_y = dim_cube[1];
 	this->dim_v = dim_cube[2];
-	
+
 	std_spectrum(dim_x, dim_y, dim_v); //oublier
 	mean_spectrum(dim_x, dim_y, dim_v);
 	max_spectrum(dim_x, dim_y, dim_v); //oublier
