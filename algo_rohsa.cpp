@@ -665,9 +665,12 @@ void algo_rohsa::minimize(model &M, long n, long m, std::vector<double> &x_v, st
 
     int taille_wa = 2*M.m*n+5*n+11*M.m*M.m+8*M.m;
     int taille_iwa = 3*n;
-    long nbd[n], iwa[taille_iwa];
-std::cout << " DEBUG  TEST 64 ; n = " <<n<< std::endl;
-std::cout << " ; taille_wa = " <<taille_wa<< std::endl;
+    long* nbd = NULL;
+    nbd = (long*)malloc(n*sizeof(double)); 
+    long* iwa = NULL;
+    iwa = (long*)malloc(taille_iwa*sizeof(double)); 
+
+//    long nbd[n], iwa[taille_iwa];
 /*
 int* memoireAllouee = NULL; // On crée un pointeur sur int
 
@@ -676,8 +679,8 @@ memoireAllouee = malloc(sizeof(int)); // La fonction malloc inscrit dans notre p
     double* wa = NULL;
     wa = (double*)malloc(taille_wa*sizeof(double)); 
 //    double wa[taille_wa];
-std::cout << " DEBUG  TEST 64" << std::endl;
 
+std::cout << " DEBUG  TEST 1" << std::endl;
 /*     char task[60]; */
     long taskValue;
     long *task=&taskValue; /* must initialize !! */
@@ -689,6 +692,7 @@ std::cout << " DEBUG  TEST 64" << std::endl;
     long isave[44];
     logical lsave[4];
     double pgtol;
+std::cout << " DEBUG  TEST 2" << std::endl;
 
 // converts the vectors into a regular list
     double x[x_v.size()];
@@ -720,7 +724,7 @@ std::cout << " DEBUG  TEST 64" << std::endl;
 /*                    u   specifies the upper bounds. */
 /*     First set bounds on the odd-numbered variables. */
 
-
+std::cout << " DEBUG  TEST 3" << std::endl;
     for (i__ = 0; i__ < n; i__ ++) {
         nbd[i__] = 2;
     }
@@ -732,7 +736,7 @@ std::cout << " DEBUG  TEST 64" << std::endl;
 L111:
 
 	double temps1_f_g_cube = omp_get_wtime();
-
+std::cout << " DEBUG  TEST 4" << std::endl;
     while(IS_FG(*task) or *task==NEW_X or *task==START){ 
     /*     This is the call to the L-BFGS-B code. */
 //    std::cout<<" Début appel BFGS "<<std::endl;
@@ -770,6 +774,8 @@ L111:
     /* System generated locals */
 
 	free(wa);
+	free(nbd);
+	free(iwa);
 /*
 	free(g);
 	free(nbd);
