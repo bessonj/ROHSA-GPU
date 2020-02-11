@@ -37,10 +37,10 @@ add_executable(ROHSA-GPU ${CPP_FILES} ${CU_FILES})
 target_compile_options(ROHSA-GPU PUBLIC -O3 -v -fopenmp -funroll-loops -std=c++11)
 
 
-target_include_directories(ROHSA-GPU PUBLIC /usr/lib/x86_64-linux-gnu/ /usr/include/python2.7/ "${HEADER_REP}")
+target_include_directories(ROHSA-GPU PUBLIC /usr/include/python2.7/ "${HEADER_REP}")
 set(LIBS ${LIBS} python2.7)
 
-
+link_directories(/usr/lib/x86_64-linux-gnu/)
 target_link_libraries(ROHSA-GPU PUBLIC ${LIBS})
 
 
