@@ -1,7 +1,6 @@
+/cmake
 *.png
 *.bin
-*.fits
-*.dat
 *.raw
 **/bin
 **/mex
@@ -24,7 +23,6 @@
 *.jpg
 *.eps
 *.mat
-*.fits
 *.JPG
 *.gif
 log
