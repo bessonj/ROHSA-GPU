@@ -1131,9 +1131,7 @@ void algo_rohsa::init_spectrum(model &M, std::vector<double> &line, std::vector<
 		for(int p(0); p<3*(i); p++) {
 			params[p] = x[p];
 		}
-		for(int p(0); p<3*(i); p++) {
-			params[p] = params[p];
-		}
+
 	}
 
 
