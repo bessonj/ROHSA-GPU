@@ -5,70 +5,44 @@
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.nvidia.cuda.ide.ten_two.configuration.debug.297349773" moduleId="org.eclipse.cdt.core.settings" name="Debug">
 				<externalSettings/>
 				<extensions>
-					<extension id="com.nvidia.cuda.ide.elf" point="org.eclipse.cdt.core.BinaryParser"/>
-					<extension id="com.nvidia.cuda.ide.cubin" point="org.eclipse.cdt.core.BinaryParser"/>
-					<extension id="com.nvidia.cuda.ide.macho" point="org.eclipse.cdt.core.BinaryParser"/>
-					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.VCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="nvcc.errorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="com.nvidia.cuda.toolchain.nvccErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="com.nvidia.cuda.ide.ten_two.configuration.debug.297349773" name="Debug" parent="com.nvidia.cuda.ide.ten_two.configuration.debug">
+				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="com.nvidia.cuda.ide.ten_two.configuration.debug.297349773" name="Debug" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=" parent="com.nvidia.cuda.ide.ten_two.configuration.debug.297349773">
 					<folderInfo id="com.nvidia.cuda.ide.ten_two.configuration.debug.297349773." name="/" resourcePath="">
-						<toolChain id="com.nvidia.cuda.tools.toolchain.ten_two.exe.debug.1426768687" name="CUDA Toolkit 10.2" superClass="com.nvidia.cuda.tools.toolchain.ten_two.exe.debug">
-							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.1022617975" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/ROHSA-GPU}/Debug" id="com.nvidia.cuda.ide.builder.1739062628" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CUDA Toolkit 10.1 Builder" superClass="com.nvidia.cuda.ide.builder"/>
-							<tool command="nvcc" id="nvcc.compiler.base.1923772001" name="NVCC Compiler" superClass="nvcc.compiler.base">
-								<option id="nvcc.compiler.deviceDebug.1669053411" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.option.level.168506998" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
-								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.736050487" name="Optimization Level" superClass="nvcc.compiler.optimization.level" value="nvcc.compiler.optimization.level.most" valueType="enumerated"/>
-								<option id="nvcc.compiler.pic.1968529135" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.cpp11option.1762154402" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.include.paths.1178694620" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/include/python2.7/"/>
-									<listOptionValue builtIn="false" value="/usr/include/"/>
-									<listOptionValue builtIn="false" value="/usr/include/CCfits/"/>
-								</option>
-								<option id="nvcc.compiler.include.files.877565292" name="Include files (-include)" superClass="nvcc.compiler.include.files" valueType="includeFiles">
-									<listOptionValue builtIn="false" value="Python.h"/>
-									<listOptionValue builtIn="false" value="CCfits.h"/>
-								</option>
-								<inputType id="nvcc.compiler.input.cu.393622441" superClass="nvcc.compiler.input.cu"/>
-								<inputType id="nvcc.compiler.input.cpp.252226606" superClass="nvcc.compiler.input.cpp"/>
-								<inputType id="nvcc.compiler.input.c.426548663" superClass="nvcc.compiler.input.c"/>
-							</tool>
-							<tool id="nvcc.linker.base.1900342036" name="NVCC Linker" superClass="nvcc.linker.base">
-								<option id="nvcc.linker.option.libs.519944462" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="python2.7"/>
-									<listOptionValue builtIn="false" value="cfitsio"/>
-									<listOptionValue builtIn="false" value="CCfits"/>
-								</option>
-								<option id="nvcc.linker.option.paths.1302396816" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/"/>
-									<listOptionValue builtIn="false" value="/usr/lib/"/>
-								</option>
-								<option id="nvcc.linker.option.cudart.303921630" name="CUDA Runtime Library:" superClass="nvcc.linker.option.cudart" value="nvcc.linker.option.cudart.shared" valueType="enumerated"/>
-								<inputType id="nvcc.linker.input.2055330004" superClass="nvcc.linker.input">
+						<toolChain id="com.nvidia.cuda.toolchain.linuxToolchain.1306000433" name="CUDA Linux toolchain" superClass="com.nvidia.cuda.toolchain.linuxToolchain">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="com.nvidia.cuda.toolchain.targetLinuxPlatform.2094997673" isAbstract="false" osList="linux" superClass="com.nvidia.cuda.toolchain.targetLinuxPlatform"/>
+							<builder buildPath="${workspace_loc:/ROHSA-GPU}/Debug" id="com.nvidia.cuda.toolchain.builder.1765638745" keepEnvironmentInBuildfile="false" name="CUDA Toolkit Builder" superClass="com.nvidia.cuda.toolchain.builder"/>
+							<tool id="nvcc.linker.92843147" name="NVCC linker" superClass="nvcc.linker">
+								<inputType id="com.nvidia.cuda.toolchain.nvcc.linker.input.1272428632" superClass="com.nvidia.cuda.toolchain.nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
 							</tool>
-							<tool id="nvcc.archiver.base.565326128" name="NVCC Archiver" superClass="nvcc.archiver.base"/>
-							<tool command="g++" id="com.nvidia.host.assembler.1521431199" name="Host Assembler" superClass="com.nvidia.host.assembler">
-								<option id="gnu.both.asm.option.flags.1632656949" name="Assembler flags" superClass="gnu.both.asm.option.flags" value="-O3" valueType="string"/>
-								<option id="gnu.both.asm.option.include.paths.1004403930" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath"/>
-								<option id="gnu.both.asm.option.warnings.nowarn.1893777764" name="Suppress warnings (-W)" superClass="gnu.both.asm.option.warnings.nowarn" value="false" valueType="boolean"/>
-								<option id="gnu.both.asm.option.version.957258386" name="Announce version (-v)" superClass="gnu.both.asm.option.version" value="false" valueType="boolean"/>
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2019345843" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							<tool id="nvcc.archiver.1614240813" name="NVCC archiver" superClass="nvcc.archiver"/>
+							<tool id="nvcc.compiler.172161524" name="NVCC Compiler" superClass="nvcc.compiler">
+								<option defaultValue="true" id="com.nvidia.cuda.toolchain.compiler.device-debug.32866549" name="Generate debug information for device code (-G)" superClass="com.nvidia.cuda.toolchain.compiler.device-debug" valueType="boolean"/>
+								<option defaultValue="true" id="com.nvidia.cuda.toolchain.compiler.debug.2089070851" name="Generate debug information for host code (-g)" superClass="com.nvidia.cuda.toolchain.compiler.debug" valueType="boolean"/>
+								<option id="nvcc.compiler.pic.2058584345" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="nvcc.compiler.include.paths.1374651816" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/include/python2.7"/>
+									<listOptionValue builtIn="false" value="L-BFGS-B-C"/>
+									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/CCfits"/>
+								</option>
+								<inputType id="com.nvidia.cuda.toolchain.input.c.485592496" name="C" superClass="com.nvidia.cuda.toolchain.input.c"/>
+								<inputType id="com.nvidia.cuda.toolchain.input.cu.1980365843" name="CUDA" superClass="com.nvidia.cuda.toolchain.input.cu"/>
+								<inputType id="com.nvidia.cuda.toolchain.input.cpp.7229" name="C++" superClass="com.nvidia.cuda.toolchain.input.cpp"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="L-BFGS-B-C/Matlab" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="L-BFGS-B-C/src/driver1.cpp|L-BFGS-B-C/src/driver2.cpp|L-BFGS-B-C/src/driver3.cpp|L-BFGS-B-C/src/linpack.c|L-BFGS-B-C/src/miniCBLAS.c|L-BFGS-B-C/src/subalgorithms.c|L-BFGS-B-C/src/print.c|matplotlib-cpp/examples|L-BFGS-B-C/Matlab" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -85,60 +59,66 @@
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.nvidia.cuda.ide.ten_two.configuration.release.1725274357" moduleId="org.eclipse.cdt.core.settings" name="Release">
 				<externalSettings/>
 				<extensions>
-					<extension id="com.nvidia.cuda.ide.elf" point="org.eclipse.cdt.core.BinaryParser"/>
-					<extension id="com.nvidia.cuda.ide.cubin" point="org.eclipse.cdt.core.BinaryParser"/>
-					<extension id="com.nvidia.cuda.ide.macho" point="org.eclipse.cdt.core.BinaryParser"/>
-					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.VCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="nvcc.errorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="com.nvidia.cuda.toolchain.nvccErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="com.nvidia.cuda.ide.ten_two.configuration.release.1725274357" name="Release" parent="com.nvidia.cuda.ide.ten_two.configuration.release">
+				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="com.nvidia.cuda.ide.ten_two.configuration.release.1725274357" name="Release" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=" parent="com.nvidia.cuda.ide.ten_two.configuration.release.1725274357">
 					<folderInfo id="com.nvidia.cuda.ide.ten_two.configuration.release.1725274357." name="/" resourcePath="">
-						<toolChain id="com.nvidia.cuda.ide.toolchain.ten_two.exe.release.320855121" name="CUDA Toolkit 10.2" superClass="com.nvidia.cuda.ide.toolchain.ten_two.exe.release">
-							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.2008756298" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/ROHSA-GPU}/Release" id="com.nvidia.cuda.ide.builder.354092874" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CUDA Toolkit 10.1 Builder" superClass="com.nvidia.cuda.ide.builder"/>
-							<tool id="nvcc.compiler.base.45541491" name="NVCC Compiler" superClass="nvcc.compiler.base">
-								<option id="nvcc.compiler.deviceDebug.1101962635" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug"/>
-								<option id="nvcc.compiler.option.level.1877647838" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level"/>
-								<option defaultValue="nvcc.compiler.optimization.level.most" id="nvcc.compiler.optimization.level.64707517" name="Optimization Level" superClass="nvcc.compiler.optimization.level" valueType="enumerated"/>
-								<option id="nvcc.compiler.pic.2035307329" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.cpp11option.641626686" name="Enable C++11 support (-std=c++11)" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
-								<option id="nvcc.compiler.include.paths.854706733" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/include/python2.7/"/>
-								</option>
-								<option id="nvcc.compiler.include.files.1696848736" name="Include files (-include)" superClass="nvcc.compiler.include.files" valueType="includeFiles">
-									<listOptionValue builtIn="false" value="Python.h"/>
-								</option>
-								<inputType id="nvcc.compiler.input.cu.1269322453" superClass="nvcc.compiler.input.cu"/>
-								<inputType id="nvcc.compiler.input.cpp.1875274790" superClass="nvcc.compiler.input.cpp"/>
-								<inputType id="nvcc.compiler.input.c.384028085" superClass="nvcc.compiler.input.c"/>
-							</tool>
-							<tool id="nvcc.linker.base.1413841463" name="NVCC Linker" superClass="nvcc.linker.base">
-								<option id="nvcc.linker.option.cudart.210411930" name="CUDA Runtime Library:" superClass="nvcc.linker.option.cudart" value="nvcc.linker.option.cudart.none" valueType="enumerated"/>
-								<option id="nvcc.linker.option.paths.1397157808" name="Library search path (-L)" superClass="nvcc.linker.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/"/>
-								</option>
-								<option id="nvcc.linker.option.libs.759181950" name="Libraries (-l)" superClass="nvcc.linker.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="CCfits"/>
-									<listOptionValue builtIn="false" value="cfitsio"/>
+						<toolChain id="com.nvidia.cuda.toolchain.linuxToolchain.2078809810" name="CUDA Linux toolchain" superClass="com.nvidia.cuda.toolchain.linuxToolchain">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="com.nvidia.cuda.toolchain.targetLinuxPlatform.1398395667" isAbstract="false" osList="linux" superClass="com.nvidia.cuda.toolchain.targetLinuxPlatform"/>
+							<builder buildPath="${workspace_loc:/ROHSA-GPU}/Release" id="com.nvidia.cuda.toolchain.builder.1595998352" keepEnvironmentInBuildfile="false" name="CUDA Toolkit Builder" superClass="com.nvidia.cuda.toolchain.builder"/>
+							<tool id="nvcc.linker.516939073" name="NVCC linker" superClass="nvcc.linker">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="nvcc.linker.libs.1128303353" name="Libraries (-l)" superClass="nvcc.linker.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="python2.7"/>
+									<listOptionValue builtIn="false" value="gomp"/>
+									<listOptionValue builtIn="false" value="cfitsio"/>
+									<listOptionValue builtIn="false" value="CCfits"/>
 								</option>
-								<inputType id="nvcc.linker.input.952064010" superClass="nvcc.linker.input">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="nvcc.linker.paths.2090878609" name="Library search path (-L)" superClass="nvcc.linker.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu"/>
+									<listOptionValue builtIn="false" value="/usr/lib/"/>
+								</option>
+								<inputType id="com.nvidia.cuda.toolchain.nvcc.linker.input.229986102" superClass="com.nvidia.cuda.toolchain.nvcc.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
 							</tool>
-							<tool id="nvcc.archiver.base.1896413731" name="NVCC Archiver" superClass="nvcc.archiver.base"/>
-							<tool id="com.nvidia.host.assembler.2071041341" name="Host Assembler" superClass="com.nvidia.host.assembler">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1607089492" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							<tool id="nvcc.archiver.1269343977" name="NVCC archiver" superClass="nvcc.archiver"/>
+							<tool id="nvcc.compiler.1563731734" name="NVCC Compiler" superClass="nvcc.compiler">
+								<option defaultValue="com.nvidia.cuda.toolchain.compiler.optimization.level3" id="com.nvidia.cuda.toolchain.compiler.optimization.401685104" name="Optimization level" superClass="com.nvidia.cuda.toolchain.compiler.optimization" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="nvcc.compiler.pic.50181959" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.nvidia.cuda.toolchain.compiler.dialect.1717303721" name="Language standard" superClass="com.nvidia.cuda.toolchain.compiler.dialect" useByScannerDiscovery="false" value="com.nvidia.cuda.toolchain.compiler.dialect.cpp11" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="nvcc.compiler.include.paths.819072368" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/include/python2.7"/>
+									<listOptionValue builtIn="false" value="./L-BFGS-B-C"/>
+									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/CCfits"/>
+								</option>
+								<option id="com.nvidia.cuda.toolchain.compiler.cuda.sm_30_sass.195624322" name="Generate SM 3.0 SASS" superClass="com.nvidia.cuda.toolchain.compiler.cuda.sm_30_sass" useByScannerDiscovery="false" value="false" valueType="boolean"/>
+								<option id="com.nvidia.cuda.toolchain.compiler.cuda.sm_50_sass.1600832554" name="Generate SM 5.0 SASS" superClass="com.nvidia.cuda.toolchain.compiler.cuda.sm_50_sass" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.nvidia.cuda.toolchain.compiler.cuda.sm_30_ptx.1340236614" name="Generate SM 3.0 PTX" superClass="com.nvidia.cuda.toolchain.compiler.cuda.sm_30_ptx" useByScannerDiscovery="false" value="false" valueType="boolean"/>
+								<option id="com.nvidia.cuda.toolchain.compiler.cuda.sm_50_ptx.1601060619" name="Generate SM 5.0 PTX" superClass="com.nvidia.cuda.toolchain.compiler.cuda.sm_50_ptx" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<inputType id="com.nvidia.cuda.toolchain.input.c.646569761" name="C" superClass="com.nvidia.cuda.toolchain.input.c"/>
+								<inputType id="com.nvidia.cuda.toolchain.input.cu.1180533038" name="CUDA" superClass="com.nvidia.cuda.toolchain.input.cu"/>
+								<inputType id="com.nvidia.cuda.toolchain.input.cpp.801782182" name="C++" superClass="com.nvidia.cuda.toolchain.input.cpp"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="com.nvidia.cuda.ide.ten_two.configuration.release.1725274357.827861573" name="/" resourcePath="L-BFGS-B-C/Matlab">
+						<toolChain id="com.nvidia.cuda.toolchain.linuxToolchain.2053465005" name="CUDA Linux toolchain" superClass="com.nvidia.cuda.toolchain.linuxToolchain" unusedChildren="">
+							<tool id="nvcc.linker.2006721914" name="NVCC linker" superClass="nvcc.linker.516939073"/>
+							<tool id="nvcc.archiver.1743152826" name="NVCC archiver" superClass="nvcc.archiver.1269343977"/>
+							<tool id="nvcc.compiler.564378889" name="NVCC Compiler" superClass="nvcc.compiler.1563731734"/>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="L-BFGS-B-C/Matlab|matplotlib-cpp/examples" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="com.nvidia.cuda.ide.build.project.ICudaProjectConfiguration">
@@ -151,7 +131,7 @@
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="ROHSA-GPU.com.nvidia.cuda.ide.ten_two.exe.156210829" name="Executable" projectType="com.nvidia.cuda.ide.ten_two.exe"/>
+		<project id="ROHSA-GPU.com.nvidia.cuda.ide.ten_two.exe.156210829" name="Executable"/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
@@ -176,4 +156,5 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 	<storageModule cpu="x86_64" moduleId="nsight.localTarget"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>
