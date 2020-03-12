@@ -1,7 +1,7 @@
 #ifndef DEF_ALGO_ROHSA
 #define DEF_ALGO_ROHSA
 
-#include "lbfgsb.h"
+#include "../L-BFGS-B-C/src/lbfgsb.h"
 #include "hypercube.hpp"
 #include "model.hpp"
 #include <iostream>

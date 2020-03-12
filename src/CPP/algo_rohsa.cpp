@@ -1,4 +1,4 @@
-#include "algo_rohsa.hpp"
+#include "../../inc/algo_rohsa.hpp"
 #include <omp.h>
 #include <array>
 
