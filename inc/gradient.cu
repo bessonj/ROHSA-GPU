@@ -66,6 +66,7 @@ for(int i=0; i<n_gauss; i++){
      coordinates[0]=2+3*i;
      set_at_4d_index(dF_over_dB, coordinates, taille_dF_over_dB, value_at_4d_index(params, coordinates_params_0, taille_params)*pow( double(index_z+1) - value_at_4d_index(params, coordinates_params_1, taille_params), 2.)/(pow(value_at_4d_index(params, coordinates_params_2, taille_params),3.)) *
                                      exp(-pow( double(index_z+1)-value_at_4d_index(params, coordinates_params_1, taille_params),2.)/(2*pow(value_at_4d_index(params, coordinates_params_2, taille_params),2.)) ) );
+     __syncthreads();
 
 }
 
@@ -111,13 +112,13 @@ void gradient(double* dF_over_dB, int* taille_dF_over_dB, int product_taille_dF_
 //   printf("%d\n", dF_over_dB[0]);
 
    double* dF_over_dB_dev;
-//   checkCudaErrors(cudaMalloc((void**)&dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double)));
+   checkCudaErrors(cudaMalloc((void**)&dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double)));
 
-//   checkCudaErrors(cudaMemcpy(dF_over_dB_dev, dF_over_dB, product_taille_dF_over_dB*sizeof(double), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaMemcpy(dF_over_dB_dev, dF_over_dB, product_taille_dF_over_dB*sizeof(double), cudaMemcpyHostToDevice));
 
-   cudaMalloc((void**)&dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double));
+//   cudaMalloc((void**)&dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double));
 
-   cudaMemcpy(dF_over_dB_dev, dF_over_dB, product_taille_dF_over_dB*sizeof(double), cudaMemcpyHostToDevice);
+//   cudaMemcpy(dF_over_dB_dev, dF_over_dB, product_taille_dF_over_dB*sizeof(double), cudaMemcpyHostToDevice);
 
 
    int N = taille_dF_over_dB[3]*taille_dF_over_dB[2]*taille_dF_over_dB[1]*taille_dF_over_dB[0];
@@ -146,10 +147,10 @@ void gradient(double* dF_over_dB, int* taille_dF_over_dB, int product_taille_dF_
 
 
 
-//   checkCudaErrors(cudaMemcpy(dF_over_dB, dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double), cudaMemcpyDeviceToHost));
-   cudaMemcpy(dF_over_dB, dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double), cudaMemcpyDeviceToHost);
+  checkCudaErrors(cudaMemcpy(dF_over_dB, dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double), cudaMemcpyDeviceToHost));
+  // cudaMemcpy(dF_over_dB, dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double), cudaMemcpyDeviceToHost);
 
-
+   cudaFree(dF_over_dB_dev);
 
 }
 
