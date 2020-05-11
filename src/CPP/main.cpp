@@ -1,6 +1,7 @@
 #include "hypercube.hpp"
 #include "model.hpp"
 #include "algo_rohsa.hpp"
+#include "gradient.hpp"
 #include <omp.h>
 #include <cmath>
 #include <iostream>

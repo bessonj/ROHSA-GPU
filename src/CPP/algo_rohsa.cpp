@@ -1,6 +1,8 @@
 #include "../../inc/algo_rohsa.hpp"
 #include "../../inc/FlatArray.hpp"
 //#include "../../inc/gradient.cu"
+#include "../../inc/gradient.hpp"
+//#include <gradient.hpp>
 #include <omp.h>
 #include <array>
 
@@ -470,6 +472,7 @@ void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vect
 	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	}
 
+
 //OpenMP for f_g_cube
 void algo_rohsa::f_g_cube_vector(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
 
@@ -499,7 +502,7 @@ std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x
 std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
 std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
 
-int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
+int n_beta = (3*M.n_gauss*indice_x*indice_y);//+n_gauss;
 
 int i,k,j,l,p;
 
@@ -512,8 +515,8 @@ double temps1_tableaux = omp_get_wtime();
 
 unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
-/*for(int i = 0; i<M.n_gauss; i++){
-	b_params[i]=beta[n_beta-M.n_gauss+i];
+/*for(int i = 0; i<n_gauss; i++){
+	b_params[i]=beta[n_beta-n_gauss+i];
 }*/
 //cout.precision(dbl::max_digits10);
 
@@ -550,7 +553,7 @@ double temps1_dF_dB = omp_get_wtime();
 
 /*
 //ANCIEN CODE (à tester) sans optim cache
-for(int i=0; i<M.n_gauss; i++){
+for(int i=0; i<n_gauss; i++){
 	for(int k=0; k<indice_v; k++){
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -579,7 +582,7 @@ for(int i=0; i<M.n_gauss; i++){
 #pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
 {
 #pragma omp for
-for(int i=0; i<M.n_gauss; i++){
+for(int i=0; i<n_gauss; i++){
 	for(k=0; k<indice_v; k++){
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -597,7 +600,7 @@ for(int i=0; i<M.n_gauss; i++){
 }
 
 */
-//repère1
+//repère_vector
 
 #pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
 {
@@ -620,7 +623,6 @@ for(int i=0; i<M.n_gauss; i++){
         }
 }
 }
-
 double temps2_dF_dB = omp_get_wtime();
 
 double temps1_deriv = omp_get_wtime();
@@ -639,8 +641,6 @@ for(k=0; k<indice_v; k++){
 	}
 }
 }
-
-
 
 
 double temps2_deriv = omp_get_wtime();
@@ -679,7 +679,7 @@ for(int k=0; k<M.n_gauss; k++){
 		}
 	}
 
-}
+} 
 
 	for(int l=0; l<3*M.n_gauss; l++){
 		for(int i=0; i<indice_y; i++){
@@ -697,15 +697,14 @@ for(int k=0; k<M.n_gauss; k++){
 	temps_tableaux += temps2_tableaux - temps1_tableaux;
 
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
 }
 
 
 
-void algo_rohsa::f_g_cube(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
+//FlatArray_CPU
+void algo_rohsa::f_g_cube_FlatArray(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
 
 //std::cout<<"Début f_g_cube"<<std::endl;
-
 
 std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 
@@ -734,7 +733,7 @@ std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x
 std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
 std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
 
-int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
+int n_beta = (3*M.n_gauss*indice_x*indice_y);//+n_gauss;
 
 int i,k,j,l,p;
 
@@ -747,8 +746,8 @@ double temps1_tableaux = omp_get_wtime();
 
 unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
-/*for(int i = 0; i<M.n_gauss; i++){
-	b_params[i]=beta[n_beta-M.n_gauss+i];
+/*for(int i = 0; i<n_gauss; i++){
+	b_params[i]=beta[n_beta-n_gauss+i];
 }*/
 //cout.precision(dbl::max_digits10);
 
@@ -785,7 +784,7 @@ double temps1_dF_dB = omp_get_wtime();
 
 /*
 //ANCIEN CODE (à tester) sans optim cache
-for(int i=0; i<M.n_gauss; i++){
+for(int i=0; i<n_gauss; i++){
 	for(int k=0; k<indice_v; k++){
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -802,19 +801,36 @@ for(int i=0; i<M.n_gauss; i++){
 // // // CALCUL DU GRADIENT
 
 //transfert ->
-
+//FlatArray<double> *dF_over_dB_dev;
+//cudaMalloc((void **)&dF_over_dB_dev,sizeof(FlatArray<double>));
+//FlatArray<double> dF_over_dB_dev(taille_dF_over_dB);
+//cudaMemcpy(&x, N*sizeof(float));
 //appel kernel 
 //gradient_kernel<<<,>>>(
 
+/*
+CudaClass c(1);
+    // create class storage on device and copy top level class
+    CudaClass *d_c;
+    cudaMalloc((void **)&d_c, sizeof(CudaClass));
+    cudaMemcpy(d_c, &c, sizeof(CudaClass), cudaMemcpyHostToDevice);
+    // make an allocated region on device for use by pointer in class
+    int *hostdata;
+    cudaMalloc((void **)&hostdata, sizeof(int));
+    cudaMemcpy(hostdata, c.data, sizeof(int), cudaMemcpyHostToDevice);
+    // copy pointer to allocated device storage to device class
+    cudaMemcpy(&(d_c->data), &hostdata, sizeof(int *), cudaMemcpyHostToDevice);
+    useClass<<<1,1>>>(d_c);
+    cudaDeviceSynchronize();
+*/
 //transfert <-
-
 
 //OMP
 /*
 #pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
 {
 #pragma omp for
-for(int i=0; i<M.n_gauss; i++){
+for(int i=0; i<n_gauss; i++){
 	for(k=0; k<indice_v; k++){
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -832,14 +848,14 @@ for(int i=0; i<M.n_gauss; i++){
 }
 
 */
-//repère1
+//repère_FlatArray
 
 //#pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
 //{
-int compteur = 0;
 //int n_compteur = 1000000000;
 //#pragma omp for
-for(int i=0; i<M.n_gauss; i++){
+/*
+for(int i=0; i<n_gauss; i++){
         for(k=0; k<indice_v; k++){
                 for(int j=0; j<indice_y; j++){
                         for(int l=0; l<indice_x; l++){
@@ -847,27 +863,8 @@ for(int i=0; i<M.n_gauss; i++){
 				coordinates[1]=k;
 				coordinates[2]=j;
 				coordinates[3]=l;
-/*
-std::cout<< " coordinates : "<<coordinates[0]<<" , "<<coordinates[1]<<" , "<<coordinates[2]<<" , "<<coordinates[3] <<std::endl;
-std::cout<< " indices : "<<0+3*i<<","<<k<<","<<j<<","<<l<<std::endl;
-std::cout<< " indices combinaison : "<<dF_over_dB.combinaison_kd_to_1d(coordinates)<<std::endl;
-//std::cout<< " fin " <<std::endl;
-*/
-/*
-if (compteur > n_compteur)
-{
-		exit(0);
-}
-compteur ++;
-*/
+
                                 dF_over_dB.vec_add(coordinates, exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) ) );
-
-
-/*
-//std::cout<< " début " <<std::endl;
-std::cout<<"1 ==> "<< dF_over_dB.vec_acc(coordinates)<<std::endl;
-std::cout<<"2 ==> "<< dF_over_dB_tilde[0+3*i][k][j][l] <<std::endl;
-*/
 
 				coordinates[0]= 1+3*i;
 
@@ -882,6 +879,7 @@ std::cout<<"2 ==> "<< dF_over_dB_tilde[0+3*i][k][j][l] <<std::endl;
                 }
         }
 }
+*/
 //}
 
 double temps2_dF_dB = omp_get_wtime();
@@ -918,11 +916,9 @@ dF_over_dB.~FlatArray<double>();
 
 
 //free(dF_over_dB);
-
 double temps2_deriv = omp_get_wtime();
 
 double temps1_conv = omp_get_wtime();
-//std::cout<<"DEBUG 1"<<std::endl;
 
 for(int k=0; k<M.n_gauss; k++){
 
@@ -976,6 +972,308 @@ for(int k=0; k<M.n_gauss; k++){
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 
 }
+
+void algo_rohsa::f_g_cube(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
+
+//std::cout<<"Début f_g_cube"<<std::endl;
+
+std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+
+
+//int coordinates[] = {0,0,0,0};
+//FlatArray est pour le CPU
+//FlatArray<double> dF_over_dB(taille_dF_over_dB);
+
+
+std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+
+std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
+
+std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<double> b_params(M.n_gauss,0.);
+
+std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+
+int n_beta = (3*M.n_gauss*indice_x*indice_y);//+n_gauss;
+
+int i,k,j,l,p;
+
+for(int i = 0; i< n; i++){
+	g[i]=0.;
+}
+f=0.;
+
+double temps1_tableaux = omp_get_wtime();
+
+unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+
+/*for(int i = 0; i<n_gauss; i++){
+	b_params[i]=beta[n_beta-n_gauss+i];
+}*/
+//cout.precision(dbl::max_digits10);
+
+
+//#pragma omp parallel private(j,i) shared(cube,params,std_map,residual,indice_x,indice_y,indice_v,M,f)
+//{
+//#pragma omp for
+for(j=0; j<indice_x; j++){
+	for(i=0; i<indice_y; i++){
+		std::vector<double> residual_1D(indice_v,0.);
+		std::vector<double> params_flat(params.size(),0.);
+		std::vector<double> cube_flat(cube[0][0].size(),0.);
+		for (p=0;p<params_flat.size();p++){
+			params_flat[p]=params[p][i][j];
+		}
+		for (p=0;p<cube_flat.size();p++){
+			cube_flat[p]=cube[i][j][p];
+		}
+		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+		for (p=0;p<residual_1D.size();p++){
+			residual[j][i][p]=residual_1D[p];
+		}
+		if(std_map[i][j]>0.){
+			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
+		}
+	}
+
+//}
+}
+
+double temps2_tableaux = omp_get_wtime();
+
+double temps1_dF_dB = omp_get_wtime();
+
+
+int taille_params_flat[] = {3*M.n_gauss, indice_y, indice_x};
+int product_taille_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
+double* params_flat = NULL;
+params_flat = (double*)malloc(product_taille_params_flat*sizeof(double));
+
+int taille_dF_over_dB[] = {3*M.n_gauss, indice_v, indice_y, indice_x};
+int product_taille_dF_over_dB = taille_dF_over_dB[0]*taille_dF_over_dB[1]*taille_dF_over_dB[2]*taille_dF_over_dB[3];
+double* dF_over_dB = NULL;
+dF_over_dB = (double*)malloc(product_taille_dF_over_dB*sizeof(double));
+
+
+
+for(j=0; j<indice_x; j++){
+        for(i=0; i<indice_y; i++){
+                for (p=0;p<3*M.n_gauss;p++){
+			params_flat[p]=params[p][i][j];
+		}
+	}
+}
+
+std::cout<<params.size()<<std::endl;
+//std::cout<<params_flat[0]<<std::endl;
+std::cout<<params[0][0][0]<<std::endl;
+//gradient.cu gpu
+gradient(dF_over_dB, taille_dF_over_dB, product_taille_dF_over_dB, params_flat, taille_params_flat, product_taille_params_flat, M);
+
+//exit(0);
+
+
+
+/*
+dF_over_dB = (double*)malloc(product*sizeof(double));
+
+
+#pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
+{
+#pragma omp for
+for(int i=0; i<n_gauss; i++){
+	for(k=0; k<indice_v; k++){
+		for(int j=0; j<indice_y; j++){
+			for(int l=0; l<indice_x; l++){
+				dF_over_dB[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+
+				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * 
+									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+
+				dF_over_dB[2+3*i][k][j][l] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * 
+									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+			}
+		}
+	}
+}
+}
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // // CALCUL DU GRADIENT
+
+//transfert ->
+//FlatArray<double> *dF_over_dB_dev;
+//cudaMalloc((void **)&dF_over_dB_dev,sizeof(FlatArray<double>));
+//FlatArray<double> dF_over_dB_dev(taille_dF_over_dB);
+//cudaMemcpy(&x, N*sizeof(float));
+//appel kernel 
+//gradient_kernel<<<,>>>(
+
+/*
+CudaClass c(1);
+    // create class storage on device and copy top level class
+    CudaClass *d_c;
+    cudaMalloc((void **)&d_c, sizeof(CudaClass));
+    cudaMemcpy(d_c, &c, sizeof(CudaClass), cudaMemcpyHostToDevice);
+    // make an allocated region on device for use by pointer in class
+    int *hostdata;
+    cudaMalloc((void **)&hostdata, sizeof(int));
+    cudaMemcpy(hostdata, c.data, sizeof(int), cudaMemcpyHostToDevice);
+    // copy pointer to allocated device storage to device class
+    cudaMemcpy(&(d_c->data), &hostdata, sizeof(int *), cudaMemcpyHostToDevice);
+    useClass<<<1,1>>>(d_c);
+    cudaDeviceSynchronize();
+*/
+//transfert <-
+
+//OMP
+//repère_cuda
+//#pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
+//{
+//int n_compteur = 1000000000;
+//#pragma omp for
+/*
+for(int i=0; i<n_gauss; i++){
+        for(k=0; k<indice_v; k++){
+                for(int j=0; j<indice_y; j++){
+                        for(int l=0; l<indice_x; l++){
+				coordinates[0]=0+3*i;
+				coordinates[1]=k;
+				coordinates[2]=j;
+				coordinates[3]=l;
+
+                                dF_over_dB.vec_add(coordinates, exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) ) );
+
+				coordinates[0]= 1+3*i;
+
+                                dF_over_dB.vec_add(coordinates, params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * 
+                                                                        exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) ) );
+				coordinates[0]=2+3*i;
+
+                                dF_over_dB.vec_add(coordinates, params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) *
+                                                                        exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) ) );
+
+                        }
+                }
+        }
+}
+*/
+//}
+
+double temps2_dF_dB = omp_get_wtime();
+
+double temps1_deriv = omp_get_wtime();
+//#pragma omp parallel private(k,l) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
+//{
+
+//#pragma omp for
+for(k=0; k<indice_v; k++){
+	for(l=0; l<3*M.n_gauss; l++){
+		for(i=0; i<indice_y; i++){
+			for(j=0; j<indice_x; j++){
+				if(std_map[i][j]>0.){
+//					coordinates[0] = l;
+//					coordinates[1] = k;
+//					coordinates[2] = i;
+//					coordinates[3] = j;
+//					deriv[l][i][j]+=  dF_over_dB.vec_acc(coordinates)*residual[j][i][k]/pow(std_map[i][j],2);
+				}
+			}
+		}
+	}
+}
+//}
+
+
+
+//int list[] = {0,0,0,0};
+//std::cout<<" deriv[0][0][1] = "<<deriv[0][1][1]<<std::endl;
+//dF_over_dB.~FlatArray<double>();
+
+//free(dF_over_dB);
+
+
+//free(dF_over_dB);
+double temps2_deriv = omp_get_wtime();
+
+double temps1_conv = omp_get_wtime();
+
+for(int k=0; k<M.n_gauss; k++){
+
+	for(int p=0; p<indice_y; p++){
+		for(int q=0; q<indice_x; q++){
+			image_amp[p][q]=params[0+3*k][p][q];
+			image_mu[p][q]=params[1+3*k][p][q];
+			image_sig[p][q]=params[2+3*k][p][q];
+		}
+	}
+
+	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+
+	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+
+
+
+	for(int j=0; i<indice_y; j++){
+		for(int i=0; j<indice_x; i++){
+			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2) + 0.5*M.lambda_var_amp*pow(image_amp[i][j]-mean_amp[k],2);
+			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2) + 0.5*M.lambda_var_mu*pow(image_mu[i][j]-mean_mu[k],2);
+			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-mean_sig[k],2);
+
+			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j]+M.lambda_var_amp*(image_amp[i][j]-mean_amp[k]);
+			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j]+M.lambda_var_mu*(image_mu[i][j]-mean_mu[k]);
+			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-mean_sig[k]);
+		}
+	}
+
+} 
+
+	for(int l=0; l<3*M.n_gauss; l++){
+		for(int i=0; i<indice_y; i++){
+			for(int j=0; j<indice_x; j++){
+				g_3D[l][i][j] = deriv[l][i][j] + dR_over_dB[l][i][j];
+			}
+		}
+	}
+	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
+
+	double temps2_conv = omp_get_wtime();
+
+	temps_conv+= temps2_conv - temps1_conv;
+	temps_deriv+= temps2_deriv - temps1_deriv;
+	temps_tableaux += temps2_tableaux - temps1_tableaux;
+
+	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
+}
+
+
 
 
 void algo_rohsa::minimize(model &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int indice_x, int indice_y, int indice_v) {
@@ -1072,8 +1370,8 @@ L111:
     if ( IS_FG(*task) ) {
 //	std::cout<<"DEBUG -1"<<std::endl;
 
-//either f_g_cube or f_g_cube_vector
-	f_g_cube_vector(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//f_g_cube, f_g_cube_FlatArray or f_g_cube_vector
+	f_g_cube(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 
 //	std::cout<<"DEBUG 3"<<std::endl;
 
