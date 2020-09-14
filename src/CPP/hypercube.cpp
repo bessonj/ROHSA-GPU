@@ -10,7 +10,88 @@ namespace plt = matplotlibcpp;
 using namespace CCfits;
 
 
-// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
+//// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
+
+//We assume that the cube does not require any further modification if it has been produced in a dat file through the Python program (ROHSApy?).
+//The depth, width and height of the cube are inherited from the dat file.
+//To truncate or not to truncate, that is the question.
+hypercube::hypercube(model &M, int indice_debut, int indice_fin, bool whole_data_in_cube)
+{
+
+	this->indice_debut= indice_debut;
+	this->indice_fin = indice_fin;
+	if(M.file_type_fits){
+		get_array_from_fits(M);
+	//	get_dimensions_from_fits(); //inutile
+//		get_binary_from_fits(); // WARNING 
+//		get_vector_from_binary(this->data);
+		if(whole_data_in_cube){
+			this->nside = dim2nside();
+//			std::cout << "	nside =  " <<this->nside<< std::endl;		
+			//exit(0);
+		}
+		else{
+			this->nside = dim2nside()-1;
+		}
+	}
+	if(M.file_type_dat){
+		this->data = use_dat_file(M);
+		this->nside = dim2nside();
+	}
+//	std::cout << "	DEBUG " << std::endl;
+//	std::cout<<dim_data[2]<<std::endl;
+
+	dim_cube[0] =pow(2.0,nside);
+	dim_cube[1] =pow(2.0,nside);
+	if(M.file_type_fits){
+		dim_cube[2] = indice_fin-indice_debut+1;
+	}
+	else{
+		dim_cube[2] = dim_data[2];
+	}
+
+	std::cout<<"dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
+
+	std::cout<<"dim_cube[0] = "<<dim_cube[0]<<std::endl;
+	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
+	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
+
+	if(M.file_type_fits){
+		cube = reshape_up(indice_debut, indice_fin);
+		std::vector<std::vector<std::vector<double>>> data_reshaped_local(dim_data[0], std::vector<std::vector<double>>(dim_data[1],std::vector<double>(dim_cube[2],0.)));
+
+		for(int i=0; i< this->dim_data[0]; i++)
+			{
+				for(int j=0; j< this->dim_data[1]; j++)
+				{
+					for(int k= indice_debut; k<= indice_fin; k++)
+					{
+						data_reshaped_local[i][j][k-indice_debut]= this->data[i][j][k];
+					}
+				}
+			}
+		this->data = data_reshaped_local;
+	}
+	else{
+		cube = data;
+	}
+
+/*
+	for(int k(0); k<dim_cube[0]; k++)
+	{
+		for(int j(0); j<dim_cube[1]; j++)
+		{
+			for(int i(0); i< dim_cube[2]; i++)
+			{
+			std::cout<<"cube["<<k<<"]["<<j<<"]["<<i<<"] = "<<data[k][j][i]<<std::endl;
+			exit(0);
+			}
+		}
+	}
+*/
+}
 
 hypercube::hypercube(model &M, int indice_debut, int indice_fin)
 {
@@ -29,7 +110,6 @@ hypercube::hypercube(model &M, int indice_debut, int indice_fin)
 	}
 //	std::cout << "	DEBUG " << std::endl;
 //	std::cout<<dim_data[2]<<std::endl;
-
 
 	dim_cube[0] =pow(2.0,nside);
 	dim_cube[1] =pow(2.0,nside);
@@ -164,9 +244,10 @@ int hypercube::dim2nside()
 	return std::max( 0, std::min(int(ceil( log(double(dim_data[0]))/log(2.))), int(ceil( log(double(dim_data[1]))/log(2.))))  ) ;  
 }
 
-
+//assuming the cube has been reshaped before through the python tool
 std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 {
+
 	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2])));
 
 	for(int i(0); i< dim_cube[0]; i++)
@@ -185,24 +266,19 @@ std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 
 std::vector<std::vector<std::vector<double>>> hypercube::reshape_up(int borne_inf, int borne_sup)
 {
-/*	int center_x = (this->data)[0].size() / 2;
-	int center_y = (this->data)[0][0].size() / 2;
-
-	int indice_debut_x = center_x - dim_cube[0]/2+1;
-	int indice_fin_x = indice_debut_x + dim_cube[0];//
-	int indice_debut_y = center_y - dim_cube[1]/2+1;
-	int indice_fin_y = indice_debut_y + dim_cube[1];//
-*/
+	//compute the offset so that the data file lies in the center of a cube
+	int offset_x = (dim_cube[0]-dim_data[0])/2;
+	int offset_y = (dim_cube[1]-dim_data[1])/2;
 
 	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2],0.)));
 
-	for(int i=0; i< this->dim_cube[0]; i++)
+	for(int i=offset_x; i< this->dim_data[0]+offset_x; i++)
 	{
-		for(int j=0; j<this->dim_cube[1]; j++)
+		for(int j=offset_y; j<this->dim_data[1]+offset_y; j++)
 		{
 			for(int k=0; k<this->dim_cube[2]; k++)
 			{
-				cube_[i][j][k]= this->data[i][j][borne_inf+k];
+				cube_[i][j][k]= this->data[i-offset_x][j-offset_y][borne_inf+k];
 			}
 		}
 	}
@@ -382,7 +458,6 @@ void hypercube::get_vector_from_binary(std::vector<std::vector<std::vector<doubl
 	}
 */
 
-	exit(0);
 
 }
 
@@ -440,7 +515,6 @@ void hypercube::display(std::vector<std::vector<std::vector<double>>> &tab, int 
 		}
 	}
 
-	std::cout<<"DEBUG"<<std::endl;
 	const float* zptr = &(z[0]);
 	const int colors = 1;
 	plt::clf();
@@ -456,12 +530,10 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
 	std::vector<double> model(this->dim_cube[2],0.);
 	std::vector<double> cube_line(this->dim_cube[2],0.);
 	std::vector<double> params_line(3*n_gauss_i,0.);
-
 	std::cout<< dim_cube[2] <<std::endl;
 	for(int i=0; i<params_line.size(); i++) {
 		params_line[i]=params[i][ind_y][ind_x];
 	}
-
 
 	for(int i(0); i<n_gauss_i; i++) {
 		for(int k=0; k<this->dim_cube[2]; k++) {
@@ -488,7 +560,6 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
 
     // Plot line from given x and y data. Color is selected automatically.
     plt::plot(x, model,"b");
-
     plt::named_plot("data", x, cube_line);
     plt::named_plot("model", x, model);
 
@@ -496,7 +567,6 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
 
     // Add graph title
     plt::title("Model vs Data Plot");
-
     // Enable legend.
     plt::legend();
 
@@ -512,7 +582,6 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
 	strcat (str,pchar_y);
 	strcat (str,".png");
 	puts (str);
-
 
     // save figure
     std::cout << "Saving result to " << str << std::endl;;
@@ -542,7 +611,7 @@ void hypercube::display_result(std::vector<std::vector<std::vector<double>>> &pa
 	std::vector<float> z_cube(this->dim_cube[0]*this->dim_cube[1],0.);
 
 	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
+		for(int j=0;j<this->dim_cube[1];j++){ 
 			z_cube[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
 		}
 	}
@@ -557,19 +626,44 @@ void hypercube::display_result(std::vector<std::vector<std::vector<double>>> &pa
 	std::cout << "Result saved to 'imshow_result.png'.\n"<<std::endl;
 }
 
-void hypercube::display_result_and_data(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i)
+void hypercube::display_result_and_data(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, bool dat_or_not)
 {
-	std::vector<std::vector<double>> model(this->dim_cube[0],std::vector<double>(this->dim_cube[1],0.));
 
+	std::cout << "fonction affichage : params.size() : " << params.size() << " , " << params[0].size() << " , " << params[0][0].size() <<  std::endl;
 
-	for(int p(0); p<this->dim_cube[0]; p++) {
-		for(int j(0); j<this->dim_cube[1]; j++) {
+	std::vector<std::vector<double>> model(this->dim_data[0],std::vector<double>(this->dim_data[1],0.));
+
+//	std::cout<< "début de la fonction affichage"<<std::endl;
+
+	for(int p(0); p<this->dim_data[0]; p++) {
+		for(int j(0); j<this->dim_data[1]; j++) {
 			for(int i(0); i<n_gauss_i; i++) {
 		model[p][j]+= model_function(rang+1, params[3*i][j][p], params[1+3*i][j][p], params[2+3*i][j][p]);
 			}
 		}
 	}
 
+//	std::cout<< "milieu du début de la fonction affichage"<<std::endl;
+
+	int offset_0 = (this->dim_cube[0]-this->dim_data[0])/2;
+	int offset_1 = (this->dim_cube[1]-this->dim_data[1])/2;
+
+	if (dat_or_not){
+		offset_0=0;
+		offset_1=0;
+	}
+
+	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
+
+
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_model[(i+offset_1)*this->dim_cube[1]+j+offset_0] = model[j][i];//this->cube[i][j][rang];
+		}
+	}
+
+//Original bit
+/*
 	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
 
 	for(int i=0;i<this->dim_cube[0];i++){
@@ -577,14 +671,16 @@ void hypercube::display_result_and_data(std::vector<std::vector<std::vector<doub
 			z_model[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
 		}
 	}
+*/
 
+//std::cout<< "milieu de la fonction affichage"<<std::endl;
 
 
 	std::vector<float> z_cube(this->dim_cube[0]*this->dim_cube[1],0.);
 
 	for(int i=0;i<this->dim_cube[0];i++){
 		for(int j=0;j<this->dim_cube[1];j++){
-			z_cube[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
+			z_cube[i*this->dim_cube[1]+j] = this->cube[i][j][rang]; //index transpose, ordre : i,j 
 		}
 	}
 
@@ -613,6 +709,51 @@ void hypercube::display_result_and_data(std::vector<std::vector<std::vector<doub
 //			plt::title("Modèle");
 	plt::subplot(1, 2, 1);
 		plt::imshow(zptr_cube, this->dim_cube[0], this->dim_cube[1], colors);
+//			plt::title("Cube hyperspectral");
+	plt::save(str);
+//	plt::show();
+	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
+
+}
+
+void hypercube::display_avec_et_sans_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par,int plot_numero)
+{
+
+	std::vector<float> z_show(this->dim_data[0]*this->dim_data[1],0.);
+
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_show[i*this->dim_data[1]+j] = params[num_par+num_gauss*3][j][i];
+		}
+	}
+
+	const float* zptr_cube = &(z_show[0]);
+	const int colors = 1;
+
+	std::string s = std::to_string(plot_numero);
+	char const *pchar = s.c_str();
+
+
+	char str[220];
+	strcpy (str,"essai plot param numero ");
+	strcat (str,pchar);
+	strcat (str,".png");
+	puts (str);
+
+
+	plt::clf();
+//	std::cout<<" DEBUG "<<std::endl;
+//	plt::title();
+
+//	plt::suptitle("Données                      Modèle");
+
+/*
+	plt::subplot(1, 2, 2);
+		plt::imshow(zptr_model, this->dim_cube[0], this->dim_cube[1], colors);
+*/
+//			plt::title("Modèle");
+//	plt::subplot(1, 2, 1);
+	plt::imshow(zptr_cube, this->dim_cube[0], this->dim_cube[1], colors);
 //			plt::title("Cube hyperspectral");
 	plt::save(str);
 //	plt::show();

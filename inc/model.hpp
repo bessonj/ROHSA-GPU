@@ -89,8 +89,6 @@ class model
 	std::vector<int> dim_cube; 
 
 */
-
 };
-
 
 #endif

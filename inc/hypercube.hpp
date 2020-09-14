@@ -21,13 +21,15 @@ class hypercube
 
 	hypercube();
 	hypercube(model &M);
-	hypercube(model &M,int indice_debut, int indice_fin);
+	hypercube(model &M,int indice_debut, int indice_fin); // assuming whole_data_in_cube = false (faster and better provided the dimensions are close)
+	hypercube(model &M,int indice_debut, int indice_fin, bool whole_data_in_cube);
 
 	void display_cube(int rang);
 	void display_data(int rang);
 	void display(std::vector<std::vector<std::vector<double>>> &tab, int rang);
 	void plot_line(std::vector<std::vector<std::vector<double>>> &params, int ind_x, int ind_y, int n_gauss_i);
-	void display_result_and_data(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i);
+	void display_result_and_data(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, bool dat_or_not);
+	void display_avec_et_sans_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par, int plot_numero);
 
 	double model_function(int x, double a, double m, double s);
 	void display_result(std::vector<std::vector<std::vector<double>>> &params, int rang, int n_gauss_i);
@@ -50,8 +52,9 @@ class hypercube
 
 
 	int indice_debut, indice_fin;
-	std::vector<std::vector<std::vector<double>>> cube; //data format 2^n
-	std::vector<std::vector<std::vector<double>>> data; //data brut
+	std::vector<std::vector<std::vector<double>>> cube; //data format 2^n and width given by user (parameters.txt)
+//	std::vector<std::vector<std::vector<double>>> data_not_reshaped; //data without width given by user (parameters.txt) might blow up memory
+	std::vector<std::vector<std::vector<double>>> data; //data with width given by user (parameters.txt)
 	int dim_data[3];
 	int dim_cube[3];
 	std::vector<int> dim_data_v;

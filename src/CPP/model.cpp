@@ -51,7 +51,6 @@ model::model()
 			file_type_fits = true;
 		else 
 			file_type_fits = false;
-
 		if(check_save_grid == "true")
 			save_grid = true;
 		else 
@@ -73,6 +72,7 @@ model::model()
         }
         else
                 std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
+
 
 	std::vector<double> slice(3,0.);
 	kernel.vector::push_back(slice);
