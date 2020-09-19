@@ -118,8 +118,8 @@ __global__ void gradient_kernel_1(double* dF_over_dB_dev, int* t, double* params
 	int t_p_1 = t_p[1];
 	int t_p_2 = 3*n_gauss;//t_p[2];
 
-        //dF_over_dB --> (v,y,x,ng)  --> (i,z,y,x)
-        //params     --> (y,x,ng)    --> (z,y,x)
+    //dF_over_dB --> (v,y,x,ng)  --> (i,z,y,x)
+    //params     --> (y,x,ng)    --> (z,y,x)
 
 if(index_x<n_gauss && index_y<t[2] && index_z<t[1])
 {
@@ -152,7 +152,13 @@ for(int i=0; i<t[0]; i++){
 __syncthreads();
 }
 
-//printf("dF_over_dB_dev[%d] = %f\n",index_z*t_3*t_2*t_1+index_y*t_3*t_2+index_x*t_3+2,dF_over_dB_dev[index_z*t_3*t_2*t_1+index_y*t_3*t_2+index_x*t_3+2]);
+/*
+for(int i=0; i<t[0]; i++){
+	printf("dF_over_dB_dev[%d] = %f\n",i*t_3*t_2*t_1+index_z*t_3*t_2+index_y*t_3+3*index_x+0,dF_over_dB_dev[i*t_3*t_2*t_1+index_z*t_3*t_2+index_y*t_3+3*index_x+0]);
+	printf("dF_over_dB_dev[%d] = %f\n",i*t_3*t_2*t_1+index_z*t_3*t_2+index_y*t_3+3*index_x+1,dF_over_dB_dev[i*t_3*t_2*t_1+index_z*t_3*t_2+index_y*t_3+3*index_x+1]);
+	printf("dF_over_dB_dev[%d] = %f\n",i*t_3*t_2*t_1+index_z*t_3*t_2+index_y*t_3+3*index_x+2,dF_over_dB_dev[i*t_3*t_2*t_1+index_z*t_3*t_2+index_y*t_3+3*index_x+2]);
+}
+*/
 __syncthreads();
 
 }

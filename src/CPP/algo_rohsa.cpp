@@ -67,7 +67,7 @@ algo_rohsa::algo_rohsa(model &M, hypercube &Hypercube)
 	if(M.descent)
 	{
 		std::cout<<"DÉBUT DE DESCENTE"<<std::endl;
-
+// test sans regu ?
 		descente(M, grid_params, fit_params);
 	}
 
@@ -268,7 +268,7 @@ void algo_rohsa::descente(model &M, std::vector<std::vector<std::vector<double>>
 	std::cout<<"                                "<<std::endl;
 
 
-	std::vector<std::vector<double>> std_map(this->dim_data[0], std::vector<double>(this->dim_data[1],0.));
+	std::vector<std::vector<double>> std_map(this->dim_data[1], std::vector<double>(this->dim_data[0],0.));
 
 	//nouvelle place de reshape_down
 	int offset_w = (this->dim_cube[0]-this->dim_data[0])/2;
@@ -280,21 +280,26 @@ std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].si
 
 //ancienne place de reshape_down	
 	reshape_down(fit_params, grid_params);
+std::cout<<"Après reshape_down"<<std::endl;
 	M.grid_params = grid_params;
 
-std::cout<<"Après reshape_down"<<std::endl;
-std::cout<<"Taille fit_params : "<<fit_params.size()<<" , "<<fit_params[0].size()<<" , "<<fit_params[0][0].size()<<std::endl;
+std::cout<<"Erreur étrange ..."<<std::endl;
 std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].size()<<" , "<<grid_params[0][0].size()<<std::endl;
+std::cout<<"Erreur étrange ..."<<std::endl;
 
-		for(int j(0); j<8; j++) {
-			for(int k(0); k<8; k++) {
-					std::cout<<"--> grid_params["<<0<<"]["<<j<<"]["<<k<<"] = "<<grid_params[0][j][k]<<std::endl;
-			}
+//std::cout<<"Taille fit_params : "<<fit_params.size()<<" , "<<fit_params[0].size()<<" , "<<fit_params[0][0].size()<<std::endl;
+std::cout<<"Erreur étrange ..."<<std::endl;
+
+	for(int j(0); j<8; j++) {
+		for(int k(0); k<8; k++) {
+			std::cout<<"--> grid_params["<<0<<"]["<<j<<"]["<<k<<"] = "<<grid_params[0][j][k]<<std::endl;
 		}
-	std::cout<<"this->file.data = "<<this->file.data[0][0][0]<<std::endl;
-	std::cout<<"this->dim_data[0] = "<<this->dim_data[0]<<std::endl;
-	std::cout<<"this->dim_data[1] = "<<this->dim_data[1]<<std::endl;
-	std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
+	}
+
+std::cout<<"this->file.data = "<<this->file.data[0][0][0]<<std::endl;
+std::cout<<"this->dim_data[0] = "<<this->dim_data[0]<<std::endl;
+std::cout<<"this->dim_data[1] = "<<this->dim_data[1]<<std::endl;
+std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
 
 //exit(0);
 	if(M.noise){
@@ -303,6 +308,7 @@ std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].si
 
 		set_stdmap(std_map, this->file.data, M.lstd, M.ustd);
 	}
+
 /*
 		std::cout<<"--> std_map[0][0] = "<<std_map[0][0]<<std::endl;
 		std::cout<<"--> std_map[1][0] = "<<std_map[1][0]<<std::endl;
@@ -312,7 +318,7 @@ std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].si
 	if(M.regul){
 		std::cout<<"Updating last level"<<std::endl;
 		// repère recherche pb %
-		update(M, this->file.data, grid_params, std_map, this->dim_data[0], this->dim_data[1], this->dim_data[2],b_params);
+		update(M, this->file.data, grid_params, std_map, this->dim_data[0], this->dim_data[1], this->dim_v,b_params);
 		std::cout<<"FIN UPDATE"<<std::endl;
 /*		std::cout<<"--> grid_params[0][0][0] = "<<grid_params[0][0][0]<<std::endl;
 		std::cout<<"--> grid_params[1][0][0] = "<<grid_params[1][0][0]<<std::endl;
@@ -320,6 +326,7 @@ std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].si
 		std::cout<<"--> grid_params[0][0][1] = "<<grid_params[0][0][1]<<std::endl;
 		exit(0);
 */
+
 		//modification update
 	}
 	double temps2_update_final = omp_get_wtime();
@@ -341,6 +348,7 @@ std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].si
 	std::cout<<"offset_w = "<<offset_w<<" ;  offset_h = "<<offset_h<<std::endl;
 
 //	comptage = 600;
+/*
 		for(int j=0+offset_w; j<8+offset_w; j++) {
 			for(int k=0+offset_h; k<8+offset_h; k++) {
 //				if (comptage>0){ 
@@ -349,6 +357,7 @@ std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].si
 //				}
 			}
 		}
+*/
 		for(int j(0); j<grid_params[0].size(); j++) {
 			for(int k(0); k<grid_params[0][0].size(); k++) {
 					std::cout<<"--> grid_params["<<0<<"]["<<j<<"]["<<k<<"] = "<<grid_params[0][j][k]<<std::endl;
@@ -392,13 +401,16 @@ void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<double>>> &tab
 	int offset_w = (dim_tab1[1]-dim_tab2[1])/2;
 	int offset_h = (dim_tab1[2]-dim_tab2[2])/2;
 
+
+
 	for(int i(0); i< dim_tab1[0]; i++)
 	{
 		for(int j(0); j<dim_tab2[1]; j++)
 		{
 			for(int k(0); k<dim_tab2[2]; k++)
 			{
-				tab2[i][k][j] = tab1[i][offset_w+k][offset_h+j];
+//				std::cout<<"i = "<<i << " , j = "<< j<< " , k = "<<k<<std::endl;
+				tab2[i][j][k] = tab1[i][offset_w+j][offset_h+k];
 			}
 		}
 	}
@@ -430,9 +442,9 @@ std::cout<<"indice_x = "<<indice_x<<std::endl;
 std::cout<<"indice_y = "<<indice_y<<std::endl;
 std::cout<<"n_gauss = "<<M.n_gauss<<std::endl;
 
-	std::vector<double> lb(n_beta);
-	std::vector<double> ub(n_beta);
-	std::vector<double> beta(n_beta);
+	std::vector<double> lb(n_beta,0.);
+	std::vector<double> ub(n_beta,0.);
+	std::vector<double> beta(n_beta,0.);
 
 	std::vector<std::vector<std::vector<double>>> lb_3D(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 	std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
@@ -476,32 +488,33 @@ if(cube_or_data[0].size() == 35){
 			for(int p=0; p<cube_flat.size(); p++){
 				cube_flat[p]=cube_or_data[j][i][p];
 			}
+
 //	std::cout<<"ERREUR 1"<<std::endl;
 			for(int p=0; p<3*M.n_gauss; p++){
-				lb_3D_flat[p]=lb_3D[p][j][i];
-				ub_3D_flat[p]=ub_3D[p][j][i];
+				lb_3D_flat[p]=lb_3D[p][i][j];
+				ub_3D_flat[p]=ub_3D[p][i][j];
 			}
 //	std::cout<<"ERREUR 2"<<std::endravel_3D(l;
 			init_bounds(M, cube_flat, M.n_gauss, lb_3D_flat, ub_3D_flat, false); //bool _init = false 
 //	std::cout<<"ERREUR 3"<<std::endl;
 			for(int p=0; p<3*M.n_gauss; p++){
-				lb_3D[p][j][i]=lb_3D_flat[p]; // the indices have been inverted
-				ub_3D[p][j][i]=ub_3D_flat[p]; //
+				lb_3D[p][i][j]=lb_3D_flat[p]; // the indices have been inverted
+				ub_3D[p][i][j]=ub_3D_flat[p]; //
 			}
 		}
 	}
-//	std::cout<<"DÉBUT DE RAVEL_3D"<<std::endl;
+	std::cout<<"DÉBUT DE RAVEL_3D"<<std::endl;
 	//ravel_3D(lb_3D, lb, indice_x, indice_y, 3*M.n_gauss); 
 	ravel_3D(lb_3D, lb, 3*M.n_gauss, indice_y, indice_x);//ancien
-//	std::cout<<"DÉBUT DE RAVEL_3D 1"<<std::endl;
+	std::cout<<"DÉBUT DE RAVEL_3D 1"<<std::endl;
 	//ravel_3D(ub_3D, ub, indice_x, indice_y, 3*M.n_gauss);
 	ravel_3D(ub_3D, ub, 3*M.n_gauss, indice_y, indice_x); //ancien
-//	std::cout<<"DÉBUT DE RAVEL_3D 2"<<std::endl;
+	std::cout<<"DÉBUT DE RAVEL_3D 2"<<std::endl;
 	//ravel_3D(params, beta, 3*M.n_gauss, indice_y, indice_x);
 	ravel_3D(params, beta, 3*M.n_gauss, indice_y, indice_x); //ancien
 
 
-//	std::cout<<"FIN DE RAVEL_3D"<<std::endl;
+	std::cout<<"FIN DE RAVEL_3D"<<std::endl;
 
 	for(int i=0; i<M.n_gauss; i++){
 		lb[n_beta-M.n_gauss+i] = M.lb_sig;
@@ -530,9 +543,9 @@ if(cube_or_data[0].size() == 35){
 	}
 	exit(0);
 */
+	std::cout<<"AVANT MINIMIZE"<<std::endl;
 	//erreur ici
 	minimize(M, n_beta, M.m, beta, lb, ub, cube_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v); 
-
 
 	std::cout<< "beta[0] = "<<beta[0] <<std::endl;
 
@@ -556,6 +569,7 @@ if(cube_or_data[0].size() == 35){
 	}
 //exit(0);
 	temps_tableau_update += omp_get_wtime() - temps2_tableau_update;
+
 }
 
 void algo_rohsa::set_stdmap(std::vector<std::vector<double>> &std_map, std::vector<std::vector<std::vector<double>>> &cube_or_data, int lb, int ub){
@@ -569,7 +583,7 @@ void algo_rohsa::set_stdmap(std::vector<std::vector<double>> &std_map, std::vect
 			for(int p=0; p<line.size(); p++){
 				line[p] = cube_or_data[i][j][p+lb];
 			}
-			std_map[i][j] = Std(line);
+			std_map[j][i] = Std(line);
 		}
 	}
 }
@@ -589,12 +603,191 @@ void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<double>> &std_map,
 			for(int p=0; p<line.size(); p++){
 				line[p] = cube[i][j][p+lb];
 			}
-			std_map[i][j] = Std(line);
+			std_map[j][i] = Std(line);
 		}
 	}
 }
 
 void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
+
+	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+
+	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
+
+	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<double> b_params(M.n_gauss,0.);
+
+	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+
+	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;//+M.n_gauss;
+
+
+	std::cout<< "AVANT OPÉRATIONS TABLEAUX" <<std::endl;
+
+	std::cout<< "MARQUEUR1" <<std::endl;
+
+	for(int i = 0; i< n; i++){
+		g[i]=0.;
+	}
+	f=0.;
+
+	std::cout<< "MARQUEUR2" <<std::endl;
+	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	std::cout<< "MARQUEUR3" <<std::endl;
+
+	for(int i = 0; i<M.n_gauss; i++){
+		b_params[i]=beta[n_beta-M.n_gauss+i];
+	}
+	std::cout<< "MARQUEUR4" <<std::endl;
+
+	for(int j=0; j<indice_x; j++){
+		for(int i=0; i<indice_y; i++){
+			std::vector<double> residual_1D(indice_v,0.);
+			std::vector<double> params_flat(params.size(),0.);
+			std::vector<double> cube_flat(cube[0][0].size(),0.);
+			std::cout<< "MARQUEUR5" <<std::endl;
+
+			for (int p=0;p<params_flat.size();p++){
+				params_flat[p]=params[p][i][j];
+			}
+			std::cout<< "MARQUEUR6" <<std::endl;
+
+			std::cout<< "--> cube_flat.size() = "<<cube_flat.size() <<std::endl;
+			for (int p=0;p<cube_flat.size();p++){
+				cube_flat[p]=cube[j][i][p];
+			}
+			std::cout<< "MARQUEUR7" <<std::endl;
+
+			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+
+			std::cout<< "MARQUEUR8" <<std::endl;
+
+			for (int p=0;p<residual_1D.size();p++){
+				residual[j][i][p]=residual_1D[p];
+			}
+			std::cout<< "MARQUEUR9" <<std::endl;
+
+			if(std_map[i][j]>0.){
+				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+			}
+		}
+	}
+//§§
+//	printf("->f = %f\n",f);
+//	std::cout<<"->f = "<<f<<std::endl;
+/*
+	for(int j=0; j<indice_y; j++){
+		for(int i = 0; i<indice_x;i++){
+		std::cout<<"std_map["<<i<<"]["<<j<<"] = "<<std_map[i][j]<<std::endl;
+		}
+	}
+*/
+//	exit(0);
+
+	std::cout<< "AVANT GRADIENT+CONVO" <<std::endl;
+
+	for(int i=0; i<M.n_gauss; i++){
+		for(int p=0; p<indice_y; p++){
+			for(int q=0; q<indice_x; q++){
+				image_amp[p][q]=params[0+3*i][p][q];
+				image_mu[p][q]=params[1+3*i][p][q];
+				image_sig[p][q]=params[2+3*i][p][q];
+			}
+		}
+
+		std::cout<< "AVANT CONVO" <<std::endl;
+
+		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+	
+		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+
+		std::cout<< "AVANT SOMME F" <<std::endl;
+		for(int l=0; l<indice_x; l++){
+			for(int j=0; j<indice_y; j++){
+				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
+				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
+				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
+
+				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
+			
+		int k;
+		double v_1=0.,v_2=0.,v_3=0.;
+
+		std::cout<< "AVANT GRADIENT BIDOUILLÉ" <<std::endl;
+
+		if(std_map[j][l]>0.){
+//	    #pragma omp parallel shared(M, params, residual, std_map, indice_v,i,j,l)
+//	    {
+//        #pragma omp for private(k)
+		for(k=0; k<indice_v; k++){
+					v_1 += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+//printf("--->curseur = %e\n", std_map[j][l] );//residual[l][j][k]  );
+					v_2 +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+	
+					v_3 += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+					}
+		}
+		deriv[0+3*i][j][l]+=v_1;
+		deriv[1+3*i][j][l]+=v_2;
+		deriv[2+3*i][j][l]+=v_3;
+//		}
+				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
+				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
+				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
+
+
+
+
+/*
+	printf("--->M.lambda_amp = %f\n",M.lambda_amp);
+	printf("--->M.lambda_mu = %f\n",M.lambda_mu);
+	printf("--->M.lambda_sig = %f\n",M.lambda_sig);
+
+	printf("--->conv_conv_amp = %f\n",conv_conv_amp[j][l]);
+	printf("--->conv_conv_mu = %f\n",conv_conv_mu[j][l]);
+	printf("--->conv_conv_sig = %f\n",conv_conv_sig[j][l]);
+
+	printf("--->deriv = %f\n",deriv[0+3*i][j][l]);
+	printf("--->deriv = %f\n",deriv[1+3*i][j][l]);
+	printf("--->deriv = %f\n",deriv[2+3*i][j][l]);
+	exit(0);	
+*/
+			}
+		}
+		
+
+	}
+		std::cout<< "AVANT TABLEAUX FIN" <<std::endl;
+
+	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	//	std::cout<<"g["<<i<<"] = "<<g[i]<<std::endl;
+//	std::cout<<"g["<<i<<"] = "<<g[i]<<std::endl;
+
+/*
+	for(int i = 0; i<n_beta;i++)
+	{
+		printf("g[%i] = %f\n",i,g[i]);
+	}
+	printf("--->f = %f\n",f);
+*/
+//	exit(0);
+	}
+
+
+void algo_rohsa::f_g_cube_fast_without_regul(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
 
 	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
@@ -658,72 +851,34 @@ void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vect
 	}
 */
 //	exit(0);
+int k,i,l,j;
+#pragma omp parallel private(i,l,j,k) shared(std_map,deriv,params,M,indice_v, residual,indice_y,indice_x)
+{
+#pragma omp for
+	for(i=0; i<M.n_gauss; i++){
+		for(l=0; l<indice_x; l++){
+			for(j=0; j<indice_y; j++){
+				double v_1=0.,v_2=0.,v_3=0.;
 
-	for(int i=0; i<M.n_gauss; i++){
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				image_amp[p][q]=params[0+3*i][p][q];
-				image_mu[p][q]=params[1+3*i][p][q];
-				image_sig[p][q]=params[2+3*i][p][q];
-			}
-		}
-	
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
-	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-		for(int l=0; l<indice_x; l++){
-			for(int j=0; j<indice_y; j++){
-				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
-				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
-				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
-
-				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
-			
-		int k;
-		double v_1=0.,v_2=0.,v_3=0.;
-
-		if(std_map[j][l]>0.){
-//	    #pragma omp parallel shared(M, params, residual, std_map, indice_v,i,j,l)
-//	    {
-//        #pragma omp for private(k)
-		for(k=0; k<indice_v; k++){
-					v_1 += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-//printf("--->curseur = %e\n", std_map[j][l] );//residual[l][j][k]  );
-					v_2 +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-	
-					v_3 += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-					}
+			if(std_map[j][l]>0.){
+	//	    #pragma omp parallel shared(M, params, residual, std_map, indice_v,i,j,l)
+	//	    {
+	//        #pragma omp for private(k)
+			for(k=0; k<indice_v; k++){
+				v_1 += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+	//printf("--->curseur = %e\n", std_map[j][l] );//residual[l][j][k]  );
+				v_2 +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+		
+				v_3 += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+						}
 		}
 		deriv[0+3*i][j][l]+=v_1;
 		deriv[1+3*i][j][l]+=v_2;
 		deriv[2+3*i][j][l]+=v_3;
 //		}
-				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
-				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
-				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
-
-/*
-	printf("--->M.lambda_amp = %f\n",M.lambda_amp);
-	printf("--->M.lambda_mu = %f\n",M.lambda_mu);
-	printf("--->M.lambda_sig = %f\n",M.lambda_sig);
-
-	printf("--->conv_conv_amp = %f\n",conv_conv_amp[j][l]);
-	printf("--->conv_conv_mu = %f\n",conv_conv_mu[j][l]);
-	printf("--->conv_conv_sig = %f\n",conv_conv_sig[j][l]);
-
-	printf("--->deriv = %f\n",deriv[0+3*i][j][l]);
-	printf("--->deriv = %f\n",deriv[1+3*i][j][l]);
-	printf("--->deriv = %f\n",deriv[2+3*i][j][l]);
-	exit(0);	
-*/
 			}
 		}
-
+	}
 	}
 	
 	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
@@ -740,6 +895,8 @@ void algo_rohsa::f_g_cube_fast(model &M, double &f, double g[], int n, std::vect
 //	exit(0);
 //jeudi
 	}
+
+
 //OpenMP for f_g_cube
 void algo_rohsa::f_g_cube_vector(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
 
@@ -792,7 +949,7 @@ for(int j=0; j<indice_x; j++){
 			params_flat[p]=params[p][i][j];
 		}
 		for (int p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[i][j][p];
+			cube_flat[p]=cube[j][i][p];
 		}
 		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
 		for (int p=0;p<residual_1D.size();p++){
@@ -918,16 +1075,16 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 
 
-	for(int i=0; i<indice_x; i++){
-		for(int j=0; j<indice_y; j++){
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
 			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2);
 			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2);
 			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-b_params[k],2);
@@ -1163,8 +1320,8 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
@@ -1235,12 +1392,6 @@ for(int i=0; i<indice_x; i++) {
 }
 
 
-
-
-
-
-
-
 //test optims OpenMP for f_g_cube
 void algo_rohsa::f_g_cube_sep(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig) 
 {
@@ -1305,8 +1456,8 @@ void algo_rohsa::f_g_cube_sep(model &M, double &f, double g[], int n, std::vecto
 		}
 	
 		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 	
 		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
@@ -1717,8 +1868,8 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
@@ -1726,8 +1877,8 @@ for(int k=0; k<M.n_gauss; k++){
 
 
 
-	for(int j=0; i<indice_y; j++){
-		for(int i=0; j<indice_x; i++){
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
 			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2) + 0.5*M.lambda_var_amp*pow(image_amp[i][j]-mean_amp[k],2);
 			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2) + 0.5*M.lambda_var_mu*pow(image_mu[i][j]-mean_mu[k],2);
 			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-mean_sig[k],2);
@@ -1735,6 +1886,9 @@ for(int k=0; k<M.n_gauss; k++){
 			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j]+M.lambda_var_amp*(image_amp[i][j]-mean_amp[k]);
 			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j]+M.lambda_var_mu*(image_mu[i][j]-mean_mu[k]);
 			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-mean_sig[k]);
+
+			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[i][j]);
+
 		}
 	}
 
@@ -1750,7 +1904,9 @@ for(int k=0; k<M.n_gauss; k++){
 	double temps2_conv = omp_get_wtime();
 
 	temps1_ravel = omp_get_wtime();
+
 	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
+
 	temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
 
@@ -1777,8 +1933,6 @@ std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::
 //dF_over_dB[v][y][x][M.n__gauss]
 //deriv[gauss][y][x]
 
-
-
 std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 std::vector<double> b_params(M.n_gauss,0.);
 
@@ -1792,9 +1946,12 @@ std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x
 std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
 std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
 
-int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
+
+int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
 int i,k,j,l,p;
+
+printf("n = %d \n",n);
 
 for(int i = 0; i< n; i++){
 	g[i]=0.;
@@ -1831,7 +1988,14 @@ int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
 int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
 int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
 int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
-	
+
+//autre manière de gérer les 3 tableaux
+/*
+double deriv[product_deriv];
+double residual[product_residual];
+double std_map_[product_std_map_];
+*/
+
 size_t size_deriv = product_deriv * sizeof(double);
 size_t size_res = product_residual * sizeof(double);
 size_t size_std = product_std_map_ * sizeof(double);
@@ -1851,9 +2015,9 @@ for(i=0; i<indice_y; i++){
 	}
 }
 
-/*for(int i = 0; i<M.n_gauss; i++){
+for(int i = 0; i<M.n_gauss; i++){
 	b_params[i]=beta[n_beta-M.n_gauss+i];
-}*/
+}
 //cout.precision(dbl::max_digits10);
 
 
@@ -1900,28 +2064,27 @@ double temps1_dF_dB = omp_get_wtime();
 
 
 
-/*
+
 int product_taille_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
 double* params_flat = NULL;
 params_flat = (double*)malloc(product_taille_params_flat*sizeof(double));
 
+/*
 int product_taille_dF_over_dB = taille_dF_over_dB[0]*taille_dF_over_dB[1]*taille_dF_over_dB[2]*taille_dF_over_dB[3];
 double* dF_over_dB = NULL;
 dF_over_dB = (double*)malloc(product_taille_dF_over_dB*sizeof(double));
 */
 
-/*
+
 int i_flat= 0;
 
 for(i=0; i<indice_y; i++){
 	for(j=0; j<indice_x; j++){
 		for (p=0;p<3*M.n_gauss;p++){
-			params_flat[i_flat]=params_T[i][j][p];
-			i_flat++;
+			params_flat[i*indice_x*3*M.n_gauss+j*3*M.n_gauss+p]=params[p][i][j];
 		}
 	}
 }
-*/
 
 /*
 for(i=0; i<indice_y; i++){
@@ -1936,12 +2099,12 @@ for(i=0; i<indice_y; i++){
 }
 */
 
+/*
 int t3= taille_deriv[3];
 int t2= taille_deriv[2];
 int t1= taille_deriv[1];
 int t0= taille_deriv[0];
 
-/*
 for(int l=0; l<indice_y; l++){
 	for(int i=0; i<indice_x; i++){
 		for(int j=0; j<3*M.n_gauss; j++){
@@ -1956,8 +2119,15 @@ for(int l=0; l<indice_y; l++){
 //gradient.cu gpu
 //std::cout<< "avant gradient" <<std::endl;
 
-gradient_L_2(deriv, taille_deriv, product_deriv, beta, taille_params_flat, product_params_flat, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
+gradient_L_2(deriv, taille_deriv, product_deriv, params_flat, taille_params_flat, product_params_flat, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
 
+std::cout<< "Après gradient " <<std::endl;
+   for(int p; p<4; p++)
+     {
+	std::cout<< " -> "<<deriv[p] <<std::endl;
+	 }
+
+//exit(0);
 /*
    for(int p; p<product_taille_dF_over_dB; p++)
      {
@@ -1985,27 +2155,37 @@ double temps1_conv = omp_get_wtime();
 //std::cout<< "avant convolutions" <<std::endl;
 
 for(int k=0; k<M.n_gauss; k++){
-
 	for(int p=0; p<indice_y; p++){
 		for(int q=0; q<indice_x; q++){
+
+			image_amp[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+0+3*k];
+			image_mu[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+1+3*k];
+			image_sig[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+2+3*k];
+/*
 			image_amp[p][q]=params[0+3*k][p][q];
 			image_mu[p][q]=params[1+3*k][p][q];
 			image_sig[p][q]=params[2+3*k][p][q];
+*/
 		}
 	}
-
+	std::cout<< "avant ligne convolution " <<std::endl;
+// $$
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	std::cout<< "après ligne convolution" <<std::endl;
+
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+
+
+	std::cout<< "OK ENTRE CONVOLUTIONS " <<std::endl;
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+	std::cout<< "FIN DES CONVOLUTIONS " <<std::endl;
 
-
-
-	for(int j=0; i<indice_y; j++){
-		for(int i=0; j<indice_x; i++){
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
 			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2) + 0.5*M.lambda_var_amp*pow(image_amp[i][j]-mean_amp[k],2);
 			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2) + 0.5*M.lambda_var_mu*pow(image_mu[i][j]-mean_mu[k],2);
 			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-mean_sig[k],2);
@@ -2013,10 +2193,14 @@ for(int k=0; k<M.n_gauss; k++){
 			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j]+M.lambda_var_amp*(image_amp[i][j]-mean_amp[k]);
 			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j]+M.lambda_var_mu*(image_mu[i][j]-mean_mu[k]);
 			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-mean_sig[k]);
+
+			g[n_beta-M.n_gauss+k]+=M.lambda_var_sig*(b_params[k]-image_sig[i][j]);
 		}
 	}
 
 }
+
+std::cout<< "pas d'erreur dernière partie? " <<std::endl;
 
 //std::cout<< "avant g_3D" <<std::endl;
 
@@ -2028,10 +2212,13 @@ for(int k=0; k<M.n_gauss; k++){
 			}
 		}//deriv 3*M.n_gauss y x
 	}
+
+
 	double temps2_conv = omp_get_wtime();
 
 	temps1_ravel = omp_get_wtime();
 	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
+
 	temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
 
@@ -2042,10 +2229,13 @@ for(int k=0; k<M.n_gauss; k++){
 
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 
-free(deriv);
-free(residual);
-free(std_map_);
-//std::cout<< "fin f_g_cube_cuda_L2" <<std::endl;
+
+	free(deriv);
+	free(std_map_);
+	free(residual);
+
+
+std::cout<< "fin f_g_cube_cuda_L2" <<std::endl;
 
 }
 
@@ -2346,8 +2536,8 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
@@ -2718,8 +2908,8 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
@@ -2744,6 +2934,168 @@ for(int k=0; k<M.n_gauss; k++){
 		for(int i=0; i<indice_y; i++){
 			for(int j=0; j<indice_x; j++){
 				g_3D[l][i][j] = deriv[l][i][j] + dR_over_dB[l][i][j];
+			}
+		}//deriv 3*M.n_gauss y x
+	}
+	double temps2_conv = omp_get_wtime();
+
+	temps1_ravel = omp_get_wtime();
+	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
+	temps2_ravel = omp_get_wtime();
+	temps_ravel+=temps2_ravel-temps1_ravel;
+
+	temps_conv+= temps2_conv - temps1_conv;
+	temps_deriv+= temps2_deriv - temps1_deriv;
+	temps_tableaux += temps2_tableaux - temps1_tableaux;
+	temps_ravel+=temps2_ravel-temps1_ravel;
+
+	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
+
+}
+
+void algo_rohsa::f_g_cube_omp_without_regul(model &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig) 
+{
+
+//std::cout<<"Début f_g_cube_test"<<std::endl;
+
+std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+//°
+//décommenter en bas
+std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_bis(indice_v,std::vector<std::vector<std::vector<double>>>( indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.))));
+std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+//std::vector<std::vector<std::vector<double>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+//dF_over_dB[v][y][x][M.n__gauss]
+//deriv[gauss][y][x]
+std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
+
+std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<double>>> params_T(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
+std::vector<double> b_params(M.n_gauss,0.);
+
+std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+
+int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
+
+int i,k,j,l,p;
+
+for(int i = 0; i< n; i++){
+	g[i]=0.;
+}
+f=0.;
+
+double temps1_ravel = omp_get_wtime();
+
+//extracting one params_T for the gradient and another for calculations below
+// WARNING
+unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+
+unravel_3D_T(beta, params_T,  3*M.n_gauss, indice_x,indice_y);
+
+int N_x = indice_x;
+int N_y = indice_y;
+int N_z = 3*M.n_gauss;
+
+/*
+std::cout<<"1 : "<<params_T[indice_y-1][indice_x-1][3*M.n_gauss-1]<<std::endl;
+
+std::cout<<"2 : "<<params[3*M.n_gauss-1][0][1]<<std::endl;
+std::cout<<"1 : "<<params_T[0][1][3*M.n_gauss-1]<<std::endl;
+*/
+//exit(0);
+double temps2_ravel = omp_get_wtime();
+temps_ravel+=temps2_ravel-temps1_ravel;
+
+double temps1_tableaux = omp_get_wtime();
+for(j=0; j<indice_x; j++){
+	for(i=0; i<indice_y; i++){
+		std::vector<double> residual_1D(indice_v,0.);
+		std::vector<double> params_flat(params.size(),0.);
+		std::vector<double> cube_flat(cube[0][0].size(),0.);
+		for (p=0;p<params_flat.size();p++){
+			params_flat[p]=params[p][i][j];
+		}
+		for (p=0;p<cube_flat.size();p++){
+			cube_flat[p]=cube[i][j][p];
+		}
+		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+		for (p=0;p<residual_1D.size();p++){
+			residual[j][i][p]=residual_1D[p];
+		}
+		if(std_map[i][j]>0.){
+			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
+		}
+	}
+
+//}
+}
+
+double temps2_tableaux = omp_get_wtime();
+
+double temps1_dF_dB = omp_get_wtime();
+
+
+// v y x 3*i+.
+//std::cout<<"DEBUG 1"<<std::endl;
+#pragma omp parallel private(k,l,j) shared(dF_over_dB_bis,params_T,M,indice_v,indice_y,indice_x)
+{
+#pragma omp for
+for(int k=0; k<indice_v; k++){
+	for(int l=0; l<indice_y; l++){
+		for(int j=0; j<indice_x; j++){
+			for(int i=0; i<M.n_gauss; i++){
+				//ojqpsfdijpsqojdfpoidspoidfpojqspodij sdjfpjqspodfijiopqs jdpofijojfoiq sdoipf oqisdhfophjqsopidf opis dofi poqs dfop qspoidf jopiqjsdopif jopqisd fop Âsopid fpoij qsdf
+				double par0 = params_T[l][j][3*i+0];
+				double par1 = double(k+1) - params_T[l][j][3*i+1];
+				double par2 = params_T[l][j][3*i+2];
+
+//				double par1_k = double(k+1) - par1;
+				double par2_pow = 1/(2*pow(par2,2.));
+//dF_over_dB[v][y][x][M.n__gauss]
+				dF_over_dB_bis[k][l][j][3*i+0] = exp( -pow( par1 ,2.)*par2_pow );//( -pow( par1_k ,2.)*par2_pow );
+				dF_over_dB_bis[k][l][j][3*i+1] = par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ); //par0*par1_k*par2_pow*2 * exp(-pow( par1_k,2.)*par2_pow );
+				dF_over_dB_bis[k][l][j][3*i+2] = par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow );//par0*pow( par1_k, 2.)/(pow(par2,3.)) * exp(-pow( par1_k,2.)*par2_pow );
+//				std::cout<<"par0 = "<<par0<<std::endl;
+			}
+		}
+	}
+}
+}
+
+double temps2_dF_dB = omp_get_wtime();
+
+double temps1_deriv = omp_get_wtime();
+
+	for(j=0; j<indice_x; j++){
+		for(i=0; i<indice_y; i++){
+			for(k=0; k<indice_v; k++){
+				for(l=0; l<3*M.n_gauss; l++){
+				if(std_map[i][j]>0.){
+					deriv[l][i][j]+=  dF_over_dB_bis[k][i][j][l]*residual[j][i][k]/pow(std_map[i][j],2);
+					}
+				}
+			}
+		}
+	}
+
+
+
+double temps2_deriv = omp_get_wtime();
+
+double temps1_conv = omp_get_wtime();
+
+	for(int l=0; l<3*M.n_gauss; l++){
+		for(int i=0; i<indice_y; i++){
+			for(int j=0; j<indice_x; j++){
+				g_3D[l][i][j] = deriv[l][i][j];
 			}
 		}//deriv 3*M.n_gauss y x
 	}
@@ -2974,8 +3326,8 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
@@ -3254,8 +3606,8 @@ for(int k=0; k<M.n_gauss; k++){
 	}
 
 	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_amp, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 
 	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
 	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
@@ -3408,7 +3760,7 @@ L111:
     /*     This is the call to the L-BFGS-B code. */
 //    std::cout<<" Début appel BFGS "<<std::endl;
 
-//std::cout<< "AVANT SETULB" <<std::endl;
+std::cout<< "AVANT SETULB" <<std::endl;
 
     setulb(&n, &m, x, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
             &M.iprint, csave, lsave, isave, dsave);
@@ -3420,20 +3772,29 @@ L111:
 
 //std::cout<< "pas d'erreur " <<std::endl;
 
+	std::cout<< "AVANT F_G_CUBE" <<std::endl;
 
 //µ
-//°
 //either f_g_cube or f_g_cube_vector or f_g_cube_test
 //	f_g_cube_omp(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-	f_g_cube_cuda_L(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_cuda_L(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_old_archive(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 
+	f_g_cube_vector(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // OK
 //	f_g_cube_cuda_L_2(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+
+//	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); //OK
+//	f_g_cube_fast_without_regul(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); 
 //	f_g_cube_sep(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 //	f_g_cube_test(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 //	f_g_cube_naive(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-
-//std::cout<< "pas d'erreur ? " <<std::endl;
+std::cout<< "Après gradient " <<std::endl;
+   for(int p; p<4; p++)
+     {
+	std::cout<< " -> "<<g[p] <<std::endl;
+	 }
+	std::cout<< " f = "<<f <<std::endl;
+std::cout<< "pas d'erreur ? " <<std::endl;
 
 //usual gradient with vectors
 //	f_g_cube_vector(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
@@ -3896,12 +4257,14 @@ void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<doubl
 
 }
 
-void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k)
+void algo_rohsa::convolution_2D_mirror(const model &M, const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k)
 {
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
 
-	std::vector <std::vector<double>> ext_conv(dim_x+4, std::vector<double>(dim_y+4));
-	std::vector <std::vector<double>> extended(dim_x+4, std::vector<double>(dim_y+4));
+	std::vector <std::vector<double>> ext_conv(dim_y+4, std::vector<double>(dim_x+4,0.));
+	std::vector <std::vector<double>> extended(dim_y+4, std::vector<double>(dim_x+4,0.));
+
+	std::cout<< "pas d'erreur conv ? 1 " <<std::endl;
 
 	for(int j(0); j<dim_x; j++)
 	{
@@ -3911,6 +4274,8 @@ void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>
 		}
 	}
 
+	std::cout<< "pas d'erreur conv ? 2" <<std::endl;
+
 	for(int j(0); j<2; j++)
 	{
 		for(int i(0); i<dim_y; i++)
@@ -3918,6 +4283,8 @@ void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>
 			extended[2+i][j] = image[i][j];
 		}
 	}
+
+	std::cout<< "pas d'erreur conv ? 3 " <<std::endl;
 
 	for(int i(0); i<2; i++)
 	{
@@ -3927,13 +4294,21 @@ void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>
 		}
 	}
 
-	for(int j(dim_x); j<dim_x+2; j++)
+	std::cout<< "pas d'erreur conv ? 4 " <<std::endl;
+
+	for(int j=dim_x; j<dim_x+2; j++)
 	{
-		for(int i(0); i<dim_y; i++)
+		for(int i=0; i<dim_y; i++)
 		{
 			extended[2+i][2+j]=image[i][j-2];
 		}
 	}
+
+	std::cout<< "pas d'erreur conv ? 5 " <<std::endl;
+
+	std::cout << "dim_x = " << dim_x << " , " << "dim_y = " << dim_y << std::endl;
+	std::cout << "extended.size() : " << extended.size() << " , " << extended[0].size() <<  std::endl;
+	std::cout << "image.size() : " << image.size() << " , " << image[0].size() << std::endl;
 
 	for(int j(0); j<dim_x; j++)
 	{
@@ -3944,6 +4319,8 @@ void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>
 	}
 	kCenterY = dim_k/2+1;
 	kCenterX = kCenterY;
+
+	std::cout<< "pas d'erreur conv ? 6" <<std::endl;
 
 
 	for(int j(1);j<=dim_x+4;j++)
@@ -3970,6 +4347,8 @@ void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>
 		}
 	}
 
+	std::cout<< "pas d'erreur conv ? 7 " <<std::endl;
+
 	for(int j(0);j<dim_x;j++)
 	{
 		for(int i(0); i<dim_y; i++)
@@ -3978,6 +4357,7 @@ void algo_rohsa::convolution_2D_mirror(model &M, std::vector<std::vector<double>
 		}
 	}
 
+	std::cout<< "pas d'erreur conv ? 8 " <<std::endl;
 }
 
 // // L'ordre x,y,lambda est celui du code fortran : lambda,y,x      pk?
@@ -4046,9 +4426,6 @@ void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &c
 
 	std::cout << "avant cube[0][0][0] " <<  std::endl;
 
-	std::cout << "cube[0][0][0] : " << cube_3D[0][0][0] <<  std::endl;
-
-	std::cout << "avant cube[v][y][x] " <<  std::endl;
 
 /*
     for(int k(0); k<dim_x; k++)
@@ -4078,7 +4455,7 @@ void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &c
 		}
     }
 
-
+	std::cout << "avant cube[v][y][x] " <<  std::endl;
 }
 
 void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube, double vector[], int dim_v, int dim_y, int dim_x)
@@ -4428,5 +4805,8 @@ void algo_rohsa::max_spectrum_norm(int dim_x, int dim_y, int dim_v, double norm_
 }
 
 
-//bas de page
 
+
+void algo_rohsa::descente_sans_regu(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
+	
+}

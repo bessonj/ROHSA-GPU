@@ -61,13 +61,10 @@ int main()
         std::cout<<"Temps total (hors enregistrement): "<<temps2 - temps1 <<std::endl;
 
 
-		int i_max = 5;
-		int j_max = 5;
-
-		for(int i=0;i<i_max;i++){
-			for(int j=0;j<j_max;j++){
+		for(int i=0;i<std::min(Hypercube_file.data[0].size(),Hypercube_file.data.size());i++){
+			for(int j=0;j<std::min(Hypercube_file.data[0].size(),Hypercube_file.data.size());j++){
 				if(i==j){
-		Hypercube_file.plot_line(modeles_parametres.fit_params, i, j, modeles_parametres.n_gauss);
+		Hypercube_file.plot_line(modeles_parametres.grid_params, i, j, modeles_parametres.n_gauss);
 			}
 			}
 		}
@@ -78,12 +75,63 @@ int main()
 		for(int p = 0; p<modeles_parametres.slice_index_max-modeles_parametres.slice_index_min-1; p++){
 			Hypercube_file.display_result_and_data(modeles_parametres.grid_params, p, modeles_parametres.n_gauss, false); //affiche cote à cote les données et le modèle
 		}
-/*	for(int p = 0; p<modeles_parametres.slice_index_max-modeles_parametres.slice_index_min-1; p++){
-		Hypercube_file.display_result_and_data(modeles_parametres.grid_params, p, modeles_parametres.n_gauss); //affiche cote à cote les données et le modèle
+
+/*
+	for(int p = 40; p<70; p++){
+		Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params, p, 0*3+1, 0, 1);
 	}
 */
+		for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
+			for (int num_par = 0; num_par < 3; num_par++)
+			{
+				Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params, num_gauss, num_par , num_par+num_gauss*3);
+			}
+		}
+exit(0);
+//
 
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,0,0 , 1);
+	for(int p = 0; p<99; p++){
+
+		for (int num_par = 0; num_par < 3; num_par++)
+			{
+			for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++)
+				{
+				for(int num_gauss_cur = 0; num_gauss_cur < modeles_parametres.n_gauss; num_gauss_cur ++)
+					{
+					if(num_gauss!=num_gauss_cur){
+						Hypercube_file.display_2_gaussiennes_par_par_par(modeles_parametres.grid_params, p, num_gauss*3+num_par, 3*num_gauss+num_par, 3*num_gauss_cur+num_par);
+					}
+				}
+			}
+		}
+	}
+		exit(0);
+//for(int deuxieme_gauss=0; deuxieme_gauss<)
+	for(int p = 0; p<Hypercube_file.cube[0][0].size(); p++){
+		for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
+			for (int num_par = 0; num_par < 3; num_par++)
+			{
+				Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params, p, num_gauss*3+num_par, 0, 1);
+			}
+		}
+
+		for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
+			for (int num_par = 0; num_par < 3; num_par++)
+			{
+				Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params,p , num_gauss*3+num_par, 1, 2);
+			}
+		}
+
+			for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
+			for (int num_par = 0; num_par < 3; num_par++)
+			{
+				Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params, p, num_gauss*3+num_par, 0, 2);
+			}
+		}
+	}
+//		Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params, p, p, 0,2); //affiche cote à cote les données et le modèle
+
+/*
 	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,0,1 , 2);
 	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,0,2 , 3);
 	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,1,0 , 4);
@@ -92,7 +140,7 @@ int main()
 	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,2,0 , 7);
 	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,2,1 , 8);
 	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,2,2 , 9);
-
+*/
 	}
 
 	if(modeles_parametres.file_type_dat){
@@ -154,6 +202,8 @@ int main()
 	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,2,2 , 9);
 
 		}
+
+
 
 
 	}

@@ -658,22 +658,10 @@ void hypercube::display_result_and_data(std::vector<std::vector<std::vector<doub
 
 	for(int i=0;i<this->dim_data[0];i++){
 		for(int j=0;j<this->dim_data[1];j++){
-			z_model[(i+offset_1)*this->dim_cube[1]+j+offset_0] = model[j][i];//this->cube[i][j][rang];
+			z_model[(i+offset_1)*this->dim_cube[1]+j+offset_0] = model[i][j];//this->cube[i][j][rang];
 		}
 	}
 
-//Original bit
-/*
-	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
-
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_model[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
-		}
-	}
-*/
-
-//std::cout<< "milieu de la fonction affichage"<<std::endl;
 
 
 	std::vector<float> z_cube(this->dim_cube[0]*this->dim_cube[1],0.);
@@ -716,6 +704,249 @@ void hypercube::display_result_and_data(std::vector<std::vector<std::vector<doub
 
 }
 
+
+void hypercube::display_2_gaussiennes(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, int n1, int n2)
+{
+/*
+	std::vector<std::vector<double>> model(this->dim_cube[0],std::vector<double>(this->dim_cube[1],0.));
+
+	for(int p(0); p<this->dim_cube[0]; p++) {
+		for(int j(0); j<this->dim_cube[1]; j++) {
+		model[p][j]+= model_function(rang+1, params[3*0][j][p], params[1+3*0][j][p], params[2+3*0][j][p]) + model_function(rang+1, params[3*1][j][p], params[1+3*1][j][p], params[2+3*1][j][p]);
+		}
+	}
+
+	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
+
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_model[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
+		}
+	}
+*/
+
+	std::vector<std::vector<double>> model_premiere_gaussienne(this->dim_data[0],std::vector<double>(this->dim_data[1],0.));
+	for(int p(0); p<this->dim_data[0]; p++) {
+		for(int j(0); j<this->dim_data[1]; j++) {
+		model_premiere_gaussienne[p][j]+= model_function(rang+1, params[3*n1][j][p], params[1+3*n1][j][p], params[2+3*n1][j][p]);
+		}
+	}
+
+	std::vector<std::vector<double>> model_deuxieme_gaussienne(this->dim_data[0],std::vector<double>(this->dim_data[1],0.));
+	for(int p(0); p<this->dim_data[0]; p++) {
+		for(int j(0); j<this->dim_data[1]; j++) {
+		model_deuxieme_gaussienne[p][j]+= model_function(rang+1, params[3*n2][j][p], params[1+3*n2][j][p], params[2+3*n2][j][p]);// + model_function(rang+1, params[3*n3][j][p], params[1+3*n3][j][p], params[2+3*n3][j][p]);
+		}
+	}
+
+	std::vector<float> z_model_premiere_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_model_premiere_gaussienne[i*this->dim_data[1]+j] = model_premiere_gaussienne[i][j];//this->cube[i][j][rang];
+		}
+	}
+
+	std::vector<float> z_model_deuxieme_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_model_deuxieme_gaussienne[i*this->dim_data[1]+j] = model_deuxieme_gaussienne[i][j];//this->cube[i][j][rang];
+		}
+	}
+	// max_val = *std::max_element(z_model_deuxieme_gaussienne.begin(), z_model_deuxieme_gaussienne.end());
+
+	std::vector<float> z_model(this->dim_data[0]*this->dim_data[1],0.);
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_model[i*this->dim_data[1]+j] = z_model_premiere_gaussienne[i*this->dim_data[1]+j] + z_model_deuxieme_gaussienne[i*this->dim_data[1]+j];//this->cube[i][j][rang];
+		}
+	}
+
+//	z_model_premiere_gaussienne[0]=max_val;
+/*
+	std::vector<float> z_gauss_1(this->dim_cube[0]*this->dim_cube[1],0.);
+	std::vector<float> z_gauss_2(this->dim_cube[0]*this->dim_cube[1],0.);
+
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
+		}
+	}
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
+		}
+	}
+*/
+	const float* zptr_model = &(z_model[0]);
+	const float* zptr_gauss_1 = &(z_model_premiere_gaussienne[0]);
+	const float* zptr_gauss_2 = &(z_model_deuxieme_gaussienne[0]);
+
+	const int colors = 1;
+
+	std::string s = std::to_string(rang);
+	char const *pchar = s.c_str();
+	std::string s1 = std::to_string(n1);
+	char const *pchar_1 = s1.c_str();
+	std::string s2 = std::to_string(n2);
+	char const *pchar_2 = s2.c_str();
+	std::string s3 = std::to_string(n_gauss_i);
+	char const *pchar_3 = s3.c_str();
+
+	char str[220];
+	strcpy (str,"decomp_two_gauss_");
+	strcat (str,pchar);
+	strcat (str,"_n1_");
+	strcat (str,pchar_1);
+	strcat (str,"_n2_");
+	strcat (str,pchar_2);
+	strcat (str,"_number_");
+	strcat (str,pchar_3);
+	strcat (str,".png");
+	puts (str);
+
+
+	plt::clf();
+//	std::cout<<" DEBUG "<<std::endl;
+//	plt::title();
+
+//	plt::suptitle("Données                      Modèle");
+
+	plt::subplot(3, 1, 1);
+		plt::imshow(zptr_model, this->dim_data[0], this->dim_data[1], colors);
+//			plt::title("Modèle");
+	plt::subplot(3, 1, 2);
+		plt::imshow(zptr_gauss_1, this->dim_data[0], this->dim_data[1], colors);
+
+	plt::subplot(3, 1, 3);
+		plt::imshow(zptr_gauss_2, this->dim_data[0], this->dim_data[1], colors);
+
+//			plt::title("Cube hyperspectral");
+	plt::save(str);
+//	plt::show();
+	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
+}
+
+void hypercube::display_2_gaussiennes_par_par_par(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, int n1, int n2)
+{
+/*
+	std::vector<std::vector<double>> model(this->dim_cube[0],std::vector<double>(this->dim_cube[1],0.));
+
+	for(int p(0); p<this->dim_cube[0]; p++) {
+		for(int j(0); j<this->dim_cube[1]; j++) {
+		model[p][j]+= model_function(rang+1, params[3*0][j][p], params[1+3*0][j][p], params[2+3*0][j][p]) + model_function(rang+1, params[3*1][j][p], params[1+3*1][j][p], params[2+3*1][j][p]);
+		}
+	}
+
+	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
+
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_model[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
+		}
+	}
+*/
+
+	std::vector<std::vector<double>> model_premiere_gaussienne(this->dim_data[0],std::vector<double>(this->dim_data[1],0.));
+	for(int p(0); p<this->dim_data[0]; p++) {
+		for(int j(0); j<this->dim_data[1]; j++) {
+		model_premiere_gaussienne[p][j]+= model_function(rang+1, params[n1][j][p], params[n1][j][p], params[n1][j][p]);
+		}
+	}
+
+	std::vector<std::vector<double>> model_deuxieme_gaussienne(this->dim_data[0],std::vector<double>(this->dim_data[1],0.));
+	for(int p(0); p<this->dim_data[0]; p++) {
+		for(int j(0); j<this->dim_data[1]; j++) {
+		model_deuxieme_gaussienne[p][j]+= model_function(rang+1, params[n2][j][p], params[n2][j][p], params[n2][j][p]);// + model_function(rang+1, params[3*n3][j][p], params[1+3*n3][j][p], params[2+3*n3][j][p]);
+		}
+	}
+
+	std::vector<float> z_model_premiere_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_model_premiere_gaussienne[i*this->dim_data[1]+j] = model_premiere_gaussienne[i][j];//this->cube[i][j][rang];
+		}
+	}
+
+	std::vector<float> z_model_deuxieme_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_model_deuxieme_gaussienne[i*this->dim_data[1]+j] = model_deuxieme_gaussienne[i][j];//this->cube[i][j][rang];
+		}
+	}
+	// max_val = *std::max_element(z_model_deuxieme_gaussienne.begin(), z_model_deuxieme_gaussienne.end());
+
+	std::vector<float> z_model(this->dim_data[0]*this->dim_data[1],0.);
+	for(int i=0;i<this->dim_data[0];i++){
+		for(int j=0;j<this->dim_data[1];j++){
+			z_model[i*this->dim_data[1]+j] = z_model_premiere_gaussienne[i*this->dim_data[1]+j] + z_model_deuxieme_gaussienne[i*this->dim_data[1]+j];//this->cube[i][j][rang];
+		}
+	}
+
+//	z_model_premiere_gaussienne[0]=max_val;
+/*
+	std::vector<float> z_gauss_1(this->dim_cube[0]*this->dim_cube[1],0.);
+	std::vector<float> z_gauss_2(this->dim_cube[0]*this->dim_cube[1],0.);
+
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
+		}
+	}
+	for(int i=0;i<this->dim_cube[0];i++){
+		for(int j=0;j<this->dim_cube[1];j++){
+			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
+		}
+	}
+*/
+	const float* zptr_model = &(z_model[0]);
+	const float* zptr_gauss_1 = &(z_model_premiere_gaussienne[0]);
+	const float* zptr_gauss_2 = &(z_model_deuxieme_gaussienne[0]);
+
+	const int colors = 1;
+
+	std::string s = std::to_string(rang);
+	char const *pchar = s.c_str();
+	std::string s1 = std::to_string(n1);
+	char const *pchar_1 = s1.c_str();
+	std::string s2 = std::to_string(n2);
+	char const *pchar_2 = s2.c_str();
+	std::string s3 = std::to_string(n_gauss_i);
+	char const *pchar_3 = s3.c_str();
+
+	char str[220];
+	strcpy (str,"par_par_par_decomp_two_gauss_");
+	strcat (str,pchar);
+	strcat (str,"_n1_");
+	strcat (str,pchar_1);
+	strcat (str,"_n2_");
+	strcat (str,pchar_2);
+	strcat (str,"_number_");
+	strcat (str,pchar_3);
+	strcat (str,".png");
+	puts (str);
+
+
+	plt::clf();
+//	std::cout<<" DEBUG "<<std::endl;
+//	plt::title();
+
+//	plt::suptitle("Données                      Modèle");
+
+	plt::subplot(3, 1, 1);
+		plt::imshow(zptr_model, this->dim_data[0], this->dim_data[1], colors);
+//			plt::title("Modèle");
+	plt::subplot(3, 1, 2);
+		plt::imshow(zptr_gauss_1, this->dim_data[0], this->dim_data[1], colors);
+
+	plt::subplot(3, 1, 3);
+		plt::imshow(zptr_gauss_2, this->dim_data[0], this->dim_data[1], colors);
+
+//			plt::title("Cube hyperspectral");
+	plt::save(str);
+//	plt::show();
+	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
+}
+
 void hypercube::display_avec_et_sans_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par,int plot_numero)
 {
 
@@ -735,7 +966,7 @@ void hypercube::display_avec_et_sans_regu(std::vector<std::vector<std::vector<do
 
 
 	char str[220];
-	strcpy (str,"essai plot param numero ");
+	strcpy (str,"essai_plot_param_numero_");
 	strcat (str,pchar);
 	strcat (str,".png");
 	puts (str);
@@ -753,7 +984,7 @@ void hypercube::display_avec_et_sans_regu(std::vector<std::vector<std::vector<do
 */
 //			plt::title("Modèle");
 //	plt::subplot(1, 2, 1);
-	plt::imshow(zptr_cube, this->dim_cube[0], this->dim_cube[1], colors);
+	plt::imshow(zptr_cube, this->dim_data[0], this->dim_data[1], colors);
 //			plt::title("Cube hyperspectral");
 	plt::save(str);
 //	plt::show();
