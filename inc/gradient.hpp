@@ -1,6 +1,6 @@
-#define BLOCK_SIZE_X 4
-#define BLOCK_SIZE_Y 4
-#define BLOCK_SIZE_Z 4
+#define BLOCK_SIZE_X 8
+#define BLOCK_SIZE_Y 8
+#define BLOCK_SIZE_Z 8
 
 //#define N 256
 #include "model.hpp"

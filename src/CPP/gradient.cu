@@ -75,76 +75,53 @@ void gradient_L_2(double* deriv, int* taille_deriv, int product_taille_deriv, do
 //    cuda_hello<<<1,1>>>();
 //  test();
 
-   printf("test1\n");
-
    double* params_dev = NULL;
    double* deriv_dev = NULL;
    double* residual_dev = NULL;
    double* std_map_dev = NULL;
 
-printf("test1.04 \n");
    int* taille_params_dev = NULL;
    int* taille_deriv_dev = NULL;
    int* taille_residual_dev = NULL;
    int* taille_std_map_dev = NULL;
 
-printf("test1.5 \n");
-printf("taille = %d \n",product_taille_deriv);
    checkCudaErrors(cudaMalloc(&deriv_dev, product_taille_deriv*sizeof(double)));
-printf("test1.6 \n");
-printf("taille = %d \n",product_residual);
    checkCudaErrors(cudaMalloc(&residual_dev, product_residual*sizeof(double)));
-printf("test1.7 \n");
-printf("taille = %d \n",product_taille_params);
    checkCudaErrors(cudaMalloc(&params_dev, product_taille_params*sizeof(double)));
-printf("test1.8 \n");
-printf("taille = %d \n",product_std_map); //problème juste après
    checkCudaErrors(cudaMalloc(&std_map_dev, product_std_map*sizeof(double)));
-printf("test1.9 \n");
+
    checkCudaErrors(cudaMalloc(&taille_deriv_dev, 3*sizeof(int)));
-printf("test1.10 \n");
    checkCudaErrors(cudaMalloc(&taille_params_dev, 3*sizeof(int)));
-printf("test1.11 \n");
    checkCudaErrors(cudaMalloc(&taille_std_map_dev, 2*sizeof(int)));
-printf("test1.12 \n");
    checkCudaErrors(cudaMalloc(&taille_residual_dev, 3*sizeof(int)));
-printf("test2 \n");
-    checkCudaErrors(cudaMemcpy(deriv_dev, deriv, product_taille_deriv*sizeof(double), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(residual_dev, residual, product_residual*sizeof(double), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(params_dev, params, product_taille_params*sizeof(double), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_std_map*sizeof(double), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(taille_deriv_dev, taille_deriv, 3*sizeof(int), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(taille_params_dev, taille_params, 3*sizeof(int), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(taille_std_map_dev, taille_std_map,2*sizeof(int), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
-
-printf("test3 \n");
-//   cudaMalloc((void**)&dF_over_dB_dev, product_taille_dF_over_dB*sizeof(double));
-
-//   cudaMemcpy(dF_over_dB_dev, dF_over_dB, product_taille_dF_over_dB*sizeof(double), cudaMemcpyHostToDevice);
+   
+   checkCudaErrors(cudaMemcpy(deriv_dev, deriv, product_taille_deriv*sizeof(double), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaMemcpy(residual_dev, residual, product_residual*sizeof(double), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaMemcpy(params_dev, params, product_taille_params*sizeof(double), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_std_map*sizeof(double), cudaMemcpyHostToDevice));
+   
+   checkCudaErrors(cudaMemcpy(taille_deriv_dev, taille_deriv, 3*sizeof(int), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaMemcpy(taille_params_dev, taille_params, 3*sizeof(int), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaMemcpy(taille_std_map_dev, taille_std_map,2*sizeof(int), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
 
    dim3 Dg, Db;
-
     Db.x = BLOCK_SIZE_X; //gaussiennes
-    Db.y = BLOCK_SIZE_Y; //x
-    Db.z = BLOCK_SIZE_Z; //y
-printf("test4 \n");
-
-        //dF_over_dB --> (v,y,x,ng)  --> (i,z,y,x)
-        //params     --> (y,x,ng)
+    Db.y = BLOCK_SIZE_Y; //y
+    Db.z = BLOCK_SIZE_Z; //x
+        //deriv      --> (3g,y,x)  --> (x,y,z)
+        //params     --> (y,x,3g)  --> (y,z,x)
     Dg.x = ceil(n_gauss/double(BLOCK_SIZE_X));
-    Dg.y = ceil(taille_deriv[2]/double(BLOCK_SIZE_Y));
-    Dg.z = ceil(taille_deriv[1]/double(BLOCK_SIZE_Z));
+    Dg.y = ceil(taille_deriv[1]/double(BLOCK_SIZE_Y));
+    Dg.z = ceil(taille_deriv[2]/double(BLOCK_SIZE_Z));
 
-printf("test5 \n");
 //    printf("Dg = %d, %d, %d ; Db = %d, %d, %d\n",Dg.x,Dg.y,Dg.z,Db.x,Db.y,Db.z);
 ///    printf("taille_dF_over_dB = %d, %d, %d\n",taille_dF_over_dB[0],taille_dF_over_dB[1],taille_dF_over_dB[2]);
 
   gradient_kernel_2<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
 
-
-printf("test6 \n");
   checkCudaErrors(cudaMemcpy(deriv, deriv_dev, product_taille_deriv*sizeof(double), cudaMemcpyDeviceToHost));
+
   checkCudaErrors(cudaFree(deriv_dev));
   checkCudaErrors(cudaFree(taille_deriv_dev));
   checkCudaErrors(cudaFree(params_dev));
@@ -153,8 +130,5 @@ printf("test6 \n");
   checkCudaErrors(cudaFree(taille_std_map_dev));
   checkCudaErrors(cudaFree(residual_dev));
   checkCudaErrors(cudaFree(taille_residual_dev));
-printf("test10 \n");
-
-
  
    }
