@@ -1946,7 +1946,7 @@ int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
 int i,k,j,l,p;
 
-printf("n = %d \n",n);
+//printf("n = %d \n",n);
 
 for(int i = 0; i< n; i++){
 	g[i]=0.;
@@ -2210,7 +2210,7 @@ for(int k=0; k<M.n_gauss; k++){
 	free(residual);
 	free(params_flat);
 
-std::cout<< "fin f_g_cube_cuda_L2" <<std::endl;
+//std::cout<< "fin f_g_cube_cuda_L2" <<std::endl;
 
 }
 

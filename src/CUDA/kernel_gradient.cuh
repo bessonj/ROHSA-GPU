@@ -224,7 +224,7 @@ __syncthreads();
 			buffer_2 += par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow ) * residual[index_z*tr1*tr2+index_y*tr2+i]*parstd;
 		}
 
-		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
+//		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
 //		printf(" buffer_0 = %f \n", buffer_0);
 
 //		printf(" buffer_0 = %f ,  buffer_1 = %f ,  buffer_2 = %f \n", buffer_0, buffer_1, buffer_2);// = %d , index_z = %d\n",index_x,index_y,index_z);
