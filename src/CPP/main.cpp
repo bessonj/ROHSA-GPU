@@ -87,10 +87,12 @@ int main()
 				Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params, num_gauss, num_par , num_par+num_gauss*3);
 			}
 		}
+		Hypercube_file.mean_parameters(modeles_parametres.grid_params, modeles_parametres.n_gauss);
+
 exit(0);
 //
 
-	for(int p = 0; p<99; p++){
+	for(int p = 0; p<modeles_parametres.slice_index_max-modeles_parametres.slice_index_min-1; p++){
 
 		for (int num_par = 0; num_par < 3; num_par++)
 			{

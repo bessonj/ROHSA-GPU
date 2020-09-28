@@ -946,7 +946,24 @@ void hypercube::display_2_gaussiennes_par_par_par(std::vector<std::vector<std::v
 //	plt::show();
 	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
 }
+void hypercube::mean_parameters(std::vector<std::vector<std::vector<double>>> &params, int num_gauss)
+{
 
+	for(int p=0; p<3*num_gauss;p++){
+		double mean = 0.;
+
+		for(int i=0;i<this->dim_data[0];i++){
+			for(int j=0;j<this->dim_data[1];j++){
+				mean += params[p][j][i];
+			}
+		}
+		mean = mean/(this->dim_data[0]*this->dim_data[1]);
+
+		printf("Paramètre n°%d, moyenne = %f \n", p, mean);
+	}
+
+
+}
 void hypercube::display_avec_et_sans_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par,int plot_numero)
 {
 

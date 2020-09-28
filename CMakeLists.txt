@@ -26,7 +26,7 @@ endif()
 
 #find_package(CCFits REQUIRED)
 include_directories("/opt/include")
-set(LIBS ${LIBS}  cfitsio CCfits BFGS)
+set(LIBS ${LIBS} cfitsio CCfits BFGS)
 
 
 add_library(BFGS ${CPP_FILES_BFGS})
@@ -35,8 +35,8 @@ add_library(BFGS ${CPP_FILES_BFGS})
 add_executable(ROHSA-GPU ${CPP_FILES} ${CU_FILES})
 
 set_target_properties(ROHSA-GPU PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_compile_features(ROHSA-GPU PUBLIC cxx_std_11)
-target_compile_options(ROHSA-GPU PUBLIC) #-O3  -funroll-loops) #-std=c++11)
+target_compile_features(ROHSA-GPU PUBLIC cxx_std_14)
+target_compile_options(ROHSA-GPU PUBLIC) #-O3  -funroll-loops) #-std=c++14)
 
 
 target_include_directories(ROHSA-GPU PUBLIC /usr/include/python2.7/ "${HEADER_REP}")

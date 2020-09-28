@@ -32,7 +32,7 @@ class hypercube
 	void display_avec_et_sans_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par, int plot_numero);
 	void display_2_gaussiennes(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, int n1, int n2);
 	void display_2_gaussiennes_par_par_par(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, int n1, int n2);
-
+	void mean_parameters(std::vector<std::vector<std::vector<double>>> &params, int num_gauss);
 
 
 
@@ -61,6 +61,7 @@ class hypercube
 	std::vector<std::vector<std::vector<double>>> cube; //data format 2^n and width given by user (parameters.txt)
 //	std::vector<std::vector<std::vector<double>>> data_not_reshaped; //data without width given by user (parameters.txt) might blow up memory
 	std::vector<std::vector<std::vector<double>>> data; //data with width given by user (parameters.txt)
+
 	int dim_data[3];
 	int dim_cube[3];
 	std::vector<int> dim_data_v;
