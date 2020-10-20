@@ -1,10 +1,9 @@
 #ifndef DEF_ALGO_ROHSA
 #define DEF_ALGO_ROHSA
 
-#include "gradient.hpp"
 #include "../L-BFGS-B-C/src/lbfgsb.h"
 #include "hypercube.hpp"
-#include "model.hpp"
+#include "parameters.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
@@ -14,8 +13,7 @@
 #include <valarray>
 #include <CCfits/CCfits>
 #include <vector>
-
-
+#include <omp.h>
 
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 
@@ -23,13 +21,16 @@ class algo_rohsa
 {
 	public:
 
-	algo_rohsa(model &M, hypercube &Hypercube); //constructeur
+	algo_rohsa(parameters &M, hypercube &Hypercube); //constructeur
 
-	void descente(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //effectue la descente et/ou la régularisation
-	void descente_sans_regu(model &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //effectue la descente et/ou la régularisation
+	void descente(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //effectue la descente et/ou la régularisation
+	void descente_sans_regu(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //effectue la descente et/ou la régularisation
 
 //	Computationnal tools
-	void convolution_2D_mirror(const model &M, const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k); //convolution 2D
+	void convolution_2D_mirror(const parameters &M, const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k); //convolution 2D
+	void convolution_2D_mirror_flat(const parameters &M, double* image, double* &conv, int dim_y, int dim_x, int dim_k);
+	void convolution_2D_mirror_flat(const parameters &M, float* image, float* &conv, int dim_y, int dim_x, int dim_k, float temps_transfert, float temps_mirroirs);
+
 	void ravel_2D(const std::vector<std::vector<double>> &map, std::vector<double> &vector, int dim_y, int dim_x);
 	void ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube, double vector[], int dim_v, int dim_y, int dim_x);
 	void ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube, std::vector<double> &vector, int dim_v, int dim_y, int dim_x);
@@ -49,19 +50,19 @@ class algo_rohsa
 	void mean_spectrum(int dim_x, int dim_y, int dim_v);
 	void max_spectrum(int dim_x, int dim_y, int dim_v);
 	void max_spectrum_norm(int dim_x, int dim_y, int dim_v, double norm_value);
-	void init_bounds(model &M, std::vector<double> line, int n_gauss_local, std::vector<double> &lb, std::vector<double> &ub, bool _init); // Conditions aux bord du spectre
+	void init_bounds(parameters &M, std::vector<double> line, int n_gauss_local, std::vector<double> &lb, std::vector<double> &ub, bool _init); // Conditions aux bord du spectre
 
 	void mean_array(int power, std::vector<std::vector<std::vector<double>>> &mean_array_); //moyenne du tableau
 
-	void init_spectrum(model &M, std::vector<double> &line, std::vector<double> &params); 
+	void init_spectrum(parameters &M, std::vector<double> &line, std::vector<double> &params); 
 	//init spectre descente
 	double model_function(int x, double a, double m, double s); //modèle
 
 	int minloc(std::vector<double> &tab); //argmin
 
-	void minimize_spec(model &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i,std::vector<double> &ub_v, std::vector<double> &line_v); //LBFGS
+	void minimize_spec(parameters &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i,std::vector<double> &ub_v, std::vector<double> &line_v); //LBFGS
 
-	 void minimize(model &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int indice_x, int indice_y, int indice_v, double* cube_flattened);
+	 void minimize(parameters &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int indice_x, int indice_y, int indice_v, double* cube_flattened);
 
 	void myresidual(double params[], double line[], std::vector<double> &residual, int n_gauss_i);
 	void myresidual(std::vector<double> &params, std::vector<double> &line, std::vector<double> &residual, int n_gauss_i);
@@ -71,32 +72,32 @@ class algo_rohsa
 
 	void mygrad_spec(double gradient[], std::vector<double> &residual, double params[], int n_gauss_i);
 
-	void upgrade(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, int power);
+	void upgrade(parameters &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, int power);
 
 	void go_up_level(std::vector<std::vector<std::vector<double>>> &fit_params);
 
 	void set_stdmap(std::vector<std::vector<double>> &std_map, std::vector<std::vector<std::vector<double>>> &cube, int lb, int ub);
 	void set_stdmap_transpose(std::vector<std::vector<double>> &std_map, std::vector<std::vector<std::vector<double>>> &cube, int lb, int ub);
-	void update(model &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v,std::vector<double> &b_params);
+	void update(parameters &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v,std::vector<double> &b_params);
 
-	void f_g_cube_vector(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_sep(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_test(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_naive(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_fast(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_fast_without_regul(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_cuda_L(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened);
+	void f_g_cube_vector(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_old_archive(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_sep(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_test(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_naive(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_fast(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_fast_without_regul(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_cuda_L(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened);
 
 	//GPU sur les 2/3 de f_g_cube, utilise params_flat au lieu de travailler avec beta
-	void f_g_cube_cuda_L_deux_tiers(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened);
+	void f_g_cube_cuda_L_deux_tiers(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened);
 
-	void f_g_cube_cuda_L_debug(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_cuda_L_2(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-//	void f_g_cube_cuda_L_3(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_cuda_L_2_2Bverified(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_omp(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
-	void f_g_cube_omp_without_regul(model &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_cuda_L_debug(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_cuda_L_2(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+//	void f_g_cube_cuda_L_3(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_cuda_L_2_2Bverified(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_omp(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
+	void f_g_cube_omp_without_regul(parameters &M,double &f, double g[],  int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig);
 
 	void reshape_down(std::vector<std::vector<std::vector<double>>> &tab1, std::vector<std::vector<std::vector<double>>>&tab2);
 
@@ -135,6 +136,11 @@ class algo_rohsa
 	double temps_3_tot;
 	double temps_ravel;
 	double temps_tableau_update;
+	double temps_setulb;
+
+	float temps_transfert;
+	float temps_mirroirs;
+	
 
 	int n_gauss_add; //EN DISCUTER AVEC ANTOINE
 

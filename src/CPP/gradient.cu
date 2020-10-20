@@ -4,11 +4,6 @@
 #include <helper_cuda.h>
 #include <cuda.h>
 
-void test(){
-  cuda_hello<<<1,1>>>();
-}
-
-
 void gradient_L(double* dF_over_dB, int* taille_dF_over_dB, int product_taille_dF_over_dB, double* params, int* taille_params, int product_taille_params, int n_gauss)
 {
 //    cuda_hello<<<1,1>>>();
@@ -103,6 +98,8 @@ void gradient_L_2_beta(double* deriv, int* taille_deriv, int product_taille_deri
    checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
 
    dim3 Dg, Db;
+
+/*
     Db.x = BLOCK_SIZE_X; //x
     Db.y = BLOCK_SIZE_Y; //y
     Db.z = BLOCK_SIZE_Z; //gaussiennes
@@ -111,9 +108,19 @@ void gradient_L_2_beta(double* deriv, int* taille_deriv, int product_taille_deri
     Dg.x = ceil(taille_deriv[2]/double(BLOCK_SIZE_X));
     Dg.y = ceil(taille_deriv[1]/double(BLOCK_SIZE_Y));
     Dg.z = ceil(n_gauss/double(BLOCK_SIZE_Z));
+*/
+    Db.x = BLOCK_SIZE_X; //x
+    Db.y = BLOCK_SIZE_Y; //y
+    Db.z = BLOCK_SIZE_Z; //gaussiennes
+        //deriv      --> (3g,y,x)  --> (z,y,x)
+        //params     --> (3g,y,x)  --> (z,y,x)
+    Dg.x = ceil(taille_deriv[2]/double(BLOCK_SIZE_X));
+    Dg.y = ceil(taille_deriv[1]/double(BLOCK_SIZE_Y));
+    Dg.z = n_gauss;
 
 //  printf("Dg = %d, %d, %d ; Db = %d, %d, %d\n",Dg.x,Dg.y,Dg.z,Db.x,Db.y,Db.z);
-  gradient_kernel_2_beta<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
+//  gradient_kernel_2_beta<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
+  gradient_kernel_2_beta_with_INDEXING<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
 //  printf("DEBUG !!\n");
 //  printf("Dg = %d, %d, %d ; Db = %d, %d, %d\n",Dg.x,Dg.y,Dg.z,Db.x,Db.y,Db.z);
 

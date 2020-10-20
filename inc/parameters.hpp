@@ -1,5 +1,5 @@
-#ifndef DEF_MODEL
-#define DEF_MODEL
+#ifndef DEF_PARAMETERS
+#define DEF_PARAMETERS
 
 #include "../L-BFGS-B-C/src/lbfgsb.h" //needed for the integer and logical type of the minimize_spec function
 #include <iostream>
@@ -15,13 +15,13 @@
 
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 
-class model
+class parameters
 {
 	public:
 
-	model();
+	parameters();
+	parameters(std::string str);
 	void write_model_in_binary();
-
 
 	std::vector<std::vector<double>> kernel;
 	std::vector<int> dim_data; //inutile : file.dim_data

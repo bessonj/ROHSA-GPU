@@ -15,9 +15,8 @@ using namespace CCfits;
 //We assume that the cube does not require any further modification if it has been produced in a dat file through the Python program (ROHSApy?).
 //The depth, width and height of the cube are inherited from the dat file.
 //To truncate or not to truncate, that is the question.
-hypercube::hypercube(model &M, int indice_debut, int indice_fin, bool whole_data_in_cube)
+hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole_data_in_cube)
 {
-
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
 	if(M.file_type_fits){
@@ -28,7 +27,6 @@ hypercube::hypercube(model &M, int indice_debut, int indice_fin, bool whole_data
 		if(whole_data_in_cube){
 			this->nside = dim2nside();
 //			std::cout << "	nside =  " <<this->nside<< std::endl;		
-			//exit(0);
 		}
 		else{
 			this->nside = dim2nside()-1;
@@ -40,7 +38,8 @@ hypercube::hypercube(model &M, int indice_debut, int indice_fin, bool whole_data
 	}
 //	std::cout << "	DEBUG " << std::endl;
 //	std::cout<<dim_data[2]<<std::endl;
-
+//	exit(0);
+	
 	dim_cube[0] =pow(2.0,nside);
 	dim_cube[1] =pow(2.0,nside);
 	if(M.file_type_fits){
@@ -93,7 +92,7 @@ hypercube::hypercube(model &M, int indice_debut, int indice_fin, bool whole_data
 */
 }
 
-hypercube::hypercube(model &M, int indice_debut, int indice_fin)
+hypercube::hypercube(parameters &M, int indice_debut, int indice_fin)
 {
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
@@ -139,7 +138,7 @@ hypercube::hypercube(model &M, int indice_debut, int indice_fin)
 */
 }
 
-hypercube::hypercube(model &M)
+hypercube::hypercube(parameters &M)
 {
 	if(M.file_type_fits){
 		get_array_from_fits(M);
@@ -184,7 +183,7 @@ hypercube::hypercube() //dummy constructor for initialization of an hypercube ob
 
 }
 
-std::vector<std::vector<std::vector<double>>> hypercube::use_dat_file(model &M)
+std::vector<std::vector<std::vector<double>>> hypercube::use_dat_file(parameters &M)
 {
    	int x,y,z;
 	double v;
@@ -299,7 +298,7 @@ void hypercube::brute_show(const std::vector<std::vector<std::vector<double>>> &
 }
 
 // M.grid_params is written into a binary after the process in algo_rohsa
-void hypercube::write_into_binary(model &M){
+void hypercube::write_into_binary(parameters &M){
 
 	std::ofstream objetfichier;
 
@@ -356,7 +355,7 @@ int hypercube::get_binary_from_fits(){
 }
 
 
-void hypercube::get_array_from_fits(model &M){
+void hypercube::get_array_from_fits(parameters &M){
 	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
 
         PHDU& image = pInfile->pHDU();
@@ -535,9 +534,9 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
 		params_line[i]=params[i][ind_y][ind_x];
 	}
 
-	for(int i(0); i<n_gauss_i; i++) {
+	for(int i=0; i<n_gauss_i; i++) {
 		for(int k=0; k<this->dim_cube[2]; k++) {
-			model[k]+= model_function(k+1, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
+			model[k]+= model_function(k, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
 		}
 	}
 
@@ -958,8 +957,12 @@ void hypercube::mean_parameters(std::vector<std::vector<std::vector<double>>> &p
 			}
 		}
 		mean = mean/(this->dim_data[0]*this->dim_data[1]);
-
-		printf("Paramètre n°%d, moyenne = %f \n", p, mean);
+		if (p%3 ==0)
+			printf("Gaussienne n°%d, moyenne a     = %f \n", p, mean);
+		if (p%3 ==1)
+			printf("Gaussienne n°%d, moyenne mu    = %f \n", p, mean);
+		if (p%3 ==2)
+			printf("Gaussienne n°%d, moyenne sigma = %f \n", p, mean);
 	}
 
 
