@@ -577,6 +577,26 @@ __global__ void kernel_norm_map_boucle_v(double* map_norm_dev, double* residual,
   }
 }
 
+__global__ void kernel_norm_map_boucle_v(double* map_norm_dev, double* residual, double* std_map, int indice_x, int indice_y, int indice_v)
+{
+	int index_x = blockIdx.x*BLOCK_SIZE_L2_X +threadIdx.x;
+	int index_y = blockIdx.y*BLOCK_SIZE_L2_Y +threadIdx.y;
+//	int index_z = blockIdx.z*BLOCK_SIZE_L2_Z +threadIdx.z;
+
+  if(index_x<indice_x && index_y<indice_y && std_map[index_y*indice_x + index_x]>0.)
+  {
+	  for(int index_z = 0; index_z<indice_v ; index_z++) {
+    	map_norm_dev[index_y*indice_x+index_x] += 0.5*pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2)/pow(std_map[index_y*indice_x + index_x],2);
+	  }
+	__syncthreads();
+
+//  printf("index_x = %d , index_y = %d , index_z = %d \n", index_x, index_y, index_z);
+
+//	map_norm_dev[index_y*indice_x + index_z] = 0.5*map_norm_dev[index_y*indice_x + index_z]/pow(std_map[index_y*indice_x + index_x],2);
+//	printf(" --> %f \n", map_norm_dev[index_y*indice_x + index_z]);
+  }
+}
+
 __global__ void dot(double* a, double* b, double* c, int N)
 {
 	__shared__ double cache[BLOCK_SIZE_REDUCTION];
@@ -628,6 +648,43 @@ __global__ void sum_reduction(double* a, double* c, int N)
 	if (cacheIndex == 0)
 		c[blockIdx.x] = cache[0];
 }
+
+
+
+
+__global__ void cpy_first_num_dev(double* array_in, double* array_out){
+	array_out[0] = array_in[0];
+}
+
+__global__ void copy_dev(double* array_in, double* array_out, int size){
+	int tid = threadIdx.x +blockIdx.x * blockDim.x;
+	if (tid < size){
+		array_out[tid] = array_in[tid];
+	}
+}
+
+__global__ void reduce_last_in_one_thread(double* array_in, double* array_out, int size){
+//	int tid = threadIdx.x +blockIdx.x * blockDim.x;
+	double sum = 0;
+	for(int i = 0; i<size; i++){
+		sum += array_in[i];
+	}
+	array_out[0]=sum;
+}
+
+__global__ void display_dev(double* array_out){
+    printf("?\n");
+    printf("array_out[0] = %f\n", array_out[0]);
+    printf("?\n");
+}
+
+
+
+
+
+
+
+
 
 
 

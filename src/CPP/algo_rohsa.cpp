@@ -2,6 +2,7 @@
 #include <array>
 #include "gradient.hpp"
 #include "convolutions.hpp"
+#include "f_g_cube_gpu.hpp"
 
 algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 {
@@ -1611,18 +1612,6 @@ std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::
 
 std::vector<double> b_params(M.n_gauss,0.);
 
-/*
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-*/
-
 int i,k,j,l,p;
 
 	int taille_params_flat[] = {indice_y, indice_x,3*M.n_gauss};
@@ -1720,23 +1709,16 @@ double temps2_dF_dB = omp_get_wtime();
 
 	double temps1_deriv = omp_get_wtime();
 
-//AJOUT
-//-----------------------------------------------------------------------------------
-//params    3g y  x
-//params_T  y  x 3g
-//dF_over_dB_bis[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
 
 	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta_modif, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
 
-//if (indice_x == 35){
-
+//printf("deriv[0] = %f", deriv[0]);
+//exit(0);
 
     float Kernel_f[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
     double Kernel_d[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
 
-//TEST CONVOLUTIONS
 /*
-	float h_RESULTAT_GPU[1225];
 	float h_IMAGE[1225];
 
 	for(j=0; j<indice_x; j++){
@@ -1749,19 +1731,22 @@ double temps2_dF_dB = omp_get_wtime();
 	int N = 4;
 	float IMAGE_TEST[16];
 	double IMAGE_TEST_double[16];
+	double IMAGE_TEST_double_cpu[16];
 
 	for(j=0; j<N; j++){
 		for(i=0; i<N; i++){
 			IMAGE_TEST[j+N*i] = j+2*i;
+			IMAGE_TEST_double_cpu[j+N*i] = j+2*i;
 			IMAGE_TEST_double[j+N*i] = j+2*i;
 		}
 	}
-	float RESULTAT_TEST_GPU[16];
-//	double RESULTAT_TEST_double[36];
+	float RESULTAT_TEST_GPU_f[16];
 
-	size_t size_RESULTAT_TEST_double = pow(N,2) * sizeof(double);
+	size_t size_RESULTAT_TEST_double = N*N * sizeof(double);
 
-	double* RESULTAT_TEST_double = (double*)malloc(size_RESULTAT_TEST_double);
+	double* RESULTAT_TEST_double_cpu = (double*)malloc(size_RESULTAT_TEST_double);
+//	double* RESULTAT_TEST_GPU_double = (double*)malloc(size_RESULTAT_TEST_double);
+	double RESULTAT_TEST_GPU_double[16];
 
 
 
@@ -1771,8 +1756,10 @@ double temps2_dF_dB = omp_get_wtime();
 	std::cout<< " "<<std::endl; 
 	std::cout<< " "<<std::endl; 
 
-	convolution_2D_mirror_flat(M, IMAGE_TEST_double, RESULTAT_TEST_double, N, N, 3);
-	conv2D_GPU(IMAGE_TEST, Kernel_f, RESULTAT_TEST_GPU, N, N);
+	convolution_2D_mirror_flat(M, IMAGE_TEST_double_cpu, RESULTAT_TEST_double_cpu, N, N, 3);
+	conv2D_GPU_all(IMAGE_TEST, Kernel_f, RESULTAT_TEST_GPU_f, N, N, 3, 0, 0);
+	conv2D_GPU_all(beta_modif, IMAGE_TEST_double, Kernel_d, RESULTAT_TEST_GPU_double, N, N, 3, 0, 0);
+//	conv2D_GPU_cpu(IMAGE_TEST, Kernel_f, RESULTAT_TEST_GPU, N, N, 0, 0);
 
 	for(i=0; i<N; i++){
 		for(j=0; j<N; j++){
@@ -1787,31 +1774,28 @@ double temps2_dF_dB = omp_get_wtime();
 
 	for(i=0; i<N; i++){
 		for(j=0; j<N; j++){
-			std::cout<< "RESULTAT_TEST_double["<<i*N+j << "] = "<< RESULTAT_TEST_double[i*N+j]<<std::endl; 
+			std::cout<< "RESULTAT_TEST_double_cpu["<<i*N+j << "] = "<< RESULTAT_TEST_double_cpu[i*N+j]<<std::endl; 
 		}
 	}
 
 	for(i=0; i<N; i++){
 		for(j=0; j<N; j++){
-			std::cout<< "RESULTAT_TEST_GPU["<<i*N+j << "] = "<< RESULTAT_TEST_GPU[i*N+j]<<std::endl; 
+			std::cout<< "RESULTAT_TEST_GPU_f["<<i*N+j << "] = "<< RESULTAT_TEST_GPU_f[i*N+j]<<std::endl; 
 		}
 	}
+
+	for(i=0; i<N; i++){
+		for(j=0; j<N; j++){
+			std::cout<< "RESULTAT_TEST_GPU_double["<<i*N+j << "] = "<< RESULTAT_TEST_GPU_double[i*N+j]<<std::endl; 
+		}
+	}
+
+
+
 
 exit(0);
 */
 
-
-
-//	conv2D_GPU(float *h_IMAGE, float *h_KERNEL,float* h_RESULTAT_GPU)
-//	exit(0);
-//}
-/*
-printf("beta[0] = %f \n",beta[0]);
-printf("beta[1] = %f \n",beta[1]);
-printf("beta[2] = %f \n",beta[2]);
-printf("beta[3] = %f \n",beta[3]);
-*/
-//exit(0);
 
 	double temps2_deriv = omp_get_wtime();
 	double temps1_conv = omp_get_wtime();
@@ -1825,43 +1809,84 @@ printf("beta[3] = %f \n",beta[3]);
 			}
 		}
 
-if(indice_x>=128 || indice_y>=128){
+if(true){//indice_x>=128 || indice_y>=128){
 	conv2D_GPU(image_amp, Kernel_f, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
 	conv2D_GPU(image_mu, Kernel_f, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
 	conv2D_GPU(image_sig, Kernel_f, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+
+	conv2D_GPU(conv_amp, Kernel_f, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(conv_mu, Kernel_f, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(conv_sig, Kernel_f, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 
 /*
 printf("-> image_amp[0] = %f \n",image_amp[0]);
 printf("-> image_amp[1] = %f \n",image_amp[1]);
 
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_amp[i][j] = %f \n",conv_amp[i+indice_x*j]);
-		}
-	}
-
 printf("image_amp[0] = %f \n",image_amp[0]);
 printf("image_amp[1] = %f \n",image_amp[1]);
 printf("conv_amp[0] = %f \n",conv_amp[0]);
 printf("conv_amp[1] = %f \n",conv_amp[1]);
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_mu[i][j] = %f \n",conv_mu[i+indice_x*j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_sig[i][j] = %f \n",conv_sig[i+indice_x*j]);
-		}
-	}
 */
+    printf("\n IMAGE \n");
+
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("image_amp[%d][%d] = %f \n",i,j,image_amp[i+indice_x*j]);
+		}
+	}
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("image_mu[%d][%d] = %f \n",i,j,image_mu[i+indice_x*j]);
+		}
+	}
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("image_sig[%d][%d] = %f \n",i,j,image_sig[i+indice_x*j]);
+		}
+	}
+
+	
+
+
+    printf("\n CONV \n");
+
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("conv_amp[%d][%d] = %f \n",i,j,conv_amp[i+indice_x*j]);
+		}
+	}
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("conv_mu[%d][%d] = %f \n",i,j,conv_mu[i+indice_x*j]);
+		}
+	}
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("conv_sig[%d][%d] = %f \n",i,j,conv_sig[i+indice_x*j]);
+		}
+	}
+
+    printf("\n CONV_CONV \n");
+
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("conv_conv_amp[%d][%d] = %f \n",i,j,conv_conv_amp[i+indice_x*j]);
+		}
+	}
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("conv_conv_mu[%d][%d] = %f \n",i,j,conv_conv_mu[i+indice_x*j]);
+		}
+	}
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			printf("conv_conv_sig[%d][%d] = %f \n",i,j,conv_conv_sig[i+indice_x*j]);
+		}
+	}
+
 //	std::cin.ignore();
 
 //exit(0);
-
-	conv2D_GPU(conv_amp, Kernel_f, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(conv_mu, Kernel_f, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(conv_sig, Kernel_f, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 } else{
 	convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 	convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
@@ -1890,6 +1915,9 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-(double)(image_sig[i+indice_x*j]));
 		}
 	}
+	//£
+//	printf("deriv[0] = %f \n",deriv[0] );
+//	exit(0);
 	}
 
 
@@ -3479,7 +3507,20 @@ L111:
 
 // GPU
 //	f_g_cube_cuda_L_2(M, f, g, n, cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // ça marche !! (c'est f_g_cube_cuda_L_2_2Bverified sans la partie vérification)
-	f_g_cube_cuda_L(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
+	f_g_cube_parallel(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened);
+//	f_g_cube_cuda_L(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
+
+
+/*
+for(int i = 0; i<(3*M.n_gauss*indice_x*indice_y)+M.n_gauss; i++){
+	printf("g[%d] = %f \n",i,g[i] );
+}
+printf("f = %f \n",f );
+*/
+//std::cin.ignore();
+
+
+
 //	f_g_cube_cuda_L_deux_tiers(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // doesn't work
 //	f_g_cube_cuda_L_2_2Bverified(M, f, g, n, cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); //gradient qui marche
 

@@ -28,3 +28,4 @@ void gradient_L_2_beta(double* deriv, int* taille_deriv, int product_taille_deri
 void gradient_L_3(double* deriv, int* taille_deriv, int product_taille_deriv, double* params, int* taille_params, int product_taille_params, double* residual, int* taille_residual, int product_residual, double* std_map, int* taille_std_map, int product_std_map, int n_gauss);
 //extern void gradient(double* dF_over_dB, int* taille_dF_over_dB, int product_taille_dF_over_dB, double* params, int* taille_params, int product_taille_params, model &M);
 double compute_residual_and_f(double* beta, int* taille_beta, int product_taille_beta, double* cube, int* taille_cube, int product_taille_cube, double* residual, int* taille_residual, int product_taille_residual, double* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss);
+void reduction_loop(double* array_in, double* array_f, int size_array);
