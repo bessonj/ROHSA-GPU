@@ -737,8 +737,7 @@ exit(0);
 //f will be returned as 
 void f_g_cube_parallel(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened)   
   {
-    std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-    //décommenter en bas
+//    printf("indice_x = %d , indice_y = %d , indice_v = %d \n", indice_x, indice_y, indice_v);
 
     std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 
@@ -1001,6 +1000,8 @@ double temps1_dF_dB = omp_get_wtime();
 
     f = array_f[0];
 
+  
+  checkCudaErrors(cudaFree(b_params_dev));
   checkCudaErrors(cudaFree(d_g));
   checkCudaErrors(cudaFree(d_image_sigma_reduc));
   checkCudaErrors(cudaFree(beta_modif_dev));
@@ -1030,7 +1031,9 @@ double temps1_dF_dB = omp_get_wtime();
   free(image_amp);
   free(image_mu);
   free(image_sig);
+/*
 
+*/
 
 
 //checkCudaErrors(cudaMemcpy(residual, residual_dev, product_residual*sizeof(double), cudaMemcpyDeviceToHost));

@@ -581,9 +581,11 @@ exit(0);
 
     double* array_f = (double*)malloc(1*sizeof(double));
     checkCudaErrors(cudaMemcpy(array_f, d_array_f, 1*sizeof(double), cudaMemcpyDeviceToHost));
+
+/*
     printf("--> array_f[0] = %f\n",array_f[0]);
     printf("sum = %f\n",sum);
-
+*/
 
 
 //limite taille à 3300*3300 :/

@@ -25,10 +25,12 @@ void conv_twice_and_copy(double* d_IMAGE_amp, double* d_IMAGE_amp_ext, double* d
 
 void prepare_for_convolution(float* d_IMAGE_amp, float* d_IMAGE_amp_ext, int image_x, int image_y, dim3 BlocksParGrille_init, dim3 ThreadsParBlock_init, dim3 BlocksParGrille, dim3 ThreadsParBlock)
 {
+/*
 	printf("BlocksParGrille.x = %d, BlocksParGrille.y = %d, BlocksParGrille.z = %d\n", BlocksParGrille.x, BlocksParGrille.y, BlocksParGrille.z);
     printf("ThreadsParBlock.x = %d, ThreadsParBlock.y = %d, ThreadsParBlock.z = %d\n", ThreadsParBlock.x, ThreadsParBlock.y, ThreadsParBlock.z);
     printf("BlocksParGrille_init.x = %d, BlocksParGrille_init.y = %d, BlocksParGrille_init.z = %d\n", BlocksParGrille_init.x, BlocksParGrille_init.y, BlocksParGrille_init.z);
     printf("ThreadsParBlock_init.x = %d, ThreadsParBlock_init.y = %d, ThreadsParBlock_init.z = %d\n", ThreadsParBlock_init.x, ThreadsParBlock_init.y, ThreadsParBlock_init.z);
+*/
 //    print_device_array<float><<<BlocksParGrille,ThreadsParBlock>>>(d_IMAGE_amp, image_x, image_y);
     init_extended_array<float><<<BlocksParGrille_init,ThreadsParBlock_init>>>(d_IMAGE_amp, d_IMAGE_amp_ext, image_x, image_y);
 //    print_device_array<float><<<BlocksParGrille,ThreadsParBlock>>>(d_IMAGE_amp, image_x, image_y);
@@ -38,10 +40,12 @@ void prepare_for_convolution(float* d_IMAGE_amp, float* d_IMAGE_amp_ext, int ima
 
 void prepare_for_convolution(double* d_IMAGE_amp, double* d_IMAGE_amp_ext, int image_x, int image_y, dim3 BlocksParGrille_init, dim3 ThreadsParBlock_init, dim3 BlocksParGrille, dim3 ThreadsParBlock)
 {
+/*
 	printf("BlocksParGrille.x = %d, BlocksParGrille.y = %d, BlocksParGrille.z = %d\n", BlocksParGrille.x, BlocksParGrille.y, BlocksParGrille.z);
     printf("ThreadsParBlock.x = %d, ThreadsParBlock.y = %d, ThreadsParBlock.z = %d\n", ThreadsParBlock.x, ThreadsParBlock.y, ThreadsParBlock.z);
     printf("BlocksParGrille_init.x = %d, BlocksParGrille_init.y = %d, BlocksParGrille_init.z = %d\n", BlocksParGrille_init.x, BlocksParGrille_init.y, BlocksParGrille_init.z);
     printf("ThreadsParBlock_init.x = %d, ThreadsParBlock_init.y = %d, ThreadsParBlock_init.z = %d\n", ThreadsParBlock_init.x, ThreadsParBlock_init.y, ThreadsParBlock_init.z);
+*/
 //    print_device_array<double><<<BlocksParGrille,ThreadsParBlock>>>(d_IMAGE_amp, image_x, image_y);
     init_extended_array<double><<<BlocksParGrille_init,ThreadsParBlock_init>>>(d_IMAGE_amp, d_IMAGE_amp_ext, image_x, image_y);
 //    print_device_array<double><<<BlocksParGrille,ThreadsParBlock>>>(d_IMAGE_amp, image_x, image_y);
@@ -269,6 +273,8 @@ void conv2D_GPU(float *h_IMAGE, float* h_KERNEL, float* h_RESULTAT_GPU, long int
 
     extension_mirror<float>(h_IMAGE, h_IMAGE_extended, image_x, image_y);
     
+
+/*
     printf("\n IMAGE EXT\n");
 
 	for(int i=0; i<image_y+4; i++){
@@ -276,7 +282,7 @@ void conv2D_GPU(float *h_IMAGE, float* h_KERNEL, float* h_RESULTAT_GPU, long int
 			printf("h_IMAGE_extended[%d][%d] = %f \n",i,j,h_IMAGE_extended[i+(image_x+4)*j]);
 		}
 	}
-
+*/
 
 /*
     for(int j=0; j<image_x; j++)

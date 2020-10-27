@@ -101,6 +101,7 @@ class algo_rohsa
 
 	void reshape_down(std::vector<std::vector<std::vector<double>>> &tab1, std::vector<std::vector<std::vector<double>>>&tab2);
 
+	void mean_parameters(std::vector<std::vector<std::vector<double>>> &params);
 
 
 
