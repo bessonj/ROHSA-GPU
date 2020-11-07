@@ -2,6 +2,10 @@
 #define BLOCK_SIZE_Y 32
 #define BLOCK_SIZE_Z 1
 
+#define BLOCK_SIZE_X_BIS 8
+#define BLOCK_SIZE_Y_BIS 8
+#define BLOCK_SIZE_Z_BIS 16
+
 #define BLOCK_SIZE_L2_X 8
 #define BLOCK_SIZE_L2_Y 8
 #define BLOCK_SIZE_L2_Z 8

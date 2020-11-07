@@ -8,13 +8,15 @@
 
 #include <string.h>
 
-/*
-#define INDEXING_2D(t,x,y) t[y+(t##_SHAPE)[1]*x]
-#define INDEXING_3D(t,x,y,z) t[(t##_SHAPE)[2]*(t##_SHAPE)[1]*x+(t##_SHAPE)[2]*y+z]
-*/
 
 #define INDEXING_2D(t,x,y) t[y+(t##_SHAPE1)*x]
 #define INDEXING_3D(t,x,y,z) t[(t##_SHAPE2)*(t##_SHAPE1)*x+(t##_SHAPE2)*y+z]
+
+
+/// Main function : it processes the FITS file, reads the parameters.txt, solves the optimization problem through the ROHSA algo and stores/print the result.
+/// 
+/// Details : 2 cases are distinguished : The data file is either a *.dat or a *.fits file.
+
 
 int main(int argc, char * argv[])
 {
@@ -76,15 +78,14 @@ int main(int argc, char * argv[])
 	std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
 	std::cout<<"Temps total (hors enregistrement): "<<temps2 - temps1 <<std::endl;
 
-		Hypercube_file.mean_parameters(modeles_parametres.grid_params, modeles_parametres.n_gauss);
-
+		Hypercube_file.mean_parameters(algo.grid_params, modeles_parametres.n_gauss);
 
 
 /*
 			for(int i=0;i<std::min(Hypercube_file.data[0].size(),Hypercube_file.data.size());i++){
 				for(int j=0;j<std::min(Hypercube_file.data[0].size(),Hypercube_file.data.size());j++){
 					if(i==j){
-			Hypercube_file.plot_line(modeles_parametres.grid_params, i, j, modeles_parametres.n_gauss);
+			Hypercube_file.plot_line(algo.grid_params, i, j, modeles_parametres.n_gauss);
 				}
 				}
 			}
@@ -93,9 +94,9 @@ int main(int argc, char * argv[])
 		//	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
 
 			for(int p = 0; p<modeles_parametres.slice_index_max-modeles_parametres.slice_index_min-1; p++){
-				Hypercube_file.display_result_and_data(modeles_parametres.grid_params, p, modeles_parametres.n_gauss, false); //affiche cote à cote les données et le modèle
+				Hypercube_file.display_result_and_data(algo.grid_params, p, modeles_parametres.n_gauss, false); //affiche cote à cote les données et le modèle
 			}
-
+*/
 		//	for(int p = 40; p<70; p++){
 		//		Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params, p, 0*3+1, 0, 1);
 		//	}
@@ -103,10 +104,10 @@ int main(int argc, char * argv[])
 			for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
 				for (int num_par = 0; num_par < 3; num_par++)
 				{
-					Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params, num_gauss, num_par , num_par+num_gauss*3);
+					Hypercube_file.display_avec_et_sans_regu(algo.grid_params, num_gauss, num_par , num_par+num_gauss*3);
 				}
 			}
-*/
+
 
 
 
@@ -125,7 +126,7 @@ exit(0);
 				for(int num_gauss_cur = 0; num_gauss_cur < modeles_parametres.n_gauss; num_gauss_cur ++)
 					{
 					if(num_gauss!=num_gauss_cur){
-						Hypercube_file.display_2_gaussiennes_par_par_par(modeles_parametres.grid_params, p, num_gauss*3+num_par, 3*num_gauss+num_par, 3*num_gauss_cur+num_par);
+						Hypercube_file.display_2_gaussiennes_par_par_par(algo.grid_params, p, num_gauss*3+num_par, 3*num_gauss+num_par, 3*num_gauss_cur+num_par);
 					}
 				}
 			}
@@ -137,21 +138,21 @@ exit(0);
 		for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
 			for (int num_par = 0; num_par < 3; num_par++)
 			{
-				Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params, p, num_gauss*3+num_par, 0, 1);
+				Hypercube_file.display_2_gaussiennes(algo.grid_params, p, num_gauss*3+num_par, 0, 1);
 			}
 		}
 
 		for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
 			for (int num_par = 0; num_par < 3; num_par++)
 			{
-				Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params,p , num_gauss*3+num_par, 1, 2);
+				Hypercube_file.display_2_gaussiennes(algo.grid_params,p , num_gauss*3+num_par, 1, 2);
 			}
 		}
 
 			for(int num_gauss = 0; num_gauss < modeles_parametres.n_gauss; num_gauss ++){
 			for (int num_par = 0; num_par < 3; num_par++)
 			{
-				Hypercube_file.display_2_gaussiennes(modeles_parametres.grid_params, p, num_gauss*3+num_par, 0, 2);
+				Hypercube_file.display_2_gaussiennes(algo.grid_params, p, num_gauss*3+num_par, 0, 2);
 			}
 		}
 	}
@@ -201,7 +202,7 @@ exit(0);
 
 		for(int i=0;i<i_max;i++){
 			for(int j=0;j<j_max;j++){
-				Hypercube_file.plot_line(modeles_parametres.grid_params, i, j, modeles_parametres.n_gauss);
+				Hypercube_file.plot_line(algo.grid_params, i, j, modeles_parametres.n_gauss);
 			}
 		}
 
@@ -209,21 +210,21 @@ exit(0);
 //	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
 
 		for(int p = 0; p<modeles_parametres.slice_index_max-modeles_parametres.slice_index_min-1; p++){
-			Hypercube_file.display_result_and_data(modeles_parametres.grid_params, p, modeles_parametres.n_gauss, true); //affiche cote à cote les données et le modèle
+			Hypercube_file.display_result_and_data(algo.grid_params, p, modeles_parametres.n_gauss, true); //affiche cote à cote les données et le modèle
 		}
 
 
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,0,0 , 1);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,0,1 , 2);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,0,2 , 3);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,1,0 , 4);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,1,1 , 5);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,1,2 , 6);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,2,0 , 7);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,2,1 , 8);
-	Hypercube_file.display_avec_et_sans_regu(modeles_parametres.grid_params,2,2 , 9);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,0,0 , 1);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,0,1 , 2);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,0,2 , 3);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,1,0 , 4);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,1,1 , 5);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,1,2 , 6);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,2,0 , 7);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,2,1 , 8);
+	Hypercube_file.display_avec_et_sans_regu(algo.grid_params,2,2 , 9);
 
-		Hypercube_file.mean_parameters(modeles_parametres.grid_params, modeles_parametres.n_gauss);
+		Hypercube_file.mean_parameters(algo.grid_params, modeles_parametres.n_gauss);
 
 		}
 

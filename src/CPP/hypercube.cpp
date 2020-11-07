@@ -297,8 +297,8 @@ void hypercube::brute_show(const std::vector<std::vector<std::vector<double>>> &
 	}
 }
 
-// M.grid_params is written into a binary after the process in algo_rohsa
-void hypercube::write_into_binary(parameters &M){
+// grid_params is written into a binary after the process in algo_rohsa
+void hypercube::write_into_binary(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params){
 
 	std::ofstream objetfichier;
 
@@ -306,9 +306,9 @@ void hypercube::write_into_binary(parameters &M){
 	if (objetfichier.bad()) //permet de tester si le fichier s'est ouvert sans probleme
 		std::cout<<"ERREUR À L'OUVERTURE DU FICHIER RAW AVANT ÉCRITURE"<< std::endl;
 
-	int n(sizeof(double) * M.grid_params.size());
+	int n(sizeof(double) * grid_params.size());
 
-	objetfichier.write((char*)&(M.grid_params)[0], n);
+	objetfichier.write((char*)&(grid_params)[0], n);
 
 	objetfichier.close();
 }

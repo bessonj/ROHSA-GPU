@@ -12,8 +12,9 @@
 #include <CCfits/CCfits>
 #include <vector>
 
-
-// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
+/// This class is about reading the fits file, transforming the data array and displaying the result in various ways.
+/// 
+///  
 
 class hypercube
 {
@@ -54,7 +55,7 @@ class hypercube
 	std::vector<std::vector<std::vector<double>>> reshape_up();
 	std::vector<std::vector<std::vector<double>>> reshape_up(int borne_inf, int borne_sup);
 
-	void write_into_binary(parameters &M);
+	void write_into_binary(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params);
 
 
 	int indice_debut, indice_fin;

@@ -184,7 +184,7 @@ parameters::parameters(std::string str)
 }
 
 
-void parameters::write_model_in_binary(){
+void parameters::write_in_binary(){
 
 //	
 

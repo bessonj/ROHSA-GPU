@@ -4,6 +4,7 @@
 #include "convolutions.hpp"
 #include "f_g_cube_gpu.hpp"
 
+
 algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 {
 
@@ -57,18 +58,12 @@ algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 	grid_params=grid_params_;
 	}
 
-//		M.fit_params = fit_params;
-/*
-		for(int p=0; p<M.fit_params.size();p++){
-			std::cout << "fit_params : "<<M.fit_params[p]<<  std::endl;
-                        }
-*/				
+			
 //		std::cout << "test fit_params : "<<fit_params[0][0][0]<<std::endl;
 		
 	if(M.descent)
 	{
 		std::cout<<"DÉBUT DE DESCENTE"<<std::endl;
-// test sans regu ?
 		descente(M, grid_params, fit_params);
 	}
 
@@ -84,7 +79,7 @@ algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 	}
 */
 
-	this->file.write_into_binary(M);
+	this->file.write_into_binary(M, this->grid_params);
 
 }
 
@@ -220,6 +215,16 @@ void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<dou
 
 					update(M, cube_mean, fit_params, std_map, power, power, dim_v, b_params);
 
+/*
+	printf("fit_params[0][0][0] = %f \n",fit_params[0][0][0] );
+	exit(0);
+*/
+/*
+for(int i = 0; i<(3*M.n_gauss*indice_x*indice_y); i++){
+	printf("fit_[%d] = %f \n",i,g[i] );
+}
+*/
+
 					double temps2_update_pp=omp_get_wtime();
 					temps_update_pp += temps2_update_pp-temps1_update_pp;
 
@@ -230,18 +235,24 @@ void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<dou
 				}
 			}
 
+	
 			if (M.save_grid){
 				//save grid in file
 			}
 
 	double temps_go_up_level1=omp_get_wtime();
 			go_up_level(fit_params);
-			M.fit_params = fit_params; //updating the model class
+			this->fit_params = fit_params; //updating the model class
 	double temps_go_up_level2=omp_get_wtime();
 	temps_go_up_level=temps_go_up_level2-temps_go_up_level1;
 
-
 	}
+
+/*
+	this->grid_params = fit_params;
+	return;
+*/
+
 /*
 	std::cout<<"AFFICHAGE POUR LA RECHERCHE D'ERREUR"<<std::endl;
 
@@ -298,7 +309,7 @@ std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].si
 	temps_reshape_down2 += temps_reshape_down2-temps_reshape_down1;
 
 std::cout<<"Après reshape_down"<<std::endl;
-	M.grid_params = grid_params;
+	this->grid_params = grid_params;
 
 
 //std::cout<<"Taille fit_params : "<<fit_params.size()<<" , "<<fit_params[0].size()<<" , "<<fit_params[0][0].size()<<std::endl;
@@ -312,11 +323,12 @@ std::cout<<"Après reshape_down"<<std::endl;
 	}
 */
 
+/*
 std::cout<<"this->file.data = "<<this->file.data[0][0][0]<<std::endl;
 std::cout<<"this->dim_data[0] = "<<this->dim_data[0]<<std::endl;
 std::cout<<"this->dim_data[1] = "<<this->dim_data[1]<<std::endl;
 std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
-
+*/
 //exit(0);
 	double temps_std_map1=omp_get_wtime();
 	if(M.noise){
@@ -346,7 +358,7 @@ std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
 	temps_update_dp +=temps_update_dp2-temps_update_dp1;
 
 //ancienne place de reshape_down	
-	M.grid_params = grid_params;
+	this->grid_params = grid_params;
 	int comptage = 600;
 
 
@@ -789,24 +801,15 @@ void algo_rohsa::f_g_cube_fast(parameters &M, double &f, double g[], int n, std:
 //		std::cout<< "AVANT GRADIENT BIDOUILLÉ" <<std::endl;
 
 		if(std_map[j][l]>0.){
-//	    #pragma omp parallel shared(M, params, residual, std_map, indice_v,i,j,l)
-//	    {
-//        #pragma omp for private(k)
-		for(k=0; k<indice_v; k++){
-					v_1 += exp(-pow( double(k)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-//printf("--->curseur = %e\n", std_map[j][l] );//residual[l][j][k]  );
-					v_2 +=  params[3*i][j][l]*( double(k) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-	
-					v_3 += params[3*i][j][l]*pow( double(k) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-					}
+			for(k=0; k<indice_v; k++){
+				v_1 += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+				v_2 += params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+				v_3 += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+			}
 		}
-		deriv[0+3*i][j][l]+=v_1;
-		deriv[1+3*i][j][l]+=v_2;
-		deriv[2+3*i][j][l]+=v_3;
-//		}
-				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
-				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
-				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
+		deriv[0+3*i][j][l] += v_1 + M.lambda_amp*conv_conv_amp[j][l];
+		deriv[1+3*i][j][l] += v_2 + M.lambda_mu*conv_conv_mu[j][l];
+		deriv[2+3*i][j][l] += v_3 + M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
 
 
 
@@ -1763,23 +1766,56 @@ double temps1_dF_dB = omp_get_wtime();
 
 
 
-f = compute_residual_and_f(beta_modif, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
+f =  compute_residual_and_f(beta_modif, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
 
 double temps2_dF_dB = omp_get_wtime();
+/*
+	for(int i = 0; i<3; i++){
+		printf("residual[%d]= %f \n",i, residual[i]);
+	}
 
-
+	for(int i = 0; i<10; i++){
+		printf("beta_modif[%d]= %f \n",i, beta_modif[i]);
+	}
+	for(int i = 0; i<10; i++){
+		printf("std_map_[%d]= %f \n",i, std_map_[i]);
+	}
+	for(int i = 0; i<10; i++){
+		printf("deriv[%d]= %f \n",i, deriv[i]);
+	}
+*/
 //std::cout<<"ENTRE BETA_MODIF ET LE GPU"	<<std::endl;
 
 	double temps1_deriv = omp_get_wtime();
 
 
 	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta_modif, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
-
+/*
+	for(int i = 0; i<10; i++){
+		printf("deriv[%d]= %f \n",i, deriv[i]);
+	}
+*/
 //printf("deriv[0] = %f", deriv[0]);
 //exit(0);
 
     float Kernel_f[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
     double Kernel_d[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
+
+
+//if(indice_x ==4){//indice_x != indice_y){
+/*
+	printf("après gradient_L_2_beta\n");
+	printf("indice_x, indice_y = %d, %d\n", indice_x, indice_y);
+
+	for(int i=0; i<30; i++){
+		printf("deriv[%d] = %f \n",i,deriv[i]);
+	}
+//	std::cin.ignore();
+//}
+
+	printf("f = %f \n",f);
+//}
+*/
 
 /*
 	float h_IMAGE[1225];
@@ -1852,13 +1888,11 @@ double temps2_dF_dB = omp_get_wtime();
 			std::cout<< "RESULTAT_TEST_GPU_double["<<i*N+j << "] = "<< RESULTAT_TEST_GPU_double[i*N+j]<<std::endl; 
 		}
 	}
-
-
-
-
 exit(0);
 */
 
+
+//	printf("deriv[0] = %f \n",deriv[0]);
 
 	double temps2_deriv = omp_get_wtime();
 	double temps1_conv = omp_get_wtime();
@@ -1872,7 +1906,7 @@ exit(0);
 			}
 		}
 
-if(indice_x>=128 || indice_y>=128){
+if(false){//indice_x>=128 || indice_y>=128){
 	conv2D_GPU(image_amp, Kernel_f, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
 	conv2D_GPU(image_mu, Kernel_f, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
 	conv2D_GPU(image_sig, Kernel_f, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
@@ -1959,6 +1993,31 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 	convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 	convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 	convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+
+//if(k <= 1 && indice_x!=indice_y)
+//{
+//if(indice_x ==4){//indice_x != indice_y){
+
+/*
+    printf("\n IMAGE cuda_L\n");
+	for(int i=0; i<indice_x; i++){
+		for(int j=0; j<indice_y; j++){
+			printf("image_amp[%d][%d] = %f \n",i,j,image_amp[i+indice_x*j]);
+		}
+	}
+    printf("\n CONV cuda_L\n");
+	for(int i=0; i<indice_x; i++){
+		for(int j=0; j<indice_y; j++){
+			printf("conv_amp[%d][%d] = %f \n",i,j,conv_amp[i+indice_x*j]);
+		}
+	}
+*/
+
+//}
+//	std::cin.ignore();
+
+//	exit(0);
+//}
 }
 
 	for(int i=0; i<indice_y; i++){
@@ -1969,8 +2028,8 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 
 			deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*(double)(conv_conv_amp[i+indice_x*j]);
 			deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*(double)(conv_conv_mu[i+indice_x*j]);
-			deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*(double)(conv_conv_sig[i+indice_x*j])+M.lambda_var_sig*((double)(image_sig[i+indice_x*j])-b_params[k]);
 
+			deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*(double)(conv_conv_sig[i+indice_x*j])+M.lambda_var_sig*((double)(image_sig[i+indice_x*j])-b_params[k]);
 /*
 			dR_over_dB[0+3*k][i][j] = M.lambda_amp*(double)(conv_conv_amp[i+indice_x*j]);
 			dR_over_dB[1+3*k][i][j] = M.lambda_mu*(double)(conv_conv_mu[i+indice_x*j]);
@@ -1979,6 +2038,10 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-(double)(image_sig[i+indice_x*j]));
 		}
 	}
+
+
+//if(indice_x != indice_y || (indice_x == 128 && indice_x == 128)){
+//}
 	//£
 //	printf("deriv[0] = %f \n",deriv[0] );
 //	exit(0);
@@ -1993,6 +2056,21 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 		}
 	}
 	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
+
+/*
+//if(indice_x ==4){//indice_x != indice_y){
+	printf("après conv \n");
+	for(int i = 0; i<20; i++){
+		printf("b_params[%d] = %f\n", i, b_params[i]);
+	}
+
+	for(int i=0; i<indice_x*indice_y*3*M.n_gauss; i++){
+		printf("g[%d] = %f \n",i,g[i]);
+	}
+	printf("f = %f \n",f);
+	std::cin.ignore();
+//}
+*/
 
 /*
 	for(int i = 0; i<product_deriv; i++){
@@ -3574,22 +3652,36 @@ L111:
 //either f_g_cube or f_g_cube_vector or f_g_cube_test
 // Wrong values
 //	f_g_cube_old_archive(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_omp(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
 
 // good values
 // CPU
+//	f_g_cube_vector(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // OK grandes données
 //	f_g_cube_naive(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); //OK
+
+// GPU
+
+//	f_g_cube_cuda_L(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
+//	f_g_cube_cuda_L_2(M, f, g, n, cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // ça marche !! (c'est f_g_cube_cuda_L_2_2Bverified sans la partie vérification)
+	f_g_cube_parallel(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube);
+
+
+//exit(0);
+
 ////printf("g[0] = %f \n",g[0] );
 ////printf("f = %f \n",f );
 ////printf("x[0] = %f \n",x[0] );
 ////printf("cube_flattened[0] = %f \n",cube_flattened[0] );
 
 ////printf("f_g_cube \n");
-//f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); //OK
 
-// GPU
-//	f_g_cube_cuda_L_2(M, f, g, n, cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // ça marche !! (c'est f_g_cube_cuda_L_2_2Bverified sans la partie vérification)
-	f_g_cube_parallel(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened);
-//	f_g_cube_cuda_L(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
+/*
+    for(int i(0); i<n; i++) {
+		printf("x[%d] = %f \n", i, x[i]);
+    } 
+*/
+
 
 /*
 printf("g[0] = %f \n",g[0] );
@@ -3601,6 +3693,7 @@ printf("x[0] = %f \n",x[0] );
 if (i__c >2){
 //	exit(0);
 }
+
 /*
 for(int i = 0; i<(3*M.n_gauss*indice_x*indice_y)+M.n_gauss; i++){
 	printf("g[%d] = %f \n",i,g[i] );
@@ -3614,8 +3707,6 @@ printf("f = %f \n",f );
 //	f_g_cube_cuda_L_deux_tiers(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // doesn't work
 //	f_g_cube_cuda_L_2_2Bverified(M, f, g, n, cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); //gradient qui marche
 
-//	f_g_cube_omp(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_vector(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // OK grandes données
 
 
 // not precise
@@ -3666,6 +3757,7 @@ std::cout<< "pas d'erreur ? " <<std::endl;
 		x_v[i]=x[i];
 //		printf("x[%d] = %f\n",i,x[i]);
 	}
+//	std::cin.ignore();
 	temps_tableau_update += omp_get_wtime() - temps4_tableau_update;
 
 //exit(0);
@@ -3889,7 +3981,7 @@ L111:
 
     setulb(&n, &m, x, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
             &M.iprint, csave, lsave, isave, dsave);
-
+//ùù
 /*     if (s_cmp(task, "FG", (ftnlen)2, (ftnlen)2) == 0) { */
     if ( IS_FG(*task) ) {
 		myresidual(x, line, _residual_, n_gauss_i);

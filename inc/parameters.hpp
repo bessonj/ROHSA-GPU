@@ -15,13 +15,18 @@
 
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 
+/// Class associated with the values given in the parameters.txt file.
+/// 
+/// 
+
+
 class parameters
 {
 	public:
 
 	parameters();
 	parameters(std::string str);
-	void write_model_in_binary();
+	void write_in_binary();
 
 	std::vector<std::vector<double>> kernel;
 	std::vector<int> dim_data; //inutile : file.dim_data
@@ -51,7 +56,7 @@ class parameters
 	double lambda_var_mu;
 	double lambda_var_sig;
 	double amp_fact_init;
-        double sig_init;
+	double sig_init;
 	std::string init_option;	
 	int maxiter_init;
 	int maxiter;
@@ -74,8 +79,6 @@ class parameters
 	double lb_sig_init;
 
 	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
-	std::vector<std::vector<std::vector<double>>> grid_params; // sortie, paramètres du modèle
-	std::vector<std::vector<std::vector<double>>> fit_params; // paramètres du modèle
 
 /*
 	int n_gauss_add;

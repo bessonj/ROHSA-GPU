@@ -1,6 +1,7 @@
 #ifndef DEF_ALGO_ROHSA
 #define DEF_ALGO_ROHSA
 
+//#include "../lbfgsb-gpu/culbfgsb/culbfgsb.h"
 #include "../L-BFGS-B-C/src/lbfgsb.h"
 #include "hypercube.hpp"
 #include "parameters.hpp"
@@ -15,7 +16,12 @@
 #include <vector>
 #include <omp.h>
 
-// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
+// mettre des const à la fin des déclarations si on ne modifie pas l'objet / les attributs
+
+/// Class for solving the optimization problem.
+/// 
+/// 
+
 
 class algo_rohsa
 {
@@ -102,8 +108,6 @@ class algo_rohsa
 	void reshape_down(std::vector<std::vector<std::vector<double>>> &tab1, std::vector<std::vector<std::vector<double>>>&tab2);
 
 	void mean_parameters(std::vector<std::vector<std::vector<double>>> &params);
-
-
 
 
 	std::vector<std::vector<std::vector<double>>> grid_params;

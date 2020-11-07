@@ -505,13 +505,13 @@ if (N==1){
    checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
 
    dim3 Dg, Db;
-    Db.x = BLOCK_SIZE_X; //
-    Db.y = BLOCK_SIZE_Y; //
-    Db.z = BLOCK_SIZE_Z; //
+    Db.x = BLOCK_SIZE_X_BIS; //
+    Db.y = BLOCK_SIZE_Y_BIS; //
+    Db.z = BLOCK_SIZE_Z_BIS; //
 
-    Dg.x = ceil(indice_x/double(BLOCK_SIZE_X));
-    Dg.y = ceil(indice_y/double(BLOCK_SIZE_Y));
-    Dg.z = ceil(indice_v/double(BLOCK_SIZE_Z));
+    Dg.x = ceil(indice_x/double(BLOCK_SIZE_X_BIS));
+    Dg.y = ceil(indice_y/double(BLOCK_SIZE_Y_BIS));
+    Dg.z = ceil(indice_v/double(BLOCK_SIZE_Z_BIS));
 
 // index_x -> indice_x
 // index_y -> indice_y
@@ -538,22 +538,6 @@ if (N==1){
 
     kernel_norm_map_boucle_v<<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, taille_residual_dev, std_map_dev, indice_x, indice_y, indice_v);
 
-/*
-//vérification kernel_norm_map_boucle_v
-    double* map_norm_host = NULL;
-    map_norm_host = (double*)malloc(indice_x*indice_y*sizeof(double));
-    checkCudaErrors(cudaMemcpy(map_norm_host, map_norm_dev, indice_x*indice_y*sizeof(double), cudaMemcpyDeviceToHost));
-    for(int p = 0; p<indice_x*indice_y; p++)
-    {
-      f+= map_norm_host[p];
-    }
-    printf("f = %f \n", f);
-exit(0);
-  
-    printf("indice_x = %d , indice_y = %d , indice_v = %d , BLOCK_SIZE_REDUCTION = %d \n", indice_x, indice_y, indice_v, BLOCK_SIZE_REDUCTION);
-    printf("int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION))) = %d \n", int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION))));
-    printf("Dg = %d , Db = %d\n",int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION))), BLOCK_SIZE_REDUCTION);
-*/
 
     int GRID_SIZE_REDUCTION = int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION)));
     double* tab_cpy_cpu = NULL;

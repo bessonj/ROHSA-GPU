@@ -4,7 +4,7 @@
 
 
 template<typename T>
-__global__ void ConvKernel_sort(T* d_Result, T* d_Data, long int c_image_x, long int c_image_y)
+__global__ void ConvKernel_sort(T* d_Result, T* d_Data, int c_image_x, int c_image_y)
 	{
     T c_Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
     long int c_kernel_x = 3;
@@ -14,22 +14,19 @@ __global__ void ConvKernel_sort(T* d_Result, T* d_Data, long int c_image_x, long
 
     T pixel_extrait = 0;
     T tmp_sum = 0;
-    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
-    int pixel_pos = pixel_y * c_image_y + pixel_x ;
-if(pixel_y < c_image_y && pixel_x < c_image_x) {
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+    int pixel_pos = pixel_y * c_image_x + pixel_x ;
+if(pixel_y < c_image_y-4 && pixel_x < c_image_x-4) {
 	for (int y = - (c_kernel_radius_y) ; y <= c_kernel_radius_y; y++)
 		{
 		for (int x = - (c_kernel_radius_x) ; x <= c_kernel_radius_x; x++)
 			{
-            if ( ( (pixel_x + x) >= 0) && ( (pixel_y + y) >= 0) && ((pixel_x + x) <= c_image_x) && ((pixel_y + y) <= c_image_y) ){
-			    pixel_extrait= d_Data[pixel_x+x + (pixel_y+y)*c_image_y ];
-            }
-            else{
-                pixel_extrait = 0;
+            if ( ( (pixel_x+x) >= 0) && ((pixel_y+y) >= 0) && ((pixel_x+x) <= c_image_x) && ((pixel_y+y) <= c_image_y) ){
+			    pixel_extrait = d_Data[pixel_x+x + (pixel_y+y)*c_image_x ];
             }
 //        	printf("pixel_extrait = %f \n", pixel_extrait);
-			tmp_sum += pixel_extrait * c_Kernel[c_kernel_radius_x+x + (c_kernel_radius_y+y)*c_kernel_y];
+			tmp_sum += pixel_extrait * c_Kernel[c_kernel_radius_x+x + (c_kernel_radius_y+y)*c_kernel_x];
 			}
 		}
 	d_Result[pixel_pos] = tmp_sum;
@@ -38,12 +35,13 @@ if(pixel_y < c_image_y && pixel_x < c_image_x) {
 }
 
 template <typename T>
-__global__ void copy_gpu_sort(T* d_out, T* d_in, long int length_x_in, long int length_y_in)
+__global__ void copy_gpu_sort(T* d_out, T* d_in, int length_x_in, int length_y_in)
 {
     int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
     if(pixel_x < length_x_in && pixel_y < length_y_in){
-        d_out[pixel_y + (length_y_in)*pixel_x] = d_in[(pixel_y+2) + (length_y_in+4)*(pixel_x+2)];
+        d_out[length_x_in*pixel_y + pixel_x] = d_in[(length_x_in+4)*(pixel_y+2) + (pixel_x+2)];
+		__syncthreads();
     }
 }
 
@@ -60,6 +58,7 @@ __global__ void parameter_maps_sliced_from_beta_sort(T* beta_modif, T* d_IMAGE_a
     int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
 	if (pixel_x < image_x && pixel_y < image_y){
+//	printf("index_x = %d , index_y = %d , k = %d\n",pixel_x, pixel_y, k);//, index_z = %d \n",index_x,index_y,index_z);
 		d_IMAGE_amp[pixel_y*image_x+pixel_x] = beta_modif[ (0+3*k)*image_x*image_y+ pixel_y*image_x+pixel_x];		
 		d_IMAGE_mu[pixel_y*image_x+pixel_x] = beta_modif[ (1+3*k)*image_x*image_y+ pixel_y*image_x+pixel_x];		
 		d_IMAGE_sig[pixel_y*image_x+pixel_x] = beta_modif[ (2+3*k)*image_x*image_y+ pixel_y*image_x+pixel_x];
@@ -88,14 +87,22 @@ __global__ void init_extended_array_sort(T* d_IMAGE, T* d_IMAGE_extended, int im
 
 	int image_x_ext = image_x+4;
 	int image_y_ext = image_y+4;
-	int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
 	int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+	int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+	
+/*
+	if(pixel_x ==0 && pixel_y ==0)
+	printf("TEST \n");//,index_z);
+	__syncthreads();
+*/
 	if (pixel_x < image_x_ext && pixel_y<image_y_ext){  
-        d_IMAGE_extended[pixel_y+image_y_ext*pixel_x]=0.;
-//    printf("d_IMAGE_extended[%d] = %f\n", pixel_y+image_y_ext*pixel_x,d_IMAGE_extended[pixel_y+image_y_ext*pixel_x]);
+//		printf("pixel_x = %d , pixel_y = %d \n",pixel_x,pixel_y);//,index_z);
+        d_IMAGE_extended[image_x_ext*pixel_y+pixel_x]=0.;
 	}
+	__syncthreads();
+
 	if (pixel_x < image_x && pixel_y<image_y){
-		d_IMAGE_extended[2+pixel_y+image_y_ext*(2+pixel_x)]=d_IMAGE[pixel_y+image_y*pixel_x];
+		d_IMAGE_extended[image_x_ext*(2+pixel_y)+2+pixel_x]=d_IMAGE[image_x*pixel_y+pixel_x];
 	}
 
 }
@@ -108,6 +115,56 @@ __global__ void init_extended_array_sort(T* d_IMAGE, T* d_IMAGE_extended, int im
 
 template <typename T>
 __global__ void extension_mirror_gpu_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int image_y){
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+	int image_x_ext = image_x+4;
+	int image_y_ext = image_y+4;
+
+	if(pixel_x < image_x && pixel_y < 2){
+//		printf("pixel_x = %d , pixel_y = %d \n",pixel_x,pixel_y);//,index_z);
+		h_IMAGE_extended[image_x_ext*pixel_y+(2+pixel_x)] = h_IMAGE[image_x*pixel_y+pixel_x];
+	}
+
+	__syncthreads();
+
+	if(pixel_x < image_y && pixel_y < 2){
+//		printf("pixel_x = %d , pixel_y = %d \n",pixel_x,pixel_y);//,index_z);
+		h_IMAGE_extended[(image_x_ext)*(pixel_x+2)+pixel_y] = h_IMAGE[image_x*pixel_x+pixel_y];
+	}
+
+	__syncthreads();
+
+	if(pixel_x < image_x && pixel_y < 2){
+//		printf("pixel_x = %d , pixel_y = %d \n",pixel_x,pixel_y);//,index_z);
+		h_IMAGE_extended[(image_x_ext)*(pixel_y+image_y+2)+2+pixel_x] = h_IMAGE[image_x*(pixel_y+image_y-2)+pixel_x];
+	}
+	
+		__syncthreads();
+
+	if(pixel_x <image_y && pixel_y < 2){
+//		printf("pixel_x = %d , pixel_y = %d \n",pixel_x,pixel_y);//,index_z);
+		h_IMAGE_extended[(image_x_ext)*(pixel_x+2)+2+image_x+pixel_y] = h_IMAGE[image_x*pixel_x+pixel_y+image_x-2];
+	}
+
+/*
+	if(pixel_x < 2 && pixel_y < image_y){
+		h_IMAGE_extended[image_x_ext*(pixel_y+2)+(pixel_x)] = h_IMAGE[image_x*pixel_y+pixel_x];
+	}
+	if(pixel_x < 2 && pixel_y < image_y){
+		h_IMAGE_extended[image_x_ext*(pixel_y)+(2+pixel_x)] = h_IMAGE[image_x*pixel_y+pixel_x];
+	}
+	if(pixel_x>=image_x && pixel_x < image_x+2 && pixel_y < image_y){
+		h_IMAGE_extended[image_x_ext*(2+pixel_y)+(2+pixel_x)] = h_IMAGE[image_x*pixel_y+(pixel_x-2)];
+	}
+	if(pixel_x < image_x && pixel_y>=image_y && pixel_y < image_y+2){
+		h_IMAGE_extended[image_x_ext*(2+pixel_y)+(2+pixel_x)] = h_IMAGE[image_x*(pixel_y-2)+pixel_x];
+	}
+*/
+
+}
+
+template <typename T>
+__global__ void extension_mirror_gpu_sort_save(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int image_y){
 /*
     if(image_x == 0 || image_y == 0){
         return;
@@ -119,7 +176,7 @@ __global__ void extension_mirror_gpu_sort(T* h_IMAGE, T* h_IMAGE_extended, int i
 	int image_y_ext = image_y+4;
 
 
-	if(pixel_x < image_y && pixel_y < 2){
+	if(pixel_x < image_x && pixel_y < 2){
 		h_IMAGE_extended[image_x_ext*pixel_y+(2+pixel_x)] = h_IMAGE[image_x*pixel_y+pixel_x];
 	}
 /*
@@ -131,7 +188,7 @@ __global__ void extension_mirror_gpu_sort(T* h_IMAGE, T* h_IMAGE_extended, int i
 		}
 	}
 */
-	if(pixel_x < image_x && pixel_y < 2){
+	if(pixel_x < image_y && pixel_y < 2){
 		h_IMAGE_extended[(image_x_ext)*(pixel_x+2)+pixel_y] = h_IMAGE[image_x*pixel_x+pixel_y];
 	}
 /*
@@ -143,7 +200,7 @@ __global__ void extension_mirror_gpu_sort(T* h_IMAGE, T* h_IMAGE_extended, int i
 		}
 	}
 */
-	if(pixel_x < image_y && pixel_y < 2){
+	if(pixel_x < image_x && pixel_y < 2){
 		h_IMAGE_extended[(image_x_ext)*(pixel_y+image_x+2)+2+pixel_x] = h_IMAGE[image_x*(pixel_y+image_x-2)+pixel_x];
 	}
 /*
@@ -156,7 +213,7 @@ __global__ void extension_mirror_gpu_sort(T* h_IMAGE, T* h_IMAGE_extended, int i
 	}
 
 */
-	if(pixel_x <image_x && pixel_y < 2){
+	if(pixel_x <image_y && pixel_y < 2){
 		h_IMAGE_extended[(image_x_ext)*(pixel_x+2)+2+image_y+pixel_y] = h_IMAGE[image_x*pixel_x+pixel_y+image_y-2];
 	}
 /*
@@ -169,6 +226,7 @@ __global__ void extension_mirror_gpu_sort(T* h_IMAGE, T* h_IMAGE_extended, int i
 	}
 */
 }
+
 
 template <typename T>
 void extension_mirror_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int image_y){

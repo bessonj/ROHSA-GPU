@@ -364,10 +364,11 @@ __global__ void gradient_kernel_2_beta_with_INDEXING(double* deriv, int* t_d, do
 		double buffer_1 = 0.;
 		double buffer_2 = 0.;
 
+//		printf("index_z = %d , index_y = %d , index_x = %d\n",index_z,index_y,index_x);
+
 		for(int i=0; i<residual_SHAPE0; i++){
 			double par_res = INDEXING_3D(residual,i,index_y,index_x)* parstd;
-//			printf("i = %d , index_z = %d , index_y = %d , index_x = %d\n",i,index_z,index_y,index_x);
-			double par1 = double(i) - par1_a;
+			double par1 = double(i+1) - par1_a;
 
 			buffer_0 += exp( -pow( par1 ,2.)*par2_pow ) * par_res;
 			buffer_1 += par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ) * par_res;
@@ -377,9 +378,9 @@ __global__ void gradient_kernel_2_beta_with_INDEXING(double* deriv, int* t_d, do
 //		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
 //		printf(" buffer_0 = %f ,  buffer_1 = %f ,  buffer_2 = %f \n", buffer_0, buffer_1, buffer_2);// = %d , index_z = %d\n",index_x,index_y,index_z);
 		__syncthreads();
-		INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)=buffer_0;
-		INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)=buffer_1;
-		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)=buffer_2;
+		INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)= buffer_0;
+		INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)= buffer_1;
+		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)= buffer_2;
 	}
 
 	__syncthreads();
@@ -520,9 +521,9 @@ __global__ void gradient_kernel_3(double* deriv, int* t_d, double* params, int* 
 
 __global__ void kernel_residual(double* beta, double* cube, double* residual, int indice_x, int indice_y, int indice_v, int n_gauss)
 {
-	int index_x = blockIdx.x*BLOCK_SIZE_X +threadIdx.x;
-	int index_y = blockIdx.y*BLOCK_SIZE_Y +threadIdx.y;
-	int index_z = blockIdx.z*BLOCK_SIZE_Z +threadIdx.z;
+	int index_x = blockIdx.x*BLOCK_SIZE_X_BIS +threadIdx.x;
+	int index_y = blockIdx.y*BLOCK_SIZE_Y_BIS +threadIdx.y;
+	int index_z = blockIdx.z*BLOCK_SIZE_Z_BIS +threadIdx.z;
 
 	if(index_x<indice_x && index_y<indice_y && index_z<indice_v)
 	{
@@ -533,7 +534,7 @@ __global__ void kernel_residual(double* beta, double* cube, double* residual, in
 			par[0]=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];
 			par[1]=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];
 			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
-			model_gaussienne += par[0]*exp(-pow((double(index_z)-par[1]),2.) / (2.*pow(par[2],2.)));
+			model_gaussienne += par[0]*exp(-pow((double(index_z+1)-par[1]),2.) / (2.*pow(par[2],2.)));
 		}
 		residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]=model_gaussienne-cube[index_z*indice_y*indice_x+index_y*indice_x+index_x];
 	}
