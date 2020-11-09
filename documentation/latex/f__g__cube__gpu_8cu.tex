@@ -1,0 +1,74 @@
+\hypertarget{f__g__cube__gpu_8cu}{}\doxysection{src/\+C\+P\+P/f\+\_\+g\+\_\+cube\+\_\+gpu.cu File Reference}
+\label{f__g__cube__gpu_8cu}\index{src/CPP/f\_g\_cube\_gpu.cu@{src/CPP/f\_g\_cube\_gpu.cu}}
+
+
+These are the functions involved in f\+\_\+g\+\_\+cube.  
+
+
+{\ttfamily \#include \char`\"{}f\+\_\+g\+\_\+cube\+\_\+gpu.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}kernel\+\_\+gradient\+\_\+sort.\+cuh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}kernel\+\_\+conv\+\_\+sort.\+cu\char`\"{}}\newline
+{\ttfamily \#include $<$cuda\+\_\+runtime.\+h$>$}\newline
+{\ttfamily \#include $<$helper\+\_\+cuda.\+h$>$}\newline
+{\ttfamily \#include $<$cuda.\+h$>$}\newline
+{\ttfamily \#include $<$omp.\+h$>$}\newline
+Include dependency graph for f\+\_\+g\+\_\+cube\+\_\+gpu.\+cu\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{f__g__cube__gpu_8cu__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_affdb0dabd0eee5400b35d0c265ad7252}\label{f__g__cube__gpu_8cu_affdb0dabd0eee5400b35d0c265ad7252}} 
+void \mbox{\hyperlink{f__g__cube__gpu_8cu_affdb0dabd0eee5400b35d0c265ad7252}{dummy\+Instantiator\+\_\+sort}} ()
+\begin{DoxyCompactList}\small\item\em Initialize the template functions. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_a2e895aea579e18e2936221d85ad98954}\label{f__g__cube__gpu_8cu_a2e895aea579e18e2936221d85ad98954}} 
+void {\bfseries prepare\+\_\+for\+\_\+convolution\+\_\+sort} (double $\ast$d\+\_\+\+I\+M\+A\+G\+E\+\_\+amp, double $\ast$d\+\_\+\+I\+M\+A\+G\+E\+\_\+amp\+\_\+ext, int image\+\_\+x, int image\+\_\+y, dim3 Blocks\+Par\+Grille\+\_\+init, dim3 Threads\+Par\+Block\+\_\+init, dim3 Blocks\+Par\+Grille\+\_\+frame, dim3 Threads\+Par\+Block\+\_\+frame)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_a060af9eadae956fbb58f43b168b8aa24}\label{f__g__cube__gpu_8cu_a060af9eadae956fbb58f43b168b8aa24}} 
+void {\bfseries conv\+\_\+twice\+\_\+and\+\_\+copy\+\_\+sort} (double $\ast$d\+\_\+\+I\+M\+A\+G\+E\+\_\+amp\+\_\+ext, double $\ast$d\+\_\+conv\+\_\+amp, double $\ast$d\+\_\+conv\+\_\+conv\+\_\+amp, int image\+\_\+x, int image\+\_\+y, dim3 Blocks\+Par\+Grille\+\_\+init, dim3 Threads\+Par\+Block\+\_\+init, dim3 Blocks\+Par\+Grille, dim3 Threads\+Par\+Block, dim3 Blocks\+Par\+Grille\+\_\+frame, dim3 Threads\+Par\+Block\+\_\+frame)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_a11ae0d8f95a057acbff3b2e4b713b300}\label{f__g__cube__gpu_8cu_a11ae0d8f95a057acbff3b2e4b713b300}} 
+void {\bfseries update\+\_\+array\+\_\+f\+\_\+dev\+\_\+sort} (double lambda, double lambda\+\_\+var, double $\ast$array\+\_\+f\+\_\+dev, double $\ast$map\+\_\+image\+\_\+dev, double $\ast$map\+\_\+conv\+\_\+dev, int indice\+\_\+x, int indice\+\_\+y, int k, double $\ast$b\+\_\+params)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_a484047e097d2c9e14d25ffbf5109e28d}\label{f__g__cube__gpu_8cu_a484047e097d2c9e14d25ffbf5109e28d}} 
+void {\bfseries update\+\_\+array\+\_\+f\+\_\+dev\+\_\+sort} (double lambda, double $\ast$array\+\_\+f\+\_\+dev, double $\ast$map\+\_\+dev, int indice\+\_\+x, int indice\+\_\+y)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_ae4d0446fc928c53562e9959d5303f317}\label{f__g__cube__gpu_8cu_ae4d0446fc928c53562e9959d5303f317}} 
+void {\bfseries conv2\+D\+\_\+\+G\+P\+U\+\_\+all\+\_\+sort} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double $\ast$d\+\_\+g, int n\+\_\+beta, double lambda\+\_\+var\+\_\+sig, double $\ast$b\+\_\+params\+\_\+dev, double $\ast$deriv\+\_\+dev, double $\ast$beta\+\_\+modif\+\_\+dev, double $\ast$array\+\_\+f\+\_\+dev, int image\+\_\+x, int image\+\_\+y, int n\+\_\+gauss, float temps\+\_\+transfert, float temps\+\_\+mirroirs)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_a120f70dd07e688f3fc52d05877bc255b}\label{f__g__cube__gpu_8cu_a120f70dd07e688f3fc52d05877bc255b}} 
+void {\bfseries gradient\+\_\+\+L\+\_\+2\+\_\+beta\+\_\+parallel} (double $\ast$deriv\+\_\+dev, int $\ast$taille\+\_\+deriv, int $\ast$taille\+\_\+deriv\+\_\+dev, double $\ast$beta\+\_\+modif\+\_\+dev, int $\ast$taille\+\_\+beta\+\_\+modif\+\_\+dev, double $\ast$residual\+\_\+dev, int $\ast$taille\+\_\+residual\+\_\+dev, double $\ast$std\+\_\+map\+\_\+dev, int $\ast$taille\+\_\+std\+\_\+map\+\_\+dev, int n\+\_\+gauss)
+\item 
+void \mbox{\hyperlink{f__g__cube__gpu_8cu_a16a118fe7908d2b42c7b3867b2268639}{gradient\+\_\+\+L\+\_\+3\+\_\+parallel}} (double $\ast$deriv, int $\ast$taille\+\_\+deriv, int product\+\_\+taille\+\_\+deriv, double $\ast$params, int $\ast$taille\+\_\+params, int product\+\_\+taille\+\_\+params, double $\ast$residual, int $\ast$taille\+\_\+residual, int product\+\_\+residual, double $\ast$std\+\_\+map, int $\ast$taille\+\_\+std\+\_\+map, int product\+\_\+std\+\_\+map, int n\+\_\+gauss)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_acbe5a986f730d4ac3940e3074f0eb419}\label{f__g__cube__gpu_8cu_acbe5a986f730d4ac3940e3074f0eb419}} 
+void {\bfseries reduction\+\_\+loop\+\_\+parallel} (double $\ast$array\+\_\+in, double $\ast$d\+\_\+array\+\_\+f, int size\+\_\+array)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_a4ae54f774181e83430a1f8b9e6a2a955}\label{f__g__cube__gpu_8cu_a4ae54f774181e83430a1f8b9e6a2a955}} 
+void {\bfseries compute\+\_\+residual\+\_\+and\+\_\+f\+\_\+parallel} (double $\ast$array\+\_\+f\+\_\+dev, double $\ast$beta\+\_\+dev, double $\ast$cube\+\_\+dev, double $\ast$residual\+\_\+dev, double $\ast$std\+\_\+map\+\_\+dev, int indice\+\_\+x, int indice\+\_\+y, int indice\+\_\+v, int n\+\_\+gauss)
+\item 
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_af6adcd739fc54ef1bcd66a9fa99efde7}\label{f__g__cube__gpu_8cu_af6adcd739fc54ef1bcd66a9fa99efde7}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+parallel} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double $\ast$g, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig, double $\ast$cube\+\_\+flattened, double temps\+\_\+conv, double temps\+\_\+deriv, double temps\+\_\+tableaux, double temps\+\_\+res\+\_\+f)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+These are the functions involved in f\+\_\+g\+\_\+cube. 
+
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{f__g__cube__gpu_8cu_a16a118fe7908d2b42c7b3867b2268639}\label{f__g__cube__gpu_8cu_a16a118fe7908d2b42c7b3867b2268639}} 
+\index{f\_g\_cube\_gpu.cu@{f\_g\_cube\_gpu.cu}!gradient\_L\_3\_parallel@{gradient\_L\_3\_parallel}}
+\index{gradient\_L\_3\_parallel@{gradient\_L\_3\_parallel}!f\_g\_cube\_gpu.cu@{f\_g\_cube\_gpu.cu}}
+\doxysubsubsection{\texorpdfstring{gradient\_L\_3\_parallel()}{gradient\_L\_3\_parallel()}}
+{\footnotesize\ttfamily void gradient\+\_\+\+L\+\_\+3\+\_\+parallel (\begin{DoxyParamCaption}\item[{double $\ast$}]{deriv,  }\item[{int $\ast$}]{taille\+\_\+deriv,  }\item[{int}]{product\+\_\+taille\+\_\+deriv,  }\item[{double $\ast$}]{params,  }\item[{int $\ast$}]{taille\+\_\+params,  }\item[{int}]{product\+\_\+taille\+\_\+params,  }\item[{double $\ast$}]{residual,  }\item[{int $\ast$}]{taille\+\_\+residual,  }\item[{int}]{product\+\_\+residual,  }\item[{double $\ast$}]{std\+\_\+map,  }\item[{int $\ast$}]{taille\+\_\+std\+\_\+map,  }\item[{int}]{product\+\_\+std\+\_\+map,  }\item[{int}]{n\+\_\+gauss }\end{DoxyParamCaption})}
+
+printf(\char`\"{}taille\+\_\+d\+F\+\_\+over\+\_\+d\+B = \%d, \%d, \%d\textbackslash{}n\char`\"{},taille\+\_\+d\+F\+\_\+over\+\_\+dB\mbox{[}0\mbox{]},taille\+\_\+d\+F\+\_\+over\+\_\+dB\mbox{[}1\mbox{]},taille\+\_\+d\+F\+\_\+over\+\_\+dB\mbox{[}2\mbox{]});
+
+Definition at line 467 of file f\+\_\+g\+\_\+cube\+\_\+gpu.\+cu.
+

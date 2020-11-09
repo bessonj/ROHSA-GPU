@@ -10,11 +10,7 @@ namespace plt = matplotlibcpp;
 using namespace CCfits;
 
 
-//// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
-
-//We assume that the cube does not require any further modification if it has been produced in a dat file through the Python program (ROHSApy?).
-//The depth, width and height of the cube are inherited from the dat file.
-//To truncate or not to truncate, that is the question.
+// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole_data_in_cube)
 {
 	this->indice_debut= indice_debut;

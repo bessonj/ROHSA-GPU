@@ -1,0 +1,363 @@
+\hypertarget{lbfgsb_8h_source}{}\doxysection{lbfgsb.\+h}
+\label{lbfgsb_8h_source}\index{L-\/BFGS-\/B-\/C/src/lbfgsb.h@{L-\/BFGS-\/B-\/C/src/lbfgsb.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001 \textcolor{comment}{/* Tues, Feb 17 2015 }}
+\DoxyCodeLine{00002 \textcolor{comment}{ * Stephen Becker, stephen.becker@colorado.edu}}
+\DoxyCodeLine{00003 \textcolor{comment}{ * */}}
+\DoxyCodeLine{00004 }
+\DoxyCodeLine{00005 \textcolor{preprocessor}{\#ifndef lbfgsb\_h}}
+\DoxyCodeLine{00006 \textcolor{preprocessor}{\#define lbfgsb\_h}}
+\DoxyCodeLine{00007 }
+\DoxyCodeLine{00008 }
+\DoxyCodeLine{00009 }
+\DoxyCodeLine{00010  \textcolor{comment}{/* You could have to modify these}}
+\DoxyCodeLine{00011 \textcolor{comment}{ * Noticed that on windows, long int is 32-\/bit}}
+\DoxyCodeLine{00012 \textcolor{comment}{ * while on linux and mac long int is 64-\/bit.}}
+\DoxyCodeLine{00013 \textcolor{comment}{  *Use long long to force 64-\/bit if you want */}}
+\DoxyCodeLine{00014 \textcolor{keyword}{typedef} \textcolor{keywordtype}{long} \textcolor{keywordtype}{int} integer;}
+\DoxyCodeLine{00015 \textcolor{keyword}{typedef} \textcolor{keywordtype}{long} \textcolor{keywordtype}{int} ftnlen;}
+\DoxyCodeLine{00016 \textcolor{keyword}{typedef} \textcolor{keywordtype}{long} \textcolor{keywordtype}{int} logical;}
+\DoxyCodeLine{00017 \textcolor{preprocessor}{\#define TRUE\_ (1)}}
+\DoxyCodeLine{00018 \textcolor{preprocessor}{\#define FALSE\_ (0)}}
+\DoxyCodeLine{00019 }
+\DoxyCodeLine{00020 }
+\DoxyCodeLine{00021 \textcolor{preprocessor}{\#include <math.h>}}
+\DoxyCodeLine{00022 \textcolor{preprocessor}{\#include <stdio.h>}}
+\DoxyCodeLine{00023 }
+\DoxyCodeLine{00024 \textcolor{preprocessor}{\#ifdef MATLAB\_MEX\_FILE}}
+\DoxyCodeLine{00025 \textcolor{preprocessor}{\#include "mex.h"}}
+\DoxyCodeLine{00026 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00027 \textcolor{comment}{/* mex.h includes matrix.h, which uses abs() */}}
+\DoxyCodeLine{00028 }
+\DoxyCodeLine{00029 \textcolor{comment}{/* Visual C++ compiler often includes file that have already}}
+\DoxyCodeLine{00030 \textcolor{comment}{ * defined min/max, so do a check first */}}
+\DoxyCodeLine{00031 \textcolor{comment}{/* The below cause conflicts with other versions of abs, max, min.}}
+\DoxyCodeLine{00032 \textcolor{comment}{   Replaced with fabs, fmin, fmax provided by math.h */}}
+\DoxyCodeLine{00033 \textcolor{comment}{/* \#ifndef abs */}}
+\DoxyCodeLine{00034 \textcolor{comment}{/* \#define abs(x) ((x) >= 0 ? (x) : -\/(x)) */}}
+\DoxyCodeLine{00035 \textcolor{comment}{/* \#endif */}}
+\DoxyCodeLine{00036 \textcolor{comment}{/* \#ifndef min */}}
+\DoxyCodeLine{00037 \textcolor{comment}{/* \#define min(a,b) ((a) <= (b) ? (a) : (b)) */}}
+\DoxyCodeLine{00038 \textcolor{comment}{/* \#endif */}}
+\DoxyCodeLine{00039 \textcolor{comment}{/* \#ifndef max */}}
+\DoxyCodeLine{00040 \textcolor{comment}{/* \#define max(a,b) ((a) >= (b) ? (a) : (b)) */}}
+\DoxyCodeLine{00041 \textcolor{comment}{/* \#endif */}}
+\DoxyCodeLine{00042 }
+\DoxyCodeLine{00043 }
+\DoxyCodeLine{00044 }
+\DoxyCodeLine{00045 }
+\DoxyCodeLine{00046 \textcolor{comment}{/* Modified L-\/BFGS-\/B to use integers instead}}
+\DoxyCodeLine{00047 \textcolor{comment}{ * of strings, for testing the "task". Way}}
+\DoxyCodeLine{00048 \textcolor{comment}{ * simpler this way. For ease-\/of-\/use, use}}
+\DoxyCodeLine{00049 \textcolor{comment}{ * these aliases. For each class of task,}}
+\DoxyCodeLine{00050 \textcolor{comment}{ * make sure numbering is contiguous}}
+\DoxyCodeLine{00051 \textcolor{comment}{ * so that I have easy tests for class}}
+\DoxyCodeLine{00052 \textcolor{comment}{ * membership */}}
+\DoxyCodeLine{00053 \textcolor{preprocessor}{\#define START 1 }}
+\DoxyCodeLine{00054 \textcolor{preprocessor}{\#define NEW\_X 2}}
+\DoxyCodeLine{00055 \textcolor{preprocessor}{\#define ABNORMAL 3 }\textcolor{comment}{/* message: ABNORMAL\_TERMINATION\_IN\_LNSRCH. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00056 \textcolor{preprocessor}{\#define RESTART 4 }\textcolor{comment}{/* message: RESTART\_FROM\_LNSRCH. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00057 }
+\DoxyCodeLine{00058 \textcolor{preprocessor}{\#define FG      10}}
+\DoxyCodeLine{00059 \textcolor{preprocessor}{\#define FG\_END  15}}
+\DoxyCodeLine{00060 \textcolor{preprocessor}{\#define IS\_FG(x) ( ((x)>=FG) ?  ( ((x)<=FG\_END) ? 1 : 0 ) : 0 )}}
+\DoxyCodeLine{00061 \textcolor{preprocessor}{\#define FG\_LN   11}}
+\DoxyCodeLine{00062 \textcolor{preprocessor}{\#define FG\_LNSRCH FG\_LN}}
+\DoxyCodeLine{00063 \textcolor{preprocessor}{\#define FG\_ST   12}}
+\DoxyCodeLine{00064 \textcolor{preprocessor}{\#define FG\_START FG\_ST}}
+\DoxyCodeLine{00065 }
+\DoxyCodeLine{00066 \textcolor{preprocessor}{\#define CONVERGENCE 20}}
+\DoxyCodeLine{00067 \textcolor{preprocessor}{\#define CONVERGENCE\_END  25}}
+\DoxyCodeLine{00068 \textcolor{preprocessor}{\#define IS\_CONVERGED(x) ( ((x)>=CONVERGENCE) ?  ( ((x)<=CONVERGENCE\_END) ? 1 : 0 ) : 0 )}}
+\DoxyCodeLine{00069 \textcolor{preprocessor}{\#define CONV\_GRAD   21 }\textcolor{comment}{/* message: CONVERGENCE: NORM\_OF\_PROJECTED\_GRADIENT\_<=\_PGTOL. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00070 \textcolor{preprocessor}{\#define CONV\_F      22 }\textcolor{comment}{/* message: CONVERGENCE: REL\_REDUCTION\_OF\_F\_<=\_FACTR*EPSMCH. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00071 }
+\DoxyCodeLine{00072 \textcolor{preprocessor}{\#define STOP  30  }}
+\DoxyCodeLine{00073 \textcolor{preprocessor}{\#define STOP\_END 40}}
+\DoxyCodeLine{00074 \textcolor{preprocessor}{\#define IS\_STOP(x) ( ((x)>=STOP) ?  ( ((x)<=STOP\_END) ? 1 : 0 ) : 0 )}}
+\DoxyCodeLine{00075 \textcolor{preprocessor}{\#define STOP\_CPU  31 }\textcolor{comment}{/* message: STOP: CPU EXCEEDING THE TIME LIMIT. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00076 \textcolor{preprocessor}{\#define STOP\_ITER 32 }\textcolor{comment}{/* message: STOP: TOTAL NO. of f AND g EVALUATIONS EXCEEDS LIM.  */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00077 \textcolor{preprocessor}{\#define STOP\_GRAD 33 }\textcolor{comment}{/* message: STOP: THE PROJECTED GRADIENT IS SUFFICIENTLY SMALL. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00078 }
+\DoxyCodeLine{00079 \textcolor{preprocessor}{\#define WARNING 100}}
+\DoxyCodeLine{00080 \textcolor{preprocessor}{\#define WARNING\_END 110}}
+\DoxyCodeLine{00081 \textcolor{preprocessor}{\#define IS\_WARNING(x) ( ((x)>=WARNING) ?  ( ((x)<=WARNING\_END) ? 1 : 0 ) : 0 )}}
+\DoxyCodeLine{00082 \textcolor{preprocessor}{\#define WARNING\_ROUND 101  }\textcolor{comment}{/* WARNING: ROUNDING ERRORS PREVENT PROGRESS */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00083 \textcolor{preprocessor}{\#define WARNING\_XTOL  102  }\textcolor{comment}{/* WARNING: XTOL TEST SATISIED */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00084 \textcolor{preprocessor}{\#define WARNING\_STPMAX 103 }\textcolor{comment}{/* WARNING: STP = STPMAX */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00085 \textcolor{preprocessor}{\#define WARNING\_STPMIN 104 }\textcolor{comment}{/* WARNING: STP = STPMIN */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00086 }
+\DoxyCodeLine{00087 \textcolor{preprocessor}{\#define ERROR 200}}
+\DoxyCodeLine{00088 \textcolor{preprocessor}{\#define ERROR\_END 240}}
+\DoxyCodeLine{00089 \textcolor{preprocessor}{\#define IS\_ERROR(x) ( ((x)>=ERROR) ?  ( ((x)<=ERROR\_END) ? 1 : 0 ) : 0 )}}
+\DoxyCodeLine{00090 \textcolor{comment}{/* More specific conditions below */}}
+\DoxyCodeLine{00091 \textcolor{preprocessor}{\#define ERROR\_SMALLSTP 201 }\textcolor{comment}{/* message: ERROR: STP .LT. STPMIN  */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00092 \textcolor{preprocessor}{\#define ERROR\_LARGESTP 202 }\textcolor{comment}{/* message: ERROR: STP .GT. STPMAX  */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00093 \textcolor{preprocessor}{\#define ERROR\_INITIAL  203 }\textcolor{comment}{/* message: ERROR: INITIAL G .GE. ZERO */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00094 \textcolor{preprocessor}{\#define ERROR\_FTOL     204 }\textcolor{comment}{/* message: ERROR: FTOL .LT. ZERO   */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00095 \textcolor{preprocessor}{\#define ERROR\_GTOL     205 }\textcolor{comment}{/* message: ERROR: GTOL .LT. ZERO   */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00096 \textcolor{preprocessor}{\#define ERROR\_XTOL     206 }\textcolor{comment}{/* message: ERROR: XTOL .LT. ZERO   */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00097 \textcolor{preprocessor}{\#define ERROR\_STP0     207 }\textcolor{comment}{/* message: ERROR: STPMIN .LT. ZERO */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00098 \textcolor{preprocessor}{\#define ERROR\_STP1     208 }\textcolor{comment}{/* message: ERROR: STPMAX .LT. STPMIN */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00099 \textcolor{preprocessor}{\#define ERROR\_N0       209 }\textcolor{comment}{/* ERROR: N .LE. 0 */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00100 \textcolor{preprocessor}{\#define ERROR\_M0       210 }\textcolor{comment}{/* ERROR: M .LE. 0 */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00101 \textcolor{preprocessor}{\#define ERROR\_FACTR    211 }\textcolor{comment}{/* ERROR: FACTR .LT. 0 */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00102 \textcolor{preprocessor}{\#define ERROR\_NBD      212 }\textcolor{comment}{/* ERROR: INVALID NBD */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00103 \textcolor{preprocessor}{\#define ERROR\_FEAS     213 }\textcolor{comment}{/* ERROR: NO FEASIBLE SOLUTION */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00104 }
+\DoxyCodeLine{00105 }
+\DoxyCodeLine{00106 \textcolor{comment}{/* and "word" was a char that was one fo these: */}}
+\DoxyCodeLine{00107 \textcolor{preprocessor}{\#define WORD\_DEFAULT 0 }\textcolor{comment}{/* aka "-\/-\/-\/".  */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00108 \textcolor{preprocessor}{\#define WORD\_CON 1 }\textcolor{comment}{/*  the subspace minimization converged. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00109 \textcolor{preprocessor}{\#define WORD\_BND 2 }\textcolor{comment}{/* the subspace minimization stopped at a bound. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00110 \textcolor{preprocessor}{\#define WORD\_TNT 3 }\textcolor{comment}{/*  the truncated Newton step has been used. */}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00111 }
+\DoxyCodeLine{00112 }
+\DoxyCodeLine{00113 \textcolor{comment}{/* If we are linking with fortran code,}}
+\DoxyCodeLine{00114 \textcolor{comment}{ * then use gfortran to compile, not gcc,}}
+\DoxyCodeLine{00115 \textcolor{comment}{ * and it will expect function names to have}}
+\DoxyCodeLine{00116 \textcolor{comment}{ * underscores.}}
+\DoxyCodeLine{00117 \textcolor{comment}{ * With gcc, if we execute the following,}}
+\DoxyCodeLine{00118 \textcolor{comment}{ * it will complain \_daxpy\_ is undefined ... */}}
+\DoxyCodeLine{00119 \textcolor{preprocessor}{\#if defined(\_WIN32) || defined(\_\_hpux) || !defined(\_\_GFORTRAN\_\_)}}
+\DoxyCodeLine{00120 \textcolor{preprocessor}{\#define FORTRAN\_WRAPPER(x) x}}
+\DoxyCodeLine{00121 \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00122 \textcolor{preprocessor}{\#define FORTRAN\_WRAPPER(x) x \#\# \_}}
+\DoxyCodeLine{00123 \textcolor{comment}{/* if we're not WIN32 or HPUX, then if we are linking}}
+\DoxyCodeLine{00124 \textcolor{comment}{ * with gfortran (instead of gcc or g++), we need to mangle}}
+\DoxyCodeLine{00125 \textcolor{comment}{ * names appropriately */}}
+\DoxyCodeLine{00126 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00127 }
+\DoxyCodeLine{00128 }
+\DoxyCodeLine{00129 \textcolor{comment}{/* First decision: use the included BLAS code}}
+\DoxyCodeLine{00130 \textcolor{comment}{ * (un-\/optimized version taken from Netlib;}}
+\DoxyCodeLine{00131 \textcolor{comment}{ * this is the "reference" implementation, or}}
+\DoxyCodeLine{00132 \textcolor{comment}{ * "Ref" for short; this is your best option}}
+\DoxyCodeLine{00133 \textcolor{comment}{ * since these routines should not be a bottleneck}}
+\DoxyCodeLine{00134 \textcolor{comment}{ * in your computation);}}
+\DoxyCodeLine{00135 \textcolor{comment}{ * or, use your own BLAS library, such }}
+\DoxyCodeLine{00136 \textcolor{comment}{ * as Intel MKL, ATLAS, GotoBLAS, etc.}}
+\DoxyCodeLine{00137 \textcolor{comment}{ * (For example, you could use libmwblas}}
+\DoxyCodeLine{00138 \textcolor{comment}{ * or libmwblas\_compat32, which are included}}
+\DoxyCodeLine{00139 \textcolor{comment}{ * with Mathworks and usually based on Intel MKL).}}
+\DoxyCodeLine{00140 \textcolor{comment}{ *}}
+\DoxyCodeLine{00141 \textcolor{comment}{ * The reason not to use your own BLAS library}}
+\DoxyCodeLine{00142 \textcolor{comment}{ * is that (1) it may be faster but it won't be}}
+\DoxyCodeLine{00143 \textcolor{comment}{ * a bottleneck, and (2) some BLAS libraries}}
+\DoxyCodeLine{00144 \textcolor{comment}{ * use 32-\/bit/4byte integers, and others use 64-\/bit/}}
+\DoxyCodeLine{00145 \textcolor{comment}{ * 8byte integers, and you pass by reference,}}
+\DoxyCodeLine{00146 \textcolor{comment}{ * so if you get it wrong, you crash.}}
+\DoxyCodeLine{00147 \textcolor{comment}{ * In Matlab, useing -\/lmwblascompat32}}
+\DoxyCodeLine{00148 \textcolor{comment}{ *   uses names like ddot32}}
+\DoxyCodeLine{00149 \textcolor{comment}{ *}}
+\DoxyCodeLine{00150 \textcolor{comment}{ * In short, use the Ref version unless you feel}}
+\DoxyCodeLine{00151 \textcolor{comment}{ * lucky.}}
+\DoxyCodeLine{00152 \textcolor{comment}{ * */}}
+\DoxyCodeLine{00153 \textcolor{preprocessor}{\#if !defined( \_USE\_OPTIMIZED\_BLAS )}}
+\DoxyCodeLine{00154 \textcolor{comment}{/* make alias to our reference implementation */}}
+\DoxyCodeLine{00155 \textcolor{preprocessor}{\#define daxpy FORTRAN\_WRAPPER(daxpyRef)}}
+\DoxyCodeLine{00156 \textcolor{preprocessor}{\#define dcopy FORTRAN\_WRAPPER(dcopyRef)}}
+\DoxyCodeLine{00157 \textcolor{preprocessor}{\#define ddot  FORTRAN\_WRAPPER(ddotRef)}}
+\DoxyCodeLine{00158 \textcolor{preprocessor}{\#define dscal FORTRAN\_WRAPPER(dscalRef)}}
+\DoxyCodeLine{00159 \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00160 \textcolor{preprocessor}{\#if defined( \_USE\_32\_BIT\_BLAS )}}
+\DoxyCodeLine{00161 \textcolor{preprocessor}{\#define daxpy FORTRAN\_WRAPPER(daxpy32)}}
+\DoxyCodeLine{00162 \textcolor{preprocessor}{\#define dcopy FORTRAN\_WRAPPER(dcopy32)}}
+\DoxyCodeLine{00163 \textcolor{preprocessor}{\#define ddot  FORTRAN\_WRAPPER(ddot32)}}
+\DoxyCodeLine{00164 \textcolor{preprocessor}{\#define dscal FORTRAN\_WRAPPER(dscal32)}}
+\DoxyCodeLine{00165 \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00166 \textcolor{preprocessor}{\#define daxpy FORTRAN\_WRAPPER(daxpy)}}
+\DoxyCodeLine{00167 \textcolor{preprocessor}{\#define dcopy FORTRAN\_WRAPPER(dcopy)}}
+\DoxyCodeLine{00168 \textcolor{preprocessor}{\#define ddot  FORTRAN\_WRAPPER(ddot)}}
+\DoxyCodeLine{00169 \textcolor{preprocessor}{\#define dscal FORTRAN\_WRAPPER(dscal)}}
+\DoxyCodeLine{00170 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00171 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00172 }
+\DoxyCodeLine{00173 }
+\DoxyCodeLine{00174 \textcolor{comment}{/* Fortran style i/o file was via pointer to integer}}
+\DoxyCodeLine{00175 \textcolor{comment}{ * but with C, want pointer to FILE */}}
+\DoxyCodeLine{00176 \textcolor{keyword}{typedef} FILE* fileType; }
+\DoxyCodeLine{00177 \textcolor{comment}{/* typedef integer* fileType; */}}
+\DoxyCodeLine{00178 }
+\DoxyCodeLine{00179 }
+\DoxyCodeLine{00180 \textcolor{comment}{/* Some linesearch parameters. The default}}
+\DoxyCodeLine{00181 \textcolor{comment}{ * values are the same as the FORTRAN code,}}
+\DoxyCodeLine{00182 \textcolor{comment}{ * but you could conceivably change these}}
+\DoxyCodeLine{00183 \textcolor{comment}{ * at compile time; they are used in}}
+\DoxyCodeLine{00184 \textcolor{comment}{ * dcsrch()  */}}
+\DoxyCodeLine{00185 \textcolor{preprocessor}{\#ifndef FTOL}}
+\DoxyCodeLine{00186 \textcolor{preprocessor}{\#define FTOL .001}}
+\DoxyCodeLine{00187 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00188 \textcolor{preprocessor}{\#ifndef GTOL}}
+\DoxyCodeLine{00189 \textcolor{preprocessor}{\#define GTOL .9}}
+\DoxyCodeLine{00190 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00191 \textcolor{preprocessor}{\#ifndef XTOL}}
+\DoxyCodeLine{00192 \textcolor{preprocessor}{\#define XTOL .1}}
+\DoxyCodeLine{00193 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00194 \textcolor{preprocessor}{\#ifndef STEPMIN}}
+\DoxyCodeLine{00195 \textcolor{preprocessor}{\#define STEPMIN 0.}}
+\DoxyCodeLine{00196 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00197 }
+\DoxyCodeLine{00198 }
+\DoxyCodeLine{00199 \textcolor{comment}{/* If we want machine precision in a nice fashion, do this: */}}
+\DoxyCodeLine{00200 \textcolor{preprocessor}{\#include <float.h>}}
+\DoxyCodeLine{00201 \textcolor{preprocessor}{\#ifndef DBL\_EPSILON}}
+\DoxyCodeLine{00202 \textcolor{preprocessor}{\#define DBL\_EPSILON 2.2e-\/16}}
+\DoxyCodeLine{00203 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00204 }
+\DoxyCodeLine{00205 }
+\DoxyCodeLine{00206 }
+\DoxyCodeLine{00207 }
+\DoxyCodeLine{00208 }
+\DoxyCodeLine{00209 }
+\DoxyCodeLine{00210 }
+\DoxyCodeLine{00211 \textcolor{preprocessor}{\#ifdef \_\_cplusplus}}
+\DoxyCodeLine{00212     \textcolor{keyword}{extern} \textcolor{stringliteral}{"C"} \{}
+\DoxyCodeLine{00213 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00214 }
+\DoxyCodeLine{00215 }
+\DoxyCodeLine{00216 }
+\DoxyCodeLine{00217 \textcolor{comment}{/* math.h */}}
+\DoxyCodeLine{00218 \textcolor{keywordtype}{double} sqrt(\textcolor{keywordtype}{double});}
+\DoxyCodeLine{00219 }
+\DoxyCodeLine{00220 \textcolor{keyword}{extern} \textcolor{keywordtype}{double} ddot(integer *, \textcolor{keywordtype}{double} *, integer *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00221         integer *);}
+\DoxyCodeLine{00222 }
+\DoxyCodeLine{00223 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} daxpy(integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00224         integer *, \textcolor{keywordtype}{double} *, integer *);}
+\DoxyCodeLine{00225 }
+\DoxyCodeLine{00226 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} dscal(integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00227         integer *);}
+\DoxyCodeLine{00228 }
+\DoxyCodeLine{00229 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} dcopy(integer *, \textcolor{keywordtype}{double} *, integer *, }
+\DoxyCodeLine{00230         \textcolor{keywordtype}{double} *, integer *);}
+\DoxyCodeLine{00231 }
+\DoxyCodeLine{00232 \textcolor{preprocessor}{\#define setulb FORTRAN\_WRAPPER(setulb)}}
+\DoxyCodeLine{00233 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} setulb(integer *n, integer *m, \textcolor{keywordtype}{double} *x, }
+\DoxyCodeLine{00234     \textcolor{keywordtype}{double} *l, \textcolor{keywordtype}{double} *u, integer *nbd, \textcolor{keywordtype}{double} *f, \textcolor{keywordtype}{double} }
+\DoxyCodeLine{00235     *g, \textcolor{keywordtype}{double} *factr, \textcolor{keywordtype}{double} *pgtol, \textcolor{keywordtype}{double} *wa, integer *}
+\DoxyCodeLine{00236     iwa, integer *task, integer *iprint, integer *csave, logical *lsave, }
+\DoxyCodeLine{00237     integer *isave, \textcolor{keywordtype}{double} *dsave); \textcolor{comment}{/* ftnlen task\_len, ftnlen csave\_len); */}}
+\DoxyCodeLine{00238 }
+\DoxyCodeLine{00239 \textcolor{preprocessor}{\#define mainlb FORTRAN\_WRAPPER(mainlb)}}
+\DoxyCodeLine{00240 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} mainlb(integer *n, integer *m, \textcolor{keywordtype}{double} *x, }
+\DoxyCodeLine{00241         \textcolor{keywordtype}{double} *l, \textcolor{keywordtype}{double} *u, integer *nbd, \textcolor{keywordtype}{double} *f, \textcolor{keywordtype}{double} }
+\DoxyCodeLine{00242         *g, \textcolor{keywordtype}{double} *factr, \textcolor{keywordtype}{double} *pgtol, \textcolor{keywordtype}{double} *ws, \textcolor{keywordtype}{double} *}
+\DoxyCodeLine{00243         wy, \textcolor{keywordtype}{double} *sy, \textcolor{keywordtype}{double} *ss, \textcolor{keywordtype}{double} *wt, \textcolor{keywordtype}{double} *wn, }
+\DoxyCodeLine{00244         \textcolor{keywordtype}{double} *snd, \textcolor{keywordtype}{double} *z\_\_, \textcolor{keywordtype}{double} *r\_\_, \textcolor{keywordtype}{double} *d\_\_, }
+\DoxyCodeLine{00245         \textcolor{keywordtype}{double} *t, \textcolor{keywordtype}{double} *xp, \textcolor{keywordtype}{double} *wa, integer *index, }
+\DoxyCodeLine{00246         integer *iwhere, integer *indx2, integer *task, integer *iprint, }
+\DoxyCodeLine{00247         integer *csave, logical *lsave, integer *isave, \textcolor{keywordtype}{double} *dsave);}
+\DoxyCodeLine{00248 }
+\DoxyCodeLine{00249 }
+\DoxyCodeLine{00250 \textcolor{preprocessor}{\#define freev FORTRAN\_WRAPPER(freev) }}
+\DoxyCodeLine{00251 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} freev(integer *, integer *, integer *, }
+\DoxyCodeLine{00252         integer *, integer *, integer *, integer *, logical *, logical *, }
+\DoxyCodeLine{00253         logical *, integer *, integer *);}
+\DoxyCodeLine{00254 }
+\DoxyCodeLine{00255 \textcolor{preprocessor}{\#define timer FORTRAN\_WRAPPER(timer) }}
+\DoxyCodeLine{00256 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} timer(\textcolor{keywordtype}{double} *);}
+\DoxyCodeLine{00257 \textcolor{preprocessor}{\#define formk FORTRAN\_WRAPPER(formk) }}
+\DoxyCodeLine{00258 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} formk(integer *, }
+\DoxyCodeLine{00259         integer *, integer *, integer *, integer *, integer *, integer *, }
+\DoxyCodeLine{00260         logical *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00261         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *, integer *, }
+\DoxyCodeLine{00262         integer *);}
+\DoxyCodeLine{00263 \textcolor{preprocessor}{\#define formt FORTRAN\_WRAPPER(formt) }}
+\DoxyCodeLine{00264 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} formt(integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00265         \textcolor{keywordtype}{double} *, integer *, \textcolor{keywordtype}{double} *, integer *);}
+\DoxyCodeLine{00266 \textcolor{preprocessor}{\#define subsm FORTRAN\_WRAPPER(subsm) }}
+\DoxyCodeLine{00267 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} subsm(integer *, integer *, integer *, integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00268         integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *,}
+\DoxyCodeLine{00269         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *}
+\DoxyCodeLine{00270         , integer *, integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *, }
+\DoxyCodeLine{00271         integer *);}
+\DoxyCodeLine{00272 \textcolor{preprocessor}{\#define prn1lb FORTRAN\_WRAPPER(prn1lb) }}
+\DoxyCodeLine{00273 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} prn1lb(integer *n, integer *m, \textcolor{keywordtype}{double} *l, }
+\DoxyCodeLine{00274         \textcolor{keywordtype}{double} *u, \textcolor{keywordtype}{double} *x, integer *iprint, fileType itfile, \textcolor{keywordtype}{double} *epsmch); }
+\DoxyCodeLine{00275 }
+\DoxyCodeLine{00276 \textcolor{preprocessor}{\#define prn2lb FORTRAN\_WRAPPER(prn2lb) }}
+\DoxyCodeLine{00277 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} prn2lb(integer *n, \textcolor{keywordtype}{double} *x, \textcolor{keywordtype}{double} *f, \textcolor{keywordtype}{double} *g, }
+\DoxyCodeLine{00278         integer *iprint, fileType itfile, integer *iter, integer *nfgv, integer *nact, \textcolor{keywordtype}{double} }
+\DoxyCodeLine{00279         * sbgnrm, integer *nseg, integer * word, integer * iword, integer * iback, \textcolor{keywordtype}{double} * stp, }
+\DoxyCodeLine{00280         \textcolor{keywordtype}{double} * xstep, ftnlen);}
+\DoxyCodeLine{00281 }
+\DoxyCodeLine{00282 \textcolor{preprocessor}{\#define prn3lb FORTRAN\_WRAPPER(prn3lb) }}
+\DoxyCodeLine{00283 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} prn3lb(integer *n, \textcolor{keywordtype}{double} *x, \textcolor{keywordtype}{double} *f, integer *}
+\DoxyCodeLine{00284     task, integer *iprint, integer *info, fileType itfile, integer *iter, }
+\DoxyCodeLine{00285     integer *nfgv, integer *nintol, integer *nskip, integer *nact, }
+\DoxyCodeLine{00286     \textcolor{keywordtype}{double} *sbgnrm, \textcolor{keywordtype}{double} *time, integer *nseg, integer *word, }
+\DoxyCodeLine{00287     integer *iback, \textcolor{keywordtype}{double} *stp, \textcolor{keywordtype}{double} *xstep, integer *k, }
+\DoxyCodeLine{00288     \textcolor{keywordtype}{double} *cachyt, \textcolor{keywordtype}{double} *sbtime, \textcolor{keywordtype}{double} *lnscht, ftnlen }
+\DoxyCodeLine{00289     task\_len, ftnlen word\_len);}
+\DoxyCodeLine{00290 }
+\DoxyCodeLine{00291 \textcolor{preprocessor}{\#define errclb FORTRAN\_WRAPPER(errclb) }}
+\DoxyCodeLine{00292 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} errclb(integer *n, integer *m, \textcolor{keywordtype}{double} *factr, }
+\DoxyCodeLine{00293         \textcolor{keywordtype}{double} *l, \textcolor{keywordtype}{double} *u, integer *nbd, integer *task, integer *info,}
+\DoxyCodeLine{00294         integer *k, ftnlen task\_len);}
+\DoxyCodeLine{00295 }
+\DoxyCodeLine{00296 \textcolor{preprocessor}{\#define active FORTRAN\_WRAPPER(active) }}
+\DoxyCodeLine{00297 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} active(integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *,}
+\DoxyCodeLine{00298         integer *, \textcolor{keywordtype}{double} *, integer *, integer *, logical *, }
+\DoxyCodeLine{00299         logical *, logical *);}
+\DoxyCodeLine{00300 \textcolor{preprocessor}{\#define cauchy FORTRAN\_WRAPPER(cauchy) }}
+\DoxyCodeLine{00301 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} cauchy(integer *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00302         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *, \textcolor{keywordtype}{double} *, integer *, }
+\DoxyCodeLine{00303         integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *, }
+\DoxyCodeLine{00304         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00305         \textcolor{keywordtype}{double} *, integer *, integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00306         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *, integer *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00307         integer *, \textcolor{keywordtype}{double} *);}
+\DoxyCodeLine{00308 \textcolor{preprocessor}{\#define cmprlb FORTRAN\_WRAPPER(cmprlb) }}
+\DoxyCodeLine{00309 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} cmprlb(integer *, integer *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00310         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00311         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, integer *,}
+\DoxyCodeLine{00312         \textcolor{keywordtype}{double} *, integer *, integer *, integer *, logical *, }
+\DoxyCodeLine{00313         integer *);}
+\DoxyCodeLine{00314 \textcolor{preprocessor}{\#define matupd FORTRAN\_WRAPPER(matupd) }}
+\DoxyCodeLine{00315 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} matupd(integer *, integer *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00316         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00317         \textcolor{keywordtype}{double} *, integer *, integer *, integer *, integer *, }
+\DoxyCodeLine{00318         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, }
+\DoxyCodeLine{00319         \textcolor{keywordtype}{double} *);}
+\DoxyCodeLine{00320 \textcolor{preprocessor}{\#define lnsrlb FORTRAN\_WRAPPER(lnsrlb) }}
+\DoxyCodeLine{00321 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} lnsrlb(integer *n, \textcolor{keywordtype}{double} *l, \textcolor{keywordtype}{double} *u, }
+\DoxyCodeLine{00322         integer *nbd, \textcolor{keywordtype}{double} *x, \textcolor{keywordtype}{double} *f, \textcolor{keywordtype}{double} *fold, }
+\DoxyCodeLine{00323         \textcolor{keywordtype}{double} *gd, \textcolor{keywordtype}{double} *gdold, \textcolor{keywordtype}{double} *g, \textcolor{keywordtype}{double} *d\_\_, }
+\DoxyCodeLine{00324         \textcolor{keywordtype}{double} *r\_\_, \textcolor{keywordtype}{double} *t, \textcolor{keywordtype}{double} *z\_\_, \textcolor{keywordtype}{double} *stp, }
+\DoxyCodeLine{00325         \textcolor{keywordtype}{double} *dnorm, \textcolor{keywordtype}{double} *dtd, \textcolor{keywordtype}{double} *xstep, \textcolor{keywordtype}{double} *}
+\DoxyCodeLine{00326         stpmx, integer *iter, integer *ifun, integer *iback, integer *nfgv, }
+\DoxyCodeLine{00327         integer *info, integer *task, logical *boxed, logical *cnstnd, integer *}
+\DoxyCodeLine{00328         csave, integer *isave, \textcolor{keywordtype}{double} *dsave); \textcolor{comment}{/* ftnlen task\_len, ftnlen }}
+\DoxyCodeLine{00329 \textcolor{comment}{        csave\_len); */}}
+\DoxyCodeLine{00330 \textcolor{preprocessor}{\#define projgr FORTRAN\_WRAPPER(projgr) }}
+\DoxyCodeLine{00331 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} projgr(integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *,}
+\DoxyCodeLine{00332         integer *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *);}
+\DoxyCodeLine{00333 }
+\DoxyCodeLine{00334 \textcolor{comment}{/* in linesearch.c */}}
+\DoxyCodeLine{00335 \textcolor{preprocessor}{\#define dcsrch FORTRAN\_WRAPPER(dcsrch) }}
+\DoxyCodeLine{00336 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} dcsrch(\textcolor{keywordtype}{double} *f, \textcolor{keywordtype}{double} *g, \textcolor{keywordtype}{double} *stp, }
+\DoxyCodeLine{00337         \textcolor{keywordtype}{double} *ftol, \textcolor{keywordtype}{double} *gtol, \textcolor{keywordtype}{double} *xtol, \textcolor{keywordtype}{double} *}
+\DoxyCodeLine{00338         stpmin, \textcolor{keywordtype}{double} *stpmax, integer *task, integer *isave, \textcolor{keywordtype}{double} *}
+\DoxyCodeLine{00339         dsave);\textcolor{comment}{/* ftnlen task\_len);*/}}
+\DoxyCodeLine{00340 \textcolor{preprocessor}{\#define dcstep FORTRAN\_WRAPPER(dcstep) }}
+\DoxyCodeLine{00341 \textcolor{keyword}{extern}  \textcolor{keywordtype}{int} dcstep(\textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *,}
+\DoxyCodeLine{00342         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *,}
+\DoxyCodeLine{00343         \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, \textcolor{keywordtype}{double} *, logical *, \textcolor{keywordtype}{double} *,}
+\DoxyCodeLine{00344         \textcolor{keywordtype}{double} *);}
+\DoxyCodeLine{00345 }
+\DoxyCodeLine{00346 \textcolor{preprocessor}{\#define dpofa FORTRAN\_WRAPPER(dpofa)}}
+\DoxyCodeLine{00347 \textcolor{keyword}{extern} \textcolor{keywordtype}{int} dpofa(\textcolor{keywordtype}{double} *, integer *, integer *, }
+\DoxyCodeLine{00348         integer *);}
+\DoxyCodeLine{00349 \textcolor{preprocessor}{\#define dtrsl FORTRAN\_WRAPPER(dtrsl)}}
+\DoxyCodeLine{00350 \textcolor{keyword}{extern} \textcolor{keywordtype}{int}  dtrsl(\textcolor{keywordtype}{double} *, integer *, integer *, }
+\DoxyCodeLine{00351         \textcolor{keywordtype}{double} *, integer *, integer *);}
+\DoxyCodeLine{00352 }
+\DoxyCodeLine{00353 \textcolor{preprocessor}{\#ifdef \_\_cplusplus}}
+\DoxyCodeLine{00354     \}   \textcolor{comment}{/* extern "C" */}}
+\DoxyCodeLine{00355 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00356 }
+\DoxyCodeLine{00357 \textcolor{preprocessor}{\#endif }\textcolor{comment}{/* lbfgsb\_h */}\textcolor{preprocessor}{}}
+
+\end{DoxyCode}

@@ -1,0 +1,148 @@
+\hypertarget{classhypercube}{}\doxysection{hypercube Class Reference}
+\label{classhypercube}\index{hypercube@{hypercube}}
+
+
+This class is about reading the fits file, transforming the data array and displaying the result in various ways.  
+
+
+
+
+{\ttfamily \#include $<$hypercube.\+hpp$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classhypercube_a2795b284e46b59f1ab2ecd3822cee038}\label{classhypercube_a2795b284e46b59f1ab2ecd3822cee038}} 
+{\bfseries hypercube} (\mbox{\hyperlink{classparameters}{parameters}} \&M)
+\item 
+\mbox{\Hypertarget{classhypercube_a22a0f2e9186f943bf99da6f9c36c060b}\label{classhypercube_a22a0f2e9186f943bf99da6f9c36c060b}} 
+{\bfseries hypercube} (\mbox{\hyperlink{classparameters}{parameters}} \&M, int indice\+\_\+debut, int \mbox{\hyperlink{classhypercube_ac5cbec6a67683703dc87278771fd797f}{indice\+\_\+fin}})
+\item 
+\mbox{\Hypertarget{classhypercube_a9356952f2213d781251549c271951fcb}\label{classhypercube_a9356952f2213d781251549c271951fcb}} 
+{\bfseries hypercube} (\mbox{\hyperlink{classparameters}{parameters}} \&M, int indice\+\_\+debut, int \mbox{\hyperlink{classhypercube_ac5cbec6a67683703dc87278771fd797f}{indice\+\_\+fin}}, bool whole\+\_\+data\+\_\+in\+\_\+cube)
+\item 
+\mbox{\Hypertarget{classhypercube_a806c8b5bf667d326e26c3ec4729ce112}\label{classhypercube_a806c8b5bf667d326e26c3ec4729ce112}} 
+void {\bfseries display\+\_\+cube} (int rang)
+\item 
+\mbox{\Hypertarget{classhypercube_ab516eddb212a5d30851fec10e9f7714f}\label{classhypercube_ab516eddb212a5d30851fec10e9f7714f}} 
+void {\bfseries display\+\_\+data} (int rang)
+\item 
+\mbox{\Hypertarget{classhypercube_a66d3259ce2c47e4e5feaa000fe1b9c0e}\label{classhypercube_a66d3259ce2c47e4e5feaa000fe1b9c0e}} 
+void {\bfseries display} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&tab, int rang)
+\item 
+\mbox{\Hypertarget{classhypercube_aa12927c1dfe6fbcde1538b26fe57ea91}\label{classhypercube_aa12927c1dfe6fbcde1538b26fe57ea91}} 
+void {\bfseries plot\+\_\+line} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int ind\+\_\+x, int ind\+\_\+y, int n\+\_\+gauss\+\_\+i)
+\item 
+\mbox{\Hypertarget{classhypercube_ab80d5f1751467bc33702a9e2f82e2590}\label{classhypercube_ab80d5f1751467bc33702a9e2f82e2590}} 
+void {\bfseries display\+\_\+result\+\_\+and\+\_\+data} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int rang, int n\+\_\+gauss\+\_\+i, bool dat\+\_\+or\+\_\+not)
+\item 
+\mbox{\Hypertarget{classhypercube_ae71563dd32cf45248c17cca923853d1f}\label{classhypercube_ae71563dd32cf45248c17cca923853d1f}} 
+void {\bfseries display\+\_\+avec\+\_\+et\+\_\+sans\+\_\+regu} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int num\+\_\+gauss, int num\+\_\+par, int plot\+\_\+numero)
+\item 
+\mbox{\Hypertarget{classhypercube_ad43c01891ee6c798873e4dc5ce6f03ba}\label{classhypercube_ad43c01891ee6c798873e4dc5ce6f03ba}} 
+void {\bfseries display\+\_\+2\+\_\+gaussiennes} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int rang, int n\+\_\+gauss\+\_\+i, int n1, int n2)
+\item 
+\mbox{\Hypertarget{classhypercube_aadcca8be18d57e9c2e40958c89ce7907}\label{classhypercube_aadcca8be18d57e9c2e40958c89ce7907}} 
+void {\bfseries display\+\_\+2\+\_\+gaussiennes\+\_\+par\+\_\+par\+\_\+par} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int rang, int n\+\_\+gauss\+\_\+i, int n1, int n2)
+\item 
+\mbox{\Hypertarget{classhypercube_a548330b0ce033dcee13663d42e6bf5f8}\label{classhypercube_a548330b0ce033dcee13663d42e6bf5f8}} 
+void {\bfseries mean\+\_\+parameters} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int num\+\_\+gauss)
+\item 
+\mbox{\Hypertarget{classhypercube_aff3c703f402ecbfbc658e7b498db740f}\label{classhypercube_aff3c703f402ecbfbc658e7b498db740f}} 
+double {\bfseries model\+\_\+function} (int x, double a, double m, double s)
+\item 
+\mbox{\Hypertarget{classhypercube_a0e4bff0c41de0f8d8f42b6411229ab01}\label{classhypercube_a0e4bff0c41de0f8d8f42b6411229ab01}} 
+void {\bfseries display\+\_\+result} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int rang, int n\+\_\+gauss\+\_\+i)
+\item 
+\mbox{\Hypertarget{classhypercube_a27c8b86f56d02fdedde9a895cf5efea8}\label{classhypercube_a27c8b86f56d02fdedde9a895cf5efea8}} 
+int {\bfseries dim2nside} ()
+\item 
+\mbox{\Hypertarget{classhypercube_ae793410159f2d12be3c658a4d12d0f5f}\label{classhypercube_ae793410159f2d12be3c658a4d12d0f5f}} 
+void {\bfseries brute\+\_\+show} (const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&z, int depth, int length1, int length2)
+\item 
+\mbox{\Hypertarget{classhypercube_ad38f0598eaa51ef0a0b9b9c2520062e4}\label{classhypercube_ad38f0598eaa51ef0a0b9b9c2520062e4}} 
+void {\bfseries multiresolution} (int nside)
+\item 
+\mbox{\Hypertarget{classhypercube_a5c58a4a3dcde616ed157d4635d9fca57}\label{classhypercube_a5c58a4a3dcde616ed157d4635d9fca57}} 
+int {\bfseries get\+\_\+binary\+\_\+from\+\_\+fits} ()
+\item 
+\mbox{\Hypertarget{classhypercube_a36a5ed891dc797c5d5c25f78124c3915}\label{classhypercube_a36a5ed891dc797c5d5c25f78124c3915}} 
+void {\bfseries get\+\_\+array\+\_\+from\+\_\+fits} (\mbox{\hyperlink{classparameters}{parameters}} \&M)
+\item 
+\mbox{\Hypertarget{classhypercube_a2536d62d75bd06b2ec3fa313ed59b7ea}\label{classhypercube_a2536d62d75bd06b2ec3fa313ed59b7ea}} 
+void {\bfseries get\+\_\+vector\+\_\+from\+\_\+binary} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&z)
+\item 
+\mbox{\Hypertarget{classhypercube_a9889c9be8334ae4468daf165cbb596d0}\label{classhypercube_a9889c9be8334ae4468daf165cbb596d0}} 
+void {\bfseries show\+\_\+data} ()
+\item 
+\mbox{\Hypertarget{classhypercube_a8ea7e308dd4fc817831b82dcf55f1b83}\label{classhypercube_a8ea7e308dd4fc817831b82dcf55f1b83}} 
+std\+::vector$<$ int $>$ {\bfseries get\+\_\+dim\+\_\+data} ()
+\item 
+\mbox{\Hypertarget{classhypercube_a78adb1768ee09f8851a695c5b0c9d4a7}\label{classhypercube_a78adb1768ee09f8851a695c5b0c9d4a7}} 
+std\+::vector$<$ int $>$ {\bfseries get\+\_\+dim\+\_\+cube} ()
+\item 
+\mbox{\Hypertarget{classhypercube_a96e69f851c97cdb0a9b499cecf54c892}\label{classhypercube_a96e69f851c97cdb0a9b499cecf54c892}} 
+int {\bfseries get\+\_\+nside} () const
+\item 
+\mbox{\Hypertarget{classhypercube_a2070abffd30017c187126cb9f2eed0a1}\label{classhypercube_a2070abffd30017c187126cb9f2eed0a1}} 
+std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$ $>$ $>$ {\bfseries use\+\_\+dat\+\_\+file} (\mbox{\hyperlink{classparameters}{parameters}} \&M)
+\item 
+\mbox{\Hypertarget{classhypercube_aba73aab967a62048cdf8fed26ff96453}\label{classhypercube_aba73aab967a62048cdf8fed26ff96453}} 
+std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$ $>$ $>$ {\bfseries reshape\+\_\+up} ()
+\item 
+\mbox{\Hypertarget{classhypercube_a46752d978fea07d9fcc886d085e897d2}\label{classhypercube_a46752d978fea07d9fcc886d085e897d2}} 
+std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$ $>$ $>$ {\bfseries reshape\+\_\+up} (int borne\+\_\+inf, int borne\+\_\+sup)
+\item 
+\mbox{\Hypertarget{classhypercube_a747c6e8fc35f8f742aae6eb86f798e62}\label{classhypercube_a747c6e8fc35f8f742aae6eb86f798e62}} 
+void {\bfseries write\+\_\+into\+\_\+binary} (\mbox{\hyperlink{classparameters}{parameters}} \&M, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&grid\+\_\+params)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classhypercube_a4ba395b5c86e76997da1efe2cf9118c2}\label{classhypercube_a4ba395b5c86e76997da1efe2cf9118c2}} 
+int {\bfseries indice\+\_\+debut}
+\item 
+\mbox{\Hypertarget{classhypercube_ac5cbec6a67683703dc87278771fd797f}\label{classhypercube_ac5cbec6a67683703dc87278771fd797f}} 
+int \mbox{\hyperlink{classhypercube_ac5cbec6a67683703dc87278771fd797f}{indice\+\_\+fin}}
+\begin{DoxyCompactList}\small\item\em Only some spectral ranges of the hypercube are exploitable. We cut the hypercube, this will introduce an offset on the result values. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classhypercube_a7b77bfb6a57c7d641a184f9828664734}\label{classhypercube_a7b77bfb6a57c7d641a184f9828664734}} 
+std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$ $>$ $>$ \mbox{\hyperlink{classhypercube_a7b77bfb6a57c7d641a184f9828664734}{cube}}
+\begin{DoxyCompactList}\small\item\em The hypercube \char`\"{}data\char`\"{} is centered into a larger hypercube \char`\"{}cube\char`\"{} for the purpose of multiresolution this hypercube is useful and its spatial dimensions are $ 2^{n\_side} \times 2^{n\_side} $. Where $n\_side$ is computed by dim2nside(), it is the smallest power of 2 greater than the spatial dimensions. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classhypercube_a75564b7f55c8e6853fe05a7f09a6decd}\label{classhypercube_a75564b7f55c8e6853fe05a7f09a6decd}} 
+std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$ $>$ $>$ \mbox{\hyperlink{classhypercube_a75564b7f55c8e6853fe05a7f09a6decd}{data}}
+\begin{DoxyCompactList}\small\item\em Hypercube array extracted from the fits file, its spectral range is changed according to indice\+\_\+debut and indice\+\_\+fin. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classhypercube_af4d41a830b0a8b3df0db5a23c703a89a}\label{classhypercube_af4d41a830b0a8b3df0db5a23c703a89a}} 
+int {\bfseries dim\+\_\+data} \mbox{[}3\mbox{]}
+\item 
+\mbox{\Hypertarget{classhypercube_aa96258e6e7ee2ec5f9a2615ccb29d9aa}\label{classhypercube_aa96258e6e7ee2ec5f9a2615ccb29d9aa}} 
+int {\bfseries dim\+\_\+cube} \mbox{[}3\mbox{]}
+\item 
+\mbox{\Hypertarget{classhypercube_a428bea89dc9261d0ed5b59fe7f27268f}\label{classhypercube_a428bea89dc9261d0ed5b59fe7f27268f}} 
+std\+::vector$<$ int $>$ {\bfseries dim\+\_\+data\+\_\+v}
+\item 
+\mbox{\Hypertarget{classhypercube_a9bbb194cfb8d3a46196462ac24866bb9}\label{classhypercube_a9bbb194cfb8d3a46196462ac24866bb9}} 
+std\+::vector$<$ int $>$ {\bfseries dim\+\_\+cube\+\_\+v}
+\item 
+\mbox{\Hypertarget{classhypercube_a7eeace46bcccb5f9c0f7649b012c61cd}\label{classhypercube_a7eeace46bcccb5f9c0f7649b012c61cd}} 
+int {\bfseries nside}
+\item 
+\mbox{\Hypertarget{classhypercube_ac7fcb3557f243c1fcfc3f048c4f46655}\label{classhypercube_ac7fcb3557f243c1fcfc3f048c4f46655}} 
+std\+::string {\bfseries filename}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This class is about reading the fits file, transforming the data array and displaying the result in various ways. 
+
+We can read a F\+I\+TS or a D\+AT file, the result is then stored into a output file (binary or fits). The hypercube extracted is put into a larger hypercube of dimensions $ dim\_\nu \times 2^{n\_side} \times 2^{n\_side} $. We can then rebuild the hypercube using the results, print the mean values of the gaussian parameters or print the gaussian parameters map.
+
+We read and write the F\+I\+TS file using the library C\+C\+Fits based on C\+Fitsio. 
+
+Definition at line 34 of file hypercube.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+inc/hypercube.\+hpp\item 
+src/\+C\+P\+P/hypercube.\+cpp\end{DoxyCompactItemize}

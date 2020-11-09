@@ -12,9 +12,24 @@
 #include <CCfits/CCfits>
 #include <vector>
 
-/// This class is about reading the fits file, transforming the data array and displaying the result in various ways.
-/// 
-///  
+/**
+ * @brief This class is about reading the fits file, transforming the data array and displaying the result in various ways.
+ *
+ *
+ *
+ *
+ *  We can read a FITS or a DAT file, the result is then stored into a output file (binary or fits). The hypercube extracted is put into a larger hypercube of dimensions \f$ dim\_\nu \times 2^{n\_side} \times 2^{n\_side} \f$.
+ * We can then rebuild the hypercube using the results, print the mean values of the gaussian parameters or print the gaussian parameters map. 
+ * 
+ *
+ *
+ * We read and write the FITS file using the library CCFits based on CFitsio.
+ *
+ *
+ *
+ * 
+ *
+ */
 
 class hypercube
 {
@@ -58,10 +73,10 @@ class hypercube
 	void write_into_binary(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params);
 
 
-	int indice_debut, indice_fin;
-	std::vector<std::vector<std::vector<double>>> cube; //data format 2^n and width given by user (parameters.txt)
-//	std::vector<std::vector<std::vector<double>>> data_not_reshaped; //data without width given by user (parameters.txt) might blow up memory
-	std::vector<std::vector<std::vector<double>>> data; //data with width given by user (parameters.txt)
+	int indice_debut, indice_fin; //!< Only some spectral ranges of the hypercube are exploitable. We cut the hypercube, this will introduce an offset on the result values.
+	std::vector<std::vector<std::vector<double>>> cube; //!< The hypercube "data" is centered into a larger hypercube "cube" for the purpose of multiresolution this hypercube is useful and its spatial dimensions are \f$  2^{n\_side} \times 2^{n\_side} \f$. Where \f$n\_side\f$ is computed by dim2nside(), it is the smallest power of 2 greater than the spatial dimensions. 
+//	std::vector<std::vector<std::vector<double>>> data_not_reshaped;
+	std::vector<std::vector<std::vector<double>>> data; //!< Hypercube array extracted from the fits file, its spectral range is changed according to indice_debut and indice_fin. 
 
 	int dim_data[3];
 	int dim_cube[3];

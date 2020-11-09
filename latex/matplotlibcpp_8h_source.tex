@@ -1,0 +1,1938 @@
+\hypertarget{matplotlibcpp_8h_source}{}\doxysection{matplotlibcpp.\+h}
+\label{matplotlibcpp_8h_source}\index{matplotlib-\/cpp/matplotlibcpp.h@{matplotlib-\/cpp/matplotlibcpp.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001 \textcolor{preprocessor}{\#pragma once}}
+\DoxyCodeLine{00002 }
+\DoxyCodeLine{00003 \textcolor{preprocessor}{\#include <vector>}}
+\DoxyCodeLine{00004 \textcolor{preprocessor}{\#include <map>}}
+\DoxyCodeLine{00005 \textcolor{preprocessor}{\#include <array>}}
+\DoxyCodeLine{00006 \textcolor{preprocessor}{\#include <numeric>}}
+\DoxyCodeLine{00007 \textcolor{preprocessor}{\#include <algorithm>}}
+\DoxyCodeLine{00008 \textcolor{preprocessor}{\#include <stdexcept>}}
+\DoxyCodeLine{00009 \textcolor{preprocessor}{\#include <iostream>}}
+\DoxyCodeLine{00010 \textcolor{preprocessor}{\#include <cstdint>} \textcolor{comment}{// <cstdint> requires c++11 support}}
+\DoxyCodeLine{00011 \textcolor{preprocessor}{\#include <functional>}}
+\DoxyCodeLine{00012 \textcolor{preprocessor}{\#include <unordered\_map>}}
+\DoxyCodeLine{00013 }
+\DoxyCodeLine{00014 \textcolor{preprocessor}{\#include <Python.h>}}
+\DoxyCodeLine{00015 }
+\DoxyCodeLine{00016 \textcolor{preprocessor}{\#ifndef WITHOUT\_NUMPY}}
+\DoxyCodeLine{00017 \textcolor{preprocessor}{\#  define NPY\_NO\_DEPRECATED\_API NPY\_1\_7\_API\_VERSION}}
+\DoxyCodeLine{00018 \textcolor{preprocessor}{\#  include <numpy/arrayobject.h>}}
+\DoxyCodeLine{00019 }
+\DoxyCodeLine{00020 \textcolor{preprocessor}{\#  ifdef WITH\_OPENCV}}
+\DoxyCodeLine{00021 \textcolor{preprocessor}{\#    include <opencv2/opencv.hpp>}}
+\DoxyCodeLine{00022 \textcolor{preprocessor}{\#  endif // WITH\_OPENCV}}
+\DoxyCodeLine{00023 }
+\DoxyCodeLine{00024 \textcolor{comment}{/*}}
+\DoxyCodeLine{00025 \textcolor{comment}{ * A bunch of constants were removed in OpenCV 4 in favour of enum classes, so}}
+\DoxyCodeLine{00026 \textcolor{comment}{ * define the ones we need here.}}
+\DoxyCodeLine{00027 \textcolor{comment}{ */}}
+\DoxyCodeLine{00028 \textcolor{preprocessor}{\#  if CV\_MAJOR\_VERSION > 3}}
+\DoxyCodeLine{00029 \textcolor{preprocessor}{\#    define CV\_BGR2RGB cv::COLOR\_BGR2RGB}}
+\DoxyCodeLine{00030 \textcolor{preprocessor}{\#    define CV\_BGRA2RGBA cv::COLOR\_BGRA2RGBA}}
+\DoxyCodeLine{00031 \textcolor{preprocessor}{\#  endif}}
+\DoxyCodeLine{00032 \textcolor{preprocessor}{\#endif // WITHOUT\_NUMPY}}
+\DoxyCodeLine{00033 }
+\DoxyCodeLine{00034 \textcolor{preprocessor}{\#if PY\_MAJOR\_VERSION >= 3}}
+\DoxyCodeLine{00035 \textcolor{preprocessor}{\#  define PyString\_FromString PyUnicode\_FromString}}
+\DoxyCodeLine{00036 \textcolor{preprocessor}{\#  define PyInt\_FromLong PyLong\_FromLong}}
+\DoxyCodeLine{00037 \textcolor{preprocessor}{\#  define PyString\_FromString PyUnicode\_FromString}}
+\DoxyCodeLine{00038 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00039 }
+\DoxyCodeLine{00040 }
+\DoxyCodeLine{00041 \textcolor{keyword}{namespace }matplotlibcpp \{}
+\DoxyCodeLine{00042 \textcolor{keyword}{namespace }detail \{}
+\DoxyCodeLine{00043 }
+\DoxyCodeLine{00044 \textcolor{keyword}{static} std::string s\_backend;}
+\DoxyCodeLine{00045 }
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00046}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1__interpreter}{00046}} \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1__interpreter}{\_interpreter}} \{}
+\DoxyCodeLine{00047     PyObject *s\_python\_function\_show;}
+\DoxyCodeLine{00048     PyObject *s\_python\_function\_close;}
+\DoxyCodeLine{00049     PyObject *s\_python\_function\_draw;}
+\DoxyCodeLine{00050     PyObject *s\_python\_function\_pause;}
+\DoxyCodeLine{00051     PyObject *s\_python\_function\_save;}
+\DoxyCodeLine{00052     PyObject *s\_python\_function\_figure;}
+\DoxyCodeLine{00053     PyObject *s\_python\_function\_fignum\_exists;}
+\DoxyCodeLine{00054     PyObject *s\_python\_function\_plot;}
+\DoxyCodeLine{00055     PyObject *s\_python\_function\_quiver;}
+\DoxyCodeLine{00056     PyObject *s\_python\_function\_semilogx;}
+\DoxyCodeLine{00057     PyObject *s\_python\_function\_semilogy;}
+\DoxyCodeLine{00058     PyObject *s\_python\_function\_loglog;}
+\DoxyCodeLine{00059     PyObject *s\_python\_function\_fill;}
+\DoxyCodeLine{00060     PyObject *s\_python\_function\_fill\_between;}
+\DoxyCodeLine{00061     PyObject *s\_python\_function\_hist;}
+\DoxyCodeLine{00062     PyObject *s\_python\_function\_imshow;}
+\DoxyCodeLine{00063     PyObject *s\_python\_function\_scatter;}
+\DoxyCodeLine{00064     PyObject *s\_python\_function\_subplot;}
+\DoxyCodeLine{00065     PyObject *s\_python\_function\_subplot2grid;}
+\DoxyCodeLine{00066     PyObject *s\_python\_function\_legend;}
+\DoxyCodeLine{00067     PyObject *s\_python\_function\_xlim;}
+\DoxyCodeLine{00068     PyObject *s\_python\_function\_ion;}
+\DoxyCodeLine{00069     PyObject *s\_python\_function\_ginput;}
+\DoxyCodeLine{00070     PyObject *s\_python\_function\_ylim;}
+\DoxyCodeLine{00071     PyObject *s\_python\_function\_title;}
+\DoxyCodeLine{00072     PyObject *s\_python\_function\_axis;}
+\DoxyCodeLine{00073     PyObject *s\_python\_function\_xlabel;}
+\DoxyCodeLine{00074     PyObject *s\_python\_function\_ylabel;}
+\DoxyCodeLine{00075     PyObject *s\_python\_function\_xticks;}
+\DoxyCodeLine{00076     PyObject *s\_python\_function\_yticks;}
+\DoxyCodeLine{00077     PyObject *s\_python\_function\_tick\_params;}
+\DoxyCodeLine{00078     PyObject *s\_python\_function\_grid;}
+\DoxyCodeLine{00079     PyObject *s\_python\_function\_clf;}
+\DoxyCodeLine{00080     PyObject *s\_python\_function\_errorbar;}
+\DoxyCodeLine{00081     PyObject *s\_python\_function\_annotate;}
+\DoxyCodeLine{00082     PyObject *s\_python\_function\_tight\_layout;}
+\DoxyCodeLine{00083     PyObject *s\_python\_colormap;}
+\DoxyCodeLine{00084     PyObject *s\_python\_empty\_tuple;}
+\DoxyCodeLine{00085     PyObject *s\_python\_function\_stem;}
+\DoxyCodeLine{00086     PyObject *s\_python\_function\_xkcd;}
+\DoxyCodeLine{00087     PyObject *s\_python\_function\_text;}
+\DoxyCodeLine{00088     PyObject *s\_python\_function\_suptitle;}
+\DoxyCodeLine{00089     PyObject *s\_python\_function\_bar;}
+\DoxyCodeLine{00090     PyObject *s\_python\_function\_subplots\_adjust;}
+\DoxyCodeLine{00091 }
+\DoxyCodeLine{00092 }
+\DoxyCodeLine{00093     \textcolor{comment}{/* For now, \_interpreter is implemented as a singleton since its currently not possible to have}}
+\DoxyCodeLine{00094 \textcolor{comment}{       multiple independent embedded python interpreters without patching the python source code}}
+\DoxyCodeLine{00095 \textcolor{comment}{       or starting a separate process for each.}}
+\DoxyCodeLine{00096 \textcolor{comment}{        http://bytes.com/topic/python/answers/793370-\/multiple-\/independent-\/python-\/interpreters-\/c-\/c-\/program}}
+\DoxyCodeLine{00097 \textcolor{comment}{       */}}
+\DoxyCodeLine{00098 }
+\DoxyCodeLine{00099     \textcolor{keyword}{static} \mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1__interpreter}{\_interpreter}}\& get() \{}
+\DoxyCodeLine{00100         \textcolor{keyword}{static} \mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1__interpreter}{\_interpreter}} ctx;}
+\DoxyCodeLine{00101         \textcolor{keywordflow}{return} ctx;}
+\DoxyCodeLine{00102     \}}
+\DoxyCodeLine{00103 }
+\DoxyCodeLine{00104     PyObject* safe\_import(PyObject* module, std::string fname) \{}
+\DoxyCodeLine{00105         PyObject* fn = PyObject\_GetAttrString(module, fname.c\_str());}
+\DoxyCodeLine{00106 }
+\DoxyCodeLine{00107         \textcolor{keywordflow}{if} (!fn)}
+\DoxyCodeLine{00108             \textcolor{keywordflow}{throw} std::runtime\_error(std::string(\textcolor{stringliteral}{"Couldn't find required function: "}) + fname);}
+\DoxyCodeLine{00109 }
+\DoxyCodeLine{00110         \textcolor{keywordflow}{if} (!PyFunction\_Check(fn))}
+\DoxyCodeLine{00111             \textcolor{keywordflow}{throw} std::runtime\_error(fname + std::string(\textcolor{stringliteral}{" is unexpectedly not a PyFunction."}));}
+\DoxyCodeLine{00112 }
+\DoxyCodeLine{00113         \textcolor{keywordflow}{return} fn;}
+\DoxyCodeLine{00114     \}}
+\DoxyCodeLine{00115 }
+\DoxyCodeLine{00116 \textcolor{keyword}{private}:}
+\DoxyCodeLine{00117 }
+\DoxyCodeLine{00118 \textcolor{preprocessor}{\#ifndef WITHOUT\_NUMPY}}
+\DoxyCodeLine{00119 \textcolor{preprocessor}{\#  if PY\_MAJOR\_VERSION >= 3}}
+\DoxyCodeLine{00120 }
+\DoxyCodeLine{00121     \textcolor{keywordtype}{void} *import\_numpy() \{}
+\DoxyCodeLine{00122         import\_array(); \textcolor{comment}{// initialize C-\/API}}
+\DoxyCodeLine{00123         \textcolor{keywordflow}{return} NULL;}
+\DoxyCodeLine{00124     \}}
+\DoxyCodeLine{00125 }
+\DoxyCodeLine{00126 \textcolor{preprocessor}{\#  else}}
+\DoxyCodeLine{00127 }
+\DoxyCodeLine{00128     \textcolor{keywordtype}{void} import\_numpy() \{}
+\DoxyCodeLine{00129         import\_array(); \textcolor{comment}{// initialize C-\/API}}
+\DoxyCodeLine{00130     \}}
+\DoxyCodeLine{00131 }
+\DoxyCodeLine{00132 \textcolor{preprocessor}{\#  endif}}
+\DoxyCodeLine{00133 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00134 }
+\DoxyCodeLine{00135     \mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1__interpreter}{\_interpreter}}() \{}
+\DoxyCodeLine{00136 }
+\DoxyCodeLine{00137         \textcolor{comment}{// optional but recommended}}
+\DoxyCodeLine{00138 \textcolor{preprocessor}{\#if PY\_MAJOR\_VERSION >= 3}}
+\DoxyCodeLine{00139         \textcolor{keywordtype}{wchar\_t} name[] = L\textcolor{stringliteral}{"plotting"};}
+\DoxyCodeLine{00140 \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00141         \textcolor{keywordtype}{char} name[] = \textcolor{stringliteral}{"plotting"};}
+\DoxyCodeLine{00142 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00143         Py\_SetProgramName(name);}
+\DoxyCodeLine{00144         Py\_Initialize();}
+\DoxyCodeLine{00145 }
+\DoxyCodeLine{00146 \textcolor{preprocessor}{\#ifndef WITHOUT\_NUMPY}}
+\DoxyCodeLine{00147         import\_numpy(); \textcolor{comment}{// initialize numpy C-\/API}}
+\DoxyCodeLine{00148 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00149 }
+\DoxyCodeLine{00150         PyObject* matplotlibname = PyString\_FromString(\textcolor{stringliteral}{"matplotlib"});}
+\DoxyCodeLine{00151         PyObject* pyplotname = PyString\_FromString(\textcolor{stringliteral}{"matplotlib.pyplot"});}
+\DoxyCodeLine{00152         PyObject* cmname  = PyString\_FromString(\textcolor{stringliteral}{"matplotlib.cm"});}
+\DoxyCodeLine{00153         PyObject* pylabname  = PyString\_FromString(\textcolor{stringliteral}{"pylab"});}
+\DoxyCodeLine{00154         \textcolor{keywordflow}{if} (!pyplotname || !pylabname || !matplotlibname || !cmname) \{}
+\DoxyCodeLine{00155             \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"couldnt create string"});}
+\DoxyCodeLine{00156         \}}
+\DoxyCodeLine{00157 }
+\DoxyCodeLine{00158         PyObject* matplotlib = PyImport\_Import(matplotlibname);}
+\DoxyCodeLine{00159         Py\_DECREF(matplotlibname);}
+\DoxyCodeLine{00160         \textcolor{keywordflow}{if} (!matplotlib) \{}
+\DoxyCodeLine{00161             PyErr\_Print();}
+\DoxyCodeLine{00162             \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Error loading module matplotlib!"});}
+\DoxyCodeLine{00163         \}}
+\DoxyCodeLine{00164 }
+\DoxyCodeLine{00165         \textcolor{comment}{// matplotlib.use() must be called *before* pylab, matplotlib.pyplot,}}
+\DoxyCodeLine{00166         \textcolor{comment}{// or matplotlib.backends is imported for the first time}}
+\DoxyCodeLine{00167         \textcolor{keywordflow}{if} (!s\_backend.empty()) \{}
+\DoxyCodeLine{00168             PyObject\_CallMethod(matplotlib, \textcolor{keyword}{const\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(\textcolor{stringliteral}{"use"}), \textcolor{keyword}{const\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(\textcolor{stringliteral}{"s"}), s\_backend.c\_str());}
+\DoxyCodeLine{00169         \}}
+\DoxyCodeLine{00170 }
+\DoxyCodeLine{00171         PyObject* pymod = PyImport\_Import(pyplotname);}
+\DoxyCodeLine{00172         Py\_DECREF(pyplotname);}
+\DoxyCodeLine{00173         \textcolor{keywordflow}{if} (!pymod) \{ \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Error loading module matplotlib.pyplot!"}); \}}
+\DoxyCodeLine{00174 }
+\DoxyCodeLine{00175         s\_python\_colormap = PyImport\_Import(cmname);}
+\DoxyCodeLine{00176         Py\_DECREF(cmname);}
+\DoxyCodeLine{00177         \textcolor{keywordflow}{if} (!s\_python\_colormap) \{ \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Error loading module matplotlib.cm!"}); \}}
+\DoxyCodeLine{00178 }
+\DoxyCodeLine{00179         PyObject* pylabmod = PyImport\_Import(pylabname);}
+\DoxyCodeLine{00180         Py\_DECREF(pylabname);}
+\DoxyCodeLine{00181         \textcolor{keywordflow}{if} (!pylabmod) \{ \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Error loading module pylab!"}); \}}
+\DoxyCodeLine{00182 }
+\DoxyCodeLine{00183         s\_python\_function\_show = safe\_import(pymod, \textcolor{stringliteral}{"show"});}
+\DoxyCodeLine{00184         s\_python\_function\_close = safe\_import(pymod, \textcolor{stringliteral}{"close"});}
+\DoxyCodeLine{00185         s\_python\_function\_draw = safe\_import(pymod, \textcolor{stringliteral}{"draw"});}
+\DoxyCodeLine{00186         s\_python\_function\_pause = safe\_import(pymod, \textcolor{stringliteral}{"pause"});}
+\DoxyCodeLine{00187         s\_python\_function\_figure = safe\_import(pymod, \textcolor{stringliteral}{"figure"});}
+\DoxyCodeLine{00188         s\_python\_function\_fignum\_exists = safe\_import(pymod, \textcolor{stringliteral}{"fignum\_exists"});}
+\DoxyCodeLine{00189         s\_python\_function\_plot = safe\_import(pymod, \textcolor{stringliteral}{"plot"});}
+\DoxyCodeLine{00190         s\_python\_function\_quiver = safe\_import(pymod, \textcolor{stringliteral}{"quiver"});}
+\DoxyCodeLine{00191         s\_python\_function\_semilogx = safe\_import(pymod, \textcolor{stringliteral}{"semilogx"});}
+\DoxyCodeLine{00192         s\_python\_function\_semilogy = safe\_import(pymod, \textcolor{stringliteral}{"semilogy"});}
+\DoxyCodeLine{00193         s\_python\_function\_loglog = safe\_import(pymod, \textcolor{stringliteral}{"loglog"});}
+\DoxyCodeLine{00194         s\_python\_function\_fill = safe\_import(pymod, \textcolor{stringliteral}{"fill"});}
+\DoxyCodeLine{00195         s\_python\_function\_fill\_between = safe\_import(pymod, \textcolor{stringliteral}{"fill\_between"});}
+\DoxyCodeLine{00196         s\_python\_function\_hist = safe\_import(pymod,\textcolor{stringliteral}{"hist"});}
+\DoxyCodeLine{00197         s\_python\_function\_scatter = safe\_import(pymod,\textcolor{stringliteral}{"scatter"});}
+\DoxyCodeLine{00198         s\_python\_function\_subplot = safe\_import(pymod, \textcolor{stringliteral}{"subplot"});}
+\DoxyCodeLine{00199         s\_python\_function\_subplot2grid = safe\_import(pymod, \textcolor{stringliteral}{"subplot2grid"});}
+\DoxyCodeLine{00200         s\_python\_function\_legend = safe\_import(pymod, \textcolor{stringliteral}{"legend"});}
+\DoxyCodeLine{00201         s\_python\_function\_ylim = safe\_import(pymod, \textcolor{stringliteral}{"ylim"});}
+\DoxyCodeLine{00202         s\_python\_function\_title = safe\_import(pymod, \textcolor{stringliteral}{"title"});}
+\DoxyCodeLine{00203         s\_python\_function\_axis = safe\_import(pymod, \textcolor{stringliteral}{"axis"});}
+\DoxyCodeLine{00204         s\_python\_function\_xlabel = safe\_import(pymod, \textcolor{stringliteral}{"xlabel"});}
+\DoxyCodeLine{00205         s\_python\_function\_ylabel = safe\_import(pymod, \textcolor{stringliteral}{"ylabel"});}
+\DoxyCodeLine{00206         s\_python\_function\_xticks = safe\_import(pymod, \textcolor{stringliteral}{"xticks"});}
+\DoxyCodeLine{00207         s\_python\_function\_yticks = safe\_import(pymod, \textcolor{stringliteral}{"yticks"});}
+\DoxyCodeLine{00208         s\_python\_function\_tick\_params = safe\_import(pymod, \textcolor{stringliteral}{"tick\_params"});}
+\DoxyCodeLine{00209         s\_python\_function\_grid = safe\_import(pymod, \textcolor{stringliteral}{"grid"});}
+\DoxyCodeLine{00210         s\_python\_function\_xlim = safe\_import(pymod, \textcolor{stringliteral}{"xlim"});}
+\DoxyCodeLine{00211         s\_python\_function\_ion = safe\_import(pymod, \textcolor{stringliteral}{"ion"});}
+\DoxyCodeLine{00212         s\_python\_function\_ginput = safe\_import(pymod, \textcolor{stringliteral}{"ginput"});}
+\DoxyCodeLine{00213         s\_python\_function\_save = safe\_import(pylabmod, \textcolor{stringliteral}{"savefig"});}
+\DoxyCodeLine{00214         s\_python\_function\_annotate = safe\_import(pymod,\textcolor{stringliteral}{"annotate"});}
+\DoxyCodeLine{00215         s\_python\_function\_clf = safe\_import(pymod, \textcolor{stringliteral}{"clf"});}
+\DoxyCodeLine{00216         s\_python\_function\_errorbar = safe\_import(pymod, \textcolor{stringliteral}{"errorbar"});}
+\DoxyCodeLine{00217         s\_python\_function\_tight\_layout = safe\_import(pymod, \textcolor{stringliteral}{"tight\_layout"});}
+\DoxyCodeLine{00218         s\_python\_function\_stem = safe\_import(pymod, \textcolor{stringliteral}{"stem"});}
+\DoxyCodeLine{00219         s\_python\_function\_xkcd = safe\_import(pymod, \textcolor{stringliteral}{"xkcd"});}
+\DoxyCodeLine{00220         s\_python\_function\_text = safe\_import(pymod, \textcolor{stringliteral}{"text"});}
+\DoxyCodeLine{00221         s\_python\_function\_suptitle = safe\_import(pymod, \textcolor{stringliteral}{"suptitle"});}
+\DoxyCodeLine{00222         s\_python\_function\_bar = safe\_import(pymod,\textcolor{stringliteral}{"bar"});}
+\DoxyCodeLine{00223         s\_python\_function\_subplots\_adjust = safe\_import(pymod,\textcolor{stringliteral}{"subplots\_adjust"});}
+\DoxyCodeLine{00224 \textcolor{preprocessor}{\#ifndef WITHOUT\_NUMPY}}
+\DoxyCodeLine{00225         s\_python\_function\_imshow = safe\_import(pymod, \textcolor{stringliteral}{"imshow"});}
+\DoxyCodeLine{00226 \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00227 }
+\DoxyCodeLine{00228         s\_python\_empty\_tuple = PyTuple\_New(0);}
+\DoxyCodeLine{00229     \}}
+\DoxyCodeLine{00230 }
+\DoxyCodeLine{00231     \string~\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1__interpreter}{\_interpreter}}() \{}
+\DoxyCodeLine{00232         Py\_Finalize();}
+\DoxyCodeLine{00233     \}}
+\DoxyCodeLine{00234 \};}
+\DoxyCodeLine{00235 }
+\DoxyCodeLine{00236 \} \textcolor{comment}{// end namespace detail}}
+\DoxyCodeLine{00237 }
+\DoxyCodeLine{00238 \textcolor{comment}{// must be called before the first regular call to matplotlib to have any effect}}
+\DoxyCodeLine{00239 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} backend(\textcolor{keyword}{const} std::string\& name)}
+\DoxyCodeLine{00240 \{}
+\DoxyCodeLine{00241     detail::s\_backend = name;}
+\DoxyCodeLine{00242 \}}
+\DoxyCodeLine{00243 }
+\DoxyCodeLine{00244 \textcolor{keyword}{inline} \textcolor{keywordtype}{bool} annotate(std::string annotation, \textcolor{keywordtype}{double} x, \textcolor{keywordtype}{double} y)}
+\DoxyCodeLine{00245 \{}
+\DoxyCodeLine{00246     PyObject * xy = PyTuple\_New(2);}
+\DoxyCodeLine{00247     PyObject * str = PyString\_FromString(annotation.c\_str());}
+\DoxyCodeLine{00248 }
+\DoxyCodeLine{00249     PyTuple\_SetItem(xy,0,PyFloat\_FromDouble(x));}
+\DoxyCodeLine{00250     PyTuple\_SetItem(xy,1,PyFloat\_FromDouble(y));}
+\DoxyCodeLine{00251 }
+\DoxyCodeLine{00252     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00253     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"xy"}, xy);}
+\DoxyCodeLine{00254 }
+\DoxyCodeLine{00255     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{00256     PyTuple\_SetItem(args, 0, str);}
+\DoxyCodeLine{00257 }
+\DoxyCodeLine{00258     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_annotate, args, kwargs);}
+\DoxyCodeLine{00259 }
+\DoxyCodeLine{00260     Py\_DECREF(args);}
+\DoxyCodeLine{00261     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00262 }
+\DoxyCodeLine{00263     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00264 }
+\DoxyCodeLine{00265     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00266 \}}
+\DoxyCodeLine{00267 }
+\DoxyCodeLine{00268 \textcolor{preprocessor}{\#ifndef WITHOUT\_NUMPY}}
+\DoxyCodeLine{00269 \textcolor{comment}{// Type selector for numpy array conversion}}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00270}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{00270}} \textcolor{keyword}{template} <\textcolor{keyword}{typename} T> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}} \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_NOTYPE; \}; \textcolor{comment}{//Default}}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00271}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01double_01_4}{00271}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<double> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_DOUBLE; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00272}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01float_01_4}{00272}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<float> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_FLOAT; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00273}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01bool_01_4}{00273}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<bool> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_BOOL; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00274}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01int8__t_01_4}{00274}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<int8\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_INT8; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00275}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01int16__t_01_4}{00275}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<int16\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_SHORT; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00276}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01int32__t_01_4}{00276}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<int32\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_INT; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00277}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01int64__t_01_4}{00277}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<int64\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_INT64; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00278}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01uint8__t_01_4}{00278}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<uint8\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_UINT8; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00279}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01uint16__t_01_4}{00279}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<uint16\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_USHORT; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00280}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01uint32__t_01_4}{00280}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<uint32\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_ULONG; \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l00281}\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type_3_01uint64__t_01_4}{00281}} \textcolor{keyword}{template} <> \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type}}<uint64\_t> \{ \textcolor{keyword}{const} \textcolor{keyword}{static} NPY\_TYPES type = NPY\_UINT64; \};}
+\DoxyCodeLine{00282 }
+\DoxyCodeLine{00283 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00284 PyObject* get\_array(\textcolor{keyword}{const} std::vector<Numeric>\& v)}
+\DoxyCodeLine{00285 \{}
+\DoxyCodeLine{00286     detail::\_interpreter::get();    \textcolor{comment}{//interpreter needs to be initialized for the numpy commands to work}}
+\DoxyCodeLine{00287     NPY\_TYPES type = \mbox{\hyperlink{structmatplotlibcpp_1_1select__npy__type}{select\_npy\_type<Numeric>::type}};}
+\DoxyCodeLine{00288     \textcolor{keywordflow}{if} (type == NPY\_NOTYPE)}
+\DoxyCodeLine{00289     \{}
+\DoxyCodeLine{00290         std::vector<double> vd(v.size());}
+\DoxyCodeLine{00291         npy\_intp vsize = v.size();}
+\DoxyCodeLine{00292         std::copy(v.begin(),v.end(),vd.begin());}
+\DoxyCodeLine{00293         PyObject* varray = PyArray\_SimpleNewFromData(1, \&vsize, NPY\_DOUBLE, (\textcolor{keywordtype}{void}*)(vd.data()));}
+\DoxyCodeLine{00294         \textcolor{keywordflow}{return} varray;}
+\DoxyCodeLine{00295     \}}
+\DoxyCodeLine{00296 }
+\DoxyCodeLine{00297     npy\_intp vsize = v.size();}
+\DoxyCodeLine{00298     PyObject* varray = PyArray\_SimpleNewFromData(1, \&vsize, type, (\textcolor{keywordtype}{void}*)(v.data()));}
+\DoxyCodeLine{00299     \textcolor{keywordflow}{return} varray;}
+\DoxyCodeLine{00300 \}}
+\DoxyCodeLine{00301 }
+\DoxyCodeLine{00302 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00303 PyObject* get\_2darray(\textcolor{keyword}{const} std::vector<::std::vector<Numeric>>\& v)}
+\DoxyCodeLine{00304 \{}
+\DoxyCodeLine{00305     detail::\_interpreter::get();    \textcolor{comment}{//interpreter needs to be initialized for the numpy commands to work}}
+\DoxyCodeLine{00306     \textcolor{keywordflow}{if} (v.size() < 1) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"get\_2d\_array v too small"});}
+\DoxyCodeLine{00307 }
+\DoxyCodeLine{00308     npy\_intp vsize[2] = \{\textcolor{keyword}{static\_cast<}npy\_intp\textcolor{keyword}{>}(v.size()),}
+\DoxyCodeLine{00309                          \textcolor{keyword}{static\_cast<}npy\_intp\textcolor{keyword}{>}(v[0].size())\};}
+\DoxyCodeLine{00310 }
+\DoxyCodeLine{00311     PyArrayObject *varray =}
+\DoxyCodeLine{00312         (PyArrayObject *)PyArray\_SimpleNew(2, vsize, NPY\_DOUBLE);}
+\DoxyCodeLine{00313 }
+\DoxyCodeLine{00314     \textcolor{keywordtype}{double} *vd\_begin = \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{double} *\textcolor{keyword}{>}(PyArray\_DATA(varray));}
+\DoxyCodeLine{00315 }
+\DoxyCodeLine{00316     \textcolor{keywordflow}{for} (const ::std::vector<Numeric> \&v\_row : v) \{}
+\DoxyCodeLine{00317       \textcolor{keywordflow}{if} (v\_row.size() != \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{size\_t}\textcolor{keyword}{>}(vsize[1]))}
+\DoxyCodeLine{00318         \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Missmatched array size"});}
+\DoxyCodeLine{00319       std::copy(v\_row.begin(), v\_row.end(), vd\_begin);}
+\DoxyCodeLine{00320       vd\_begin += vsize[1];}
+\DoxyCodeLine{00321     \}}
+\DoxyCodeLine{00322 }
+\DoxyCodeLine{00323     \textcolor{keywordflow}{return} \textcolor{keyword}{reinterpret\_cast<}PyObject *\textcolor{keyword}{>}(varray);}
+\DoxyCodeLine{00324 \}}
+\DoxyCodeLine{00325 }
+\DoxyCodeLine{00326 \textcolor{preprocessor}{\#else // fallback if we don't have numpy: copy every element of the given vector}}
+\DoxyCodeLine{00327 }
+\DoxyCodeLine{00328 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00329 PyObject* get\_array(\textcolor{keyword}{const} std::vector<Numeric>\& v)}
+\DoxyCodeLine{00330 \{}
+\DoxyCodeLine{00331     PyObject* list = PyList\_New(v.size());}
+\DoxyCodeLine{00332     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{size\_t} i = 0; i < v.size(); ++i) \{}
+\DoxyCodeLine{00333         PyList\_SetItem(list, i, PyFloat\_FromDouble(v.at(i)));}
+\DoxyCodeLine{00334     \}}
+\DoxyCodeLine{00335     \textcolor{keywordflow}{return} list;}
+\DoxyCodeLine{00336 \}}
+\DoxyCodeLine{00337 }
+\DoxyCodeLine{00338 \textcolor{preprocessor}{\#endif // WITHOUT\_NUMPY}}
+\DoxyCodeLine{00339 }
+\DoxyCodeLine{00340 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00341 \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} std::vector<Numeric> \&x, \textcolor{keyword}{const} std::vector<Numeric> \&y, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords)}
+\DoxyCodeLine{00342 \{}
+\DoxyCodeLine{00343     assert(x.size() == y.size());}
+\DoxyCodeLine{00344 }
+\DoxyCodeLine{00345     \textcolor{comment}{// using numpy arrays}}
+\DoxyCodeLine{00346     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00347     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00348 }
+\DoxyCodeLine{00349     \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{00350     PyObject* args = PyTuple\_New(2);}
+\DoxyCodeLine{00351     PyTuple\_SetItem(args, 0, xarray);}
+\DoxyCodeLine{00352     PyTuple\_SetItem(args, 1, yarray);}
+\DoxyCodeLine{00353 }
+\DoxyCodeLine{00354     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{00355     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00356     \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{00357     \{}
+\DoxyCodeLine{00358         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyString\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00359     \}}
+\DoxyCodeLine{00360 }
+\DoxyCodeLine{00361     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_plot, args, kwargs);}
+\DoxyCodeLine{00362 }
+\DoxyCodeLine{00363     Py\_DECREF(args);}
+\DoxyCodeLine{00364     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00365     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00366 }
+\DoxyCodeLine{00367     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00368 \}}
+\DoxyCodeLine{00369 }
+\DoxyCodeLine{00370 \textcolor{comment}{// TODO -\/ it should be possible to make this work by implementing}}
+\DoxyCodeLine{00371 \textcolor{comment}{// a non-\/numpy alternative for `get\_2darray()`.}}
+\DoxyCodeLine{00372 \textcolor{preprocessor}{\#ifndef WITHOUT\_NUMPY}}
+\DoxyCodeLine{00373 \textcolor{keyword}{template} <\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00374 \textcolor{keywordtype}{void} plot\_surface(\textcolor{keyword}{const} std::vector<::std::vector<Numeric>> \&x,}
+\DoxyCodeLine{00375                   \textcolor{keyword}{const} std::vector<::std::vector<Numeric>> \&y,}
+\DoxyCodeLine{00376                   \textcolor{keyword}{const} std::vector<::std::vector<Numeric>> \&z,}
+\DoxyCodeLine{00377                   \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords =}
+\DoxyCodeLine{00378                       std::map<std::string, std::string>())}
+\DoxyCodeLine{00379 \{}
+\DoxyCodeLine{00380   \textcolor{comment}{// We lazily load the modules here the first time this function is called}}
+\DoxyCodeLine{00381   \textcolor{comment}{// because I'm not sure that we can assume "matplotlib installed" implies}}
+\DoxyCodeLine{00382   \textcolor{comment}{// "mpl\_toolkits installed" on all platforms, and we don't want to require}}
+\DoxyCodeLine{00383   \textcolor{comment}{// it for people who don't need 3d plots.}}
+\DoxyCodeLine{00384   \textcolor{keyword}{static} PyObject *mpl\_toolkitsmod = \textcolor{keyword}{nullptr}, *axis3dmod = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00385   \textcolor{keywordflow}{if} (!mpl\_toolkitsmod) \{}
+\DoxyCodeLine{00386     detail::\_interpreter::get();}
+\DoxyCodeLine{00387 }
+\DoxyCodeLine{00388     PyObject* mpl\_toolkits = PyString\_FromString(\textcolor{stringliteral}{"mpl\_toolkits"});}
+\DoxyCodeLine{00389     PyObject* axis3d = PyString\_FromString(\textcolor{stringliteral}{"mpl\_toolkits.mplot3d"});}
+\DoxyCodeLine{00390     \textcolor{keywordflow}{if} (!mpl\_toolkits || !axis3d) \{ \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"couldnt create string"}); \}}
+\DoxyCodeLine{00391 }
+\DoxyCodeLine{00392     mpl\_toolkitsmod = PyImport\_Import(mpl\_toolkits);}
+\DoxyCodeLine{00393     Py\_DECREF(mpl\_toolkits);}
+\DoxyCodeLine{00394     \textcolor{keywordflow}{if} (!mpl\_toolkitsmod) \{ \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Error loading module mpl\_toolkits!"}); \}}
+\DoxyCodeLine{00395 }
+\DoxyCodeLine{00396     axis3dmod = PyImport\_Import(axis3d);}
+\DoxyCodeLine{00397     Py\_DECREF(axis3d);}
+\DoxyCodeLine{00398     \textcolor{keywordflow}{if} (!axis3dmod) \{ \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Error loading module mpl\_toolkits.mplot3d!"}); \}}
+\DoxyCodeLine{00399   \}}
+\DoxyCodeLine{00400 }
+\DoxyCodeLine{00401   assert(x.size() == y.size());}
+\DoxyCodeLine{00402   assert(y.size() == z.size());}
+\DoxyCodeLine{00403 }
+\DoxyCodeLine{00404   \textcolor{comment}{// using numpy arrays}}
+\DoxyCodeLine{00405   PyObject *xarray = get\_2darray(x);}
+\DoxyCodeLine{00406   PyObject *yarray = get\_2darray(y);}
+\DoxyCodeLine{00407   PyObject *zarray = get\_2darray(z);}
+\DoxyCodeLine{00408 }
+\DoxyCodeLine{00409   \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{00410   PyObject *args = PyTuple\_New(3);}
+\DoxyCodeLine{00411   PyTuple\_SetItem(args, 0, xarray);}
+\DoxyCodeLine{00412   PyTuple\_SetItem(args, 1, yarray);}
+\DoxyCodeLine{00413   PyTuple\_SetItem(args, 2, zarray);}
+\DoxyCodeLine{00414 }
+\DoxyCodeLine{00415   \textcolor{comment}{// Build up the kw args.}}
+\DoxyCodeLine{00416   PyObject *kwargs = PyDict\_New();}
+\DoxyCodeLine{00417   PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"rstride"}, PyInt\_FromLong(1));}
+\DoxyCodeLine{00418   PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"cstride"}, PyInt\_FromLong(1));}
+\DoxyCodeLine{00419 }
+\DoxyCodeLine{00420   PyObject *python\_colormap\_coolwarm = PyObject\_GetAttrString(}
+\DoxyCodeLine{00421       detail::\_interpreter::get().s\_python\_colormap, \textcolor{stringliteral}{"coolwarm"});}
+\DoxyCodeLine{00422 }
+\DoxyCodeLine{00423   PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"cmap"}, python\_colormap\_coolwarm);}
+\DoxyCodeLine{00424 }
+\DoxyCodeLine{00425   \textcolor{keywordflow}{for} (std::map<std::string, std::string>::const\_iterator it = keywords.begin();}
+\DoxyCodeLine{00426        it != keywords.end(); ++it) \{}
+\DoxyCodeLine{00427     PyDict\_SetItemString(kwargs, it-\/>first.c\_str(),}
+\DoxyCodeLine{00428                          PyString\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00429   \}}
+\DoxyCodeLine{00430 }
+\DoxyCodeLine{00431 }
+\DoxyCodeLine{00432   PyObject *fig =}
+\DoxyCodeLine{00433       PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_figure,}
+\DoxyCodeLine{00434                           detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{00435   \textcolor{keywordflow}{if} (!fig) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to figure() failed."});}
+\DoxyCodeLine{00436 }
+\DoxyCodeLine{00437   PyObject *gca\_kwargs = PyDict\_New();}
+\DoxyCodeLine{00438   PyDict\_SetItemString(gca\_kwargs, \textcolor{stringliteral}{"projection"}, PyString\_FromString(\textcolor{stringliteral}{"3d"}));}
+\DoxyCodeLine{00439 }
+\DoxyCodeLine{00440   PyObject *gca = PyObject\_GetAttrString(fig, \textcolor{stringliteral}{"gca"});}
+\DoxyCodeLine{00441   \textcolor{keywordflow}{if} (!gca) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"No gca"});}
+\DoxyCodeLine{00442   Py\_INCREF(gca);}
+\DoxyCodeLine{00443   PyObject *axis = PyObject\_Call(}
+\DoxyCodeLine{00444       gca, detail::\_interpreter::get().s\_python\_empty\_tuple, gca\_kwargs);}
+\DoxyCodeLine{00445 }
+\DoxyCodeLine{00446   \textcolor{keywordflow}{if} (!axis) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"No axis"});}
+\DoxyCodeLine{00447   Py\_INCREF(axis);}
+\DoxyCodeLine{00448 }
+\DoxyCodeLine{00449   Py\_DECREF(gca);}
+\DoxyCodeLine{00450   Py\_DECREF(gca\_kwargs);}
+\DoxyCodeLine{00451 }
+\DoxyCodeLine{00452   PyObject *plot\_surface = PyObject\_GetAttrString(axis, \textcolor{stringliteral}{"plot\_surface"});}
+\DoxyCodeLine{00453   \textcolor{keywordflow}{if} (!plot\_surface) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"No surface"});}
+\DoxyCodeLine{00454   Py\_INCREF(plot\_surface);}
+\DoxyCodeLine{00455   PyObject *res = PyObject\_Call(plot\_surface, args, kwargs);}
+\DoxyCodeLine{00456   \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"failed surface"});}
+\DoxyCodeLine{00457   Py\_DECREF(plot\_surface);}
+\DoxyCodeLine{00458 }
+\DoxyCodeLine{00459   Py\_DECREF(axis);}
+\DoxyCodeLine{00460   Py\_DECREF(args);}
+\DoxyCodeLine{00461   Py\_DECREF(kwargs);}
+\DoxyCodeLine{00462   \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{00463 \}}
+\DoxyCodeLine{00464 \textcolor{preprocessor}{\#endif // WITHOUT\_NUMPY}}
+\DoxyCodeLine{00465 }
+\DoxyCodeLine{00466 }
+\DoxyCodeLine{00467 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00468 \textcolor{keywordtype}{bool} stem(\textcolor{keyword}{const} std::vector<Numeric> \&x, \textcolor{keyword}{const} std::vector<Numeric> \&y, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords)}
+\DoxyCodeLine{00469 \{}
+\DoxyCodeLine{00470     assert(x.size() == y.size());}
+\DoxyCodeLine{00471 }
+\DoxyCodeLine{00472     \textcolor{comment}{// using numpy arrays}}
+\DoxyCodeLine{00473     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00474     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00475 }
+\DoxyCodeLine{00476     \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{00477     PyObject* args = PyTuple\_New(2);}
+\DoxyCodeLine{00478     PyTuple\_SetItem(args, 0, xarray);}
+\DoxyCodeLine{00479     PyTuple\_SetItem(args, 1, yarray);}
+\DoxyCodeLine{00480 }
+\DoxyCodeLine{00481     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{00482     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00483     \textcolor{keywordflow}{for} (std::map<std::string, std::string>::const\_iterator it =}
+\DoxyCodeLine{00484             keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{00485         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(),}
+\DoxyCodeLine{00486                 PyString\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00487     \}}
+\DoxyCodeLine{00488 }
+\DoxyCodeLine{00489     PyObject* res = PyObject\_Call(}
+\DoxyCodeLine{00490             detail::\_interpreter::get().s\_python\_function\_stem, args, kwargs);}
+\DoxyCodeLine{00491 }
+\DoxyCodeLine{00492     Py\_DECREF(args);}
+\DoxyCodeLine{00493     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00494     \textcolor{keywordflow}{if} (res)}
+\DoxyCodeLine{00495         Py\_DECREF(res);}
+\DoxyCodeLine{00496 }
+\DoxyCodeLine{00497     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00498 \}}
+\DoxyCodeLine{00499 }
+\DoxyCodeLine{00500 \textcolor{keyword}{template}< \textcolor{keyword}{typename} Numeric >}
+\DoxyCodeLine{00501 \textcolor{keywordtype}{bool} fill(\textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords)}
+\DoxyCodeLine{00502 \{}
+\DoxyCodeLine{00503     assert(x.size() == y.size());}
+\DoxyCodeLine{00504 }
+\DoxyCodeLine{00505     \textcolor{comment}{// using numpy arrays}}
+\DoxyCodeLine{00506     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00507     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00508 }
+\DoxyCodeLine{00509     \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{00510     PyObject* args = PyTuple\_New(2);}
+\DoxyCodeLine{00511     PyTuple\_SetItem(args, 0, xarray);}
+\DoxyCodeLine{00512     PyTuple\_SetItem(args, 1, yarray);}
+\DoxyCodeLine{00513 }
+\DoxyCodeLine{00514     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{00515     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00516     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} it = keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{00517         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00518     \}}
+\DoxyCodeLine{00519 }
+\DoxyCodeLine{00520     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_fill, args, kwargs);}
+\DoxyCodeLine{00521 }
+\DoxyCodeLine{00522     Py\_DECREF(args);}
+\DoxyCodeLine{00523     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00524 }
+\DoxyCodeLine{00525     \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{00526 }
+\DoxyCodeLine{00527     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00528 \}}
+\DoxyCodeLine{00529 }
+\DoxyCodeLine{00530 \textcolor{keyword}{template}< \textcolor{keyword}{typename} Numeric >}
+\DoxyCodeLine{00531 \textcolor{keywordtype}{bool} fill\_between(\textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y1, \textcolor{keyword}{const} std::vector<Numeric>\& y2, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords)}
+\DoxyCodeLine{00532 \{}
+\DoxyCodeLine{00533     assert(x.size() == y1.size());}
+\DoxyCodeLine{00534     assert(x.size() == y2.size());}
+\DoxyCodeLine{00535 }
+\DoxyCodeLine{00536     \textcolor{comment}{// using numpy arrays}}
+\DoxyCodeLine{00537     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00538     PyObject* y1array = get\_array(y1);}
+\DoxyCodeLine{00539     PyObject* y2array = get\_array(y2);}
+\DoxyCodeLine{00540 }
+\DoxyCodeLine{00541     \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{00542     PyObject* args = PyTuple\_New(3);}
+\DoxyCodeLine{00543     PyTuple\_SetItem(args, 0, xarray);}
+\DoxyCodeLine{00544     PyTuple\_SetItem(args, 1, y1array);}
+\DoxyCodeLine{00545     PyTuple\_SetItem(args, 2, y2array);}
+\DoxyCodeLine{00546 }
+\DoxyCodeLine{00547     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{00548     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00549     \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{00550         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00551     \}}
+\DoxyCodeLine{00552 }
+\DoxyCodeLine{00553     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_fill\_between, args, kwargs);}
+\DoxyCodeLine{00554 }
+\DoxyCodeLine{00555     Py\_DECREF(args);}
+\DoxyCodeLine{00556     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00557     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00558 }
+\DoxyCodeLine{00559     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00560 \}}
+\DoxyCodeLine{00561 }
+\DoxyCodeLine{00562 \textcolor{keyword}{template}< \textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00563 \textcolor{keywordtype}{bool} hist(\textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keywordtype}{long} bins=10,std::string color=\textcolor{stringliteral}{"b"},}
+\DoxyCodeLine{00564           \textcolor{keywordtype}{double} alpha=1.0, \textcolor{keywordtype}{bool} cumulative=\textcolor{keyword}{false})}
+\DoxyCodeLine{00565 \{}
+\DoxyCodeLine{00566 }
+\DoxyCodeLine{00567     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00568 }
+\DoxyCodeLine{00569     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00570     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"bins"}, PyLong\_FromLong(bins));}
+\DoxyCodeLine{00571     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"color"}, PyString\_FromString(color.c\_str()));}
+\DoxyCodeLine{00572     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"alpha"}, PyFloat\_FromDouble(alpha));}
+\DoxyCodeLine{00573     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"cumulative"}, cumulative ? Py\_True : Py\_False);}
+\DoxyCodeLine{00574 }
+\DoxyCodeLine{00575     PyObject* plot\_args = PyTuple\_New(1);}
+\DoxyCodeLine{00576 }
+\DoxyCodeLine{00577     PyTuple\_SetItem(plot\_args, 0, yarray);}
+\DoxyCodeLine{00578 }
+\DoxyCodeLine{00579 }
+\DoxyCodeLine{00580     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_hist, plot\_args, kwargs);}
+\DoxyCodeLine{00581 }
+\DoxyCodeLine{00582 }
+\DoxyCodeLine{00583     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00584     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00585     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00586 }
+\DoxyCodeLine{00587     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00588 \}}
+\DoxyCodeLine{00589 }
+\DoxyCodeLine{00590 \textcolor{preprocessor}{\#ifndef WITHOUT\_NUMPY}}
+\DoxyCodeLine{00591     \textcolor{keyword}{namespace }internal \{}
+\DoxyCodeLine{00592         \textcolor{keyword}{inline} \textcolor{keywordtype}{void} imshow(\textcolor{keywordtype}{void} *ptr, \textcolor{keyword}{const} NPY\_TYPES type, \textcolor{keyword}{const} \textcolor{keywordtype}{int} rows, \textcolor{keyword}{const} \textcolor{keywordtype}{int} columns, \textcolor{keyword}{const} \textcolor{keywordtype}{int} colors, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords)}
+\DoxyCodeLine{00593         \{}
+\DoxyCodeLine{00594             assert(type == NPY\_UINT8 || type == NPY\_FLOAT);}
+\DoxyCodeLine{00595             assert(colors == 1 || colors == 3 || colors == 4);}
+\DoxyCodeLine{00596 }
+\DoxyCodeLine{00597             detail::\_interpreter::get();    \textcolor{comment}{//interpreter needs to be initialized for the numpy commands to work}}
+\DoxyCodeLine{00598 }
+\DoxyCodeLine{00599             \textcolor{comment}{// construct args}}
+\DoxyCodeLine{00600             npy\_intp dims[3] = \{ rows, columns, colors \};}
+\DoxyCodeLine{00601             PyObject *args = PyTuple\_New(1);}
+\DoxyCodeLine{00602             PyTuple\_SetItem(args, 0, PyArray\_SimpleNewFromData(colors == 1 ? 2 : 3, dims, type, ptr));}
+\DoxyCodeLine{00603 }
+\DoxyCodeLine{00604             \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{00605             PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00606             \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{00607             \{}
+\DoxyCodeLine{00608                 PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00609             \}}
+\DoxyCodeLine{00610 }
+\DoxyCodeLine{00611             PyObject *res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_imshow, args, kwargs);}
+\DoxyCodeLine{00612             Py\_DECREF(args);}
+\DoxyCodeLine{00613             Py\_DECREF(kwargs);}
+\DoxyCodeLine{00614             \textcolor{keywordflow}{if} (!res)}
+\DoxyCodeLine{00615                 \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to imshow() failed"});}
+\DoxyCodeLine{00616             Py\_DECREF(res);}
+\DoxyCodeLine{00617         \}}
+\DoxyCodeLine{00618     \}}
+\DoxyCodeLine{00619 }
+\DoxyCodeLine{00620     \textcolor{keyword}{inline} \textcolor{keywordtype}{void} imshow(\textcolor{keyword}{const} \textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{char} *ptr, \textcolor{keyword}{const} \textcolor{keywordtype}{int} rows, \textcolor{keyword}{const} \textcolor{keywordtype}{int} columns, \textcolor{keyword}{const} \textcolor{keywordtype}{int} colors, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords = \{\})}
+\DoxyCodeLine{00621     \{}
+\DoxyCodeLine{00622         internal::imshow((\textcolor{keywordtype}{void} *) ptr, NPY\_UINT8, rows, columns, colors, keywords);}
+\DoxyCodeLine{00623     \}}
+\DoxyCodeLine{00624 }
+\DoxyCodeLine{00625     \textcolor{keyword}{inline} \textcolor{keywordtype}{void} imshow(\textcolor{keyword}{const} \textcolor{keywordtype}{float} *ptr, \textcolor{keyword}{const} \textcolor{keywordtype}{int} rows, \textcolor{keyword}{const} \textcolor{keywordtype}{int} columns, \textcolor{keyword}{const} \textcolor{keywordtype}{int} colors, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords = \{\})}
+\DoxyCodeLine{00626     \{}
+\DoxyCodeLine{00627         internal::imshow((\textcolor{keywordtype}{void} *) ptr, NPY\_FLOAT, rows, columns, colors, keywords);}
+\DoxyCodeLine{00628     \}}
+\DoxyCodeLine{00629 }
+\DoxyCodeLine{00630 \textcolor{preprocessor}{\#ifdef WITH\_OPENCV}}
+\DoxyCodeLine{00631     \textcolor{keywordtype}{void} imshow(\textcolor{keyword}{const} cv::Mat \&image, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords = \{\})}
+\DoxyCodeLine{00632     \{}
+\DoxyCodeLine{00633         \textcolor{comment}{// Convert underlying type of matrix, if needed}}
+\DoxyCodeLine{00634         cv::Mat image2;}
+\DoxyCodeLine{00635         NPY\_TYPES npy\_type = NPY\_UINT8;}
+\DoxyCodeLine{00636         \textcolor{keywordflow}{switch} (image.type() \& CV\_MAT\_DEPTH\_MASK) \{}
+\DoxyCodeLine{00637         \textcolor{keywordflow}{case} CV\_8U:}
+\DoxyCodeLine{00638             image2 = image;}
+\DoxyCodeLine{00639             \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00640         \textcolor{keywordflow}{case} CV\_32F:}
+\DoxyCodeLine{00641             image2 = image;}
+\DoxyCodeLine{00642             npy\_type = NPY\_FLOAT;}
+\DoxyCodeLine{00643             \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00644         \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00645             image.convertTo(image2, CV\_MAKETYPE(CV\_8U, image.channels()));}
+\DoxyCodeLine{00646         \}}
+\DoxyCodeLine{00647 }
+\DoxyCodeLine{00648         \textcolor{comment}{// If color image, convert from BGR to RGB}}
+\DoxyCodeLine{00649         \textcolor{keywordflow}{switch} (image2.channels()) \{}
+\DoxyCodeLine{00650         \textcolor{keywordflow}{case} 3:}
+\DoxyCodeLine{00651             cv::cvtColor(image2, image2, CV\_BGR2RGB);}
+\DoxyCodeLine{00652             \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00653         \textcolor{keywordflow}{case} 4:}
+\DoxyCodeLine{00654             cv::cvtColor(image2, image2, CV\_BGRA2RGBA);}
+\DoxyCodeLine{00655         \}}
+\DoxyCodeLine{00656 }
+\DoxyCodeLine{00657         internal::imshow(image2.data, npy\_type, image2.rows, image2.cols, image2.channels(), keywords);}
+\DoxyCodeLine{00658     \}}
+\DoxyCodeLine{00659 \textcolor{preprocessor}{\#endif // WITH\_OPENCV}}
+\DoxyCodeLine{00660 \textcolor{preprocessor}{\#endif // WITHOUT\_NUMPY}}
+\DoxyCodeLine{00661 }
+\DoxyCodeLine{00662 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY>}
+\DoxyCodeLine{00663 \textcolor{keywordtype}{bool} scatter(\textcolor{keyword}{const} std::vector<NumericX>\& x,}
+\DoxyCodeLine{00664              \textcolor{keyword}{const} std::vector<NumericY>\& y,}
+\DoxyCodeLine{00665              \textcolor{keyword}{const} \textcolor{keywordtype}{double} s=1.0, \textcolor{comment}{// The marker size in points**2}}
+\DoxyCodeLine{00666              \textcolor{keyword}{const} std::unordered\_map<std::string, std::string> \& keywords = \{\})}
+\DoxyCodeLine{00667 \{}
+\DoxyCodeLine{00668     assert(x.size() == y.size());}
+\DoxyCodeLine{00669 }
+\DoxyCodeLine{00670     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00671     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00672 }
+\DoxyCodeLine{00673     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00674     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"s"}, PyLong\_FromLong(s));}
+\DoxyCodeLine{00675     \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}\& it : keywords)}
+\DoxyCodeLine{00676     \{}
+\DoxyCodeLine{00677         PyDict\_SetItemString(kwargs, it.first.c\_str(), PyString\_FromString(it.second.c\_str()));}
+\DoxyCodeLine{00678     \}}
+\DoxyCodeLine{00679 }
+\DoxyCodeLine{00680     PyObject* plot\_args = PyTuple\_New(2);}
+\DoxyCodeLine{00681     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00682     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00683 }
+\DoxyCodeLine{00684     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_scatter, plot\_args, kwargs);}
+\DoxyCodeLine{00685 }
+\DoxyCodeLine{00686     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00687     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00688     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00689 }
+\DoxyCodeLine{00690     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00691 \}}
+\DoxyCodeLine{00692 }
+\DoxyCodeLine{00693 \textcolor{keyword}{template} <\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00694 \textcolor{keywordtype}{bool} bar(\textcolor{keyword}{const} std::vector<Numeric> \&               x,}
+\DoxyCodeLine{00695          \textcolor{keyword}{const} std::vector<Numeric> \&               y,}
+\DoxyCodeLine{00696          std::string                                ec       = \textcolor{stringliteral}{"black"},}
+\DoxyCodeLine{00697          std::string                                ls       = \textcolor{stringliteral}{"-\/"},}
+\DoxyCodeLine{00698          \textcolor{keywordtype}{double}                                     lw       = 1.0,}
+\DoxyCodeLine{00699          \textcolor{keyword}{const} std::map<std::string, std::string> \& keywords = \{\}) \{}
+\DoxyCodeLine{00700   PyObject * xarray = get\_array(x);}
+\DoxyCodeLine{00701   PyObject * yarray = get\_array(y);}
+\DoxyCodeLine{00702 }
+\DoxyCodeLine{00703   PyObject * kwargs = PyDict\_New();}
+\DoxyCodeLine{00704 }
+\DoxyCodeLine{00705   PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"ec"}, PyString\_FromString(ec.c\_str()));}
+\DoxyCodeLine{00706   PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"ls"}, PyString\_FromString(ls.c\_str()));}
+\DoxyCodeLine{00707   PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"lw"}, PyFloat\_FromDouble(lw));}
+\DoxyCodeLine{00708 }
+\DoxyCodeLine{00709   \textcolor{keywordflow}{for} (std::map<std::string, std::string>::const\_iterator it =}
+\DoxyCodeLine{00710          keywords.begin();}
+\DoxyCodeLine{00711        it != keywords.end();}
+\DoxyCodeLine{00712        ++it) \{}
+\DoxyCodeLine{00713     PyDict\_SetItemString(}
+\DoxyCodeLine{00714       kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00715   \}}
+\DoxyCodeLine{00716 }
+\DoxyCodeLine{00717   PyObject * plot\_args = PyTuple\_New(2);}
+\DoxyCodeLine{00718   PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00719   PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00720 }
+\DoxyCodeLine{00721   PyObject * res = PyObject\_Call(}
+\DoxyCodeLine{00722     detail::\_interpreter::get().s\_python\_function\_bar, plot\_args, kwargs);}
+\DoxyCodeLine{00723 }
+\DoxyCodeLine{00724   Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00725   Py\_DECREF(kwargs);}
+\DoxyCodeLine{00726   \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{00727 }
+\DoxyCodeLine{00728   \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00729 \}}
+\DoxyCodeLine{00730 }
+\DoxyCodeLine{00731 \textcolor{keyword}{template} <\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00732 \textcolor{keywordtype}{bool} bar(\textcolor{keyword}{const} std::vector<Numeric> \&               y,}
+\DoxyCodeLine{00733          std::string                                ec       = \textcolor{stringliteral}{"black"},}
+\DoxyCodeLine{00734          std::string                                ls       = \textcolor{stringliteral}{"-\/"},}
+\DoxyCodeLine{00735          \textcolor{keywordtype}{double}                                     lw       = 1.0,}
+\DoxyCodeLine{00736          \textcolor{keyword}{const} std::map<std::string, std::string> \& keywords = \{\}) \{}
+\DoxyCodeLine{00737   \textcolor{keyword}{using} T = \textcolor{keyword}{typename} std::remove\_reference<decltype(y)>::type::value\_type;}
+\DoxyCodeLine{00738 }
+\DoxyCodeLine{00739   std::vector<T> x;}
+\DoxyCodeLine{00740   \textcolor{keywordflow}{for} (std::size\_t i = 0; i < y.size(); i++) \{ x.push\_back(i); \}}
+\DoxyCodeLine{00741 }
+\DoxyCodeLine{00742   \textcolor{keywordflow}{return} bar(x, y, ec, ls, lw, keywords);}
+\DoxyCodeLine{00743 \}}
+\DoxyCodeLine{00744 }
+\DoxyCodeLine{00745 \textcolor{keyword}{inline} \textcolor{keywordtype}{bool} subplots\_adjust(\textcolor{keyword}{const} std::map<std::string, double>\& keywords = \{\})}
+\DoxyCodeLine{00746 \{}
+\DoxyCodeLine{00747 }
+\DoxyCodeLine{00748     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00749     \textcolor{keywordflow}{for} (std::map<std::string, double>::const\_iterator it =}
+\DoxyCodeLine{00750             keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{00751         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(),}
+\DoxyCodeLine{00752                              PyFloat\_FromDouble(it-\/>second));}
+\DoxyCodeLine{00753     \}}
+\DoxyCodeLine{00754 }
+\DoxyCodeLine{00755 }
+\DoxyCodeLine{00756     PyObject* plot\_args = PyTuple\_New(0);}
+\DoxyCodeLine{00757 }
+\DoxyCodeLine{00758     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_subplots\_adjust, plot\_args, kwargs);}
+\DoxyCodeLine{00759 }
+\DoxyCodeLine{00760     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00761     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00762     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00763 }
+\DoxyCodeLine{00764     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00765 \}}
+\DoxyCodeLine{00766 }
+\DoxyCodeLine{00767 \textcolor{keyword}{template}< \textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00768 \textcolor{keywordtype}{bool} named\_hist(std::string label,\textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keywordtype}{long} bins=10, std::string color=\textcolor{stringliteral}{"b"}, \textcolor{keywordtype}{double} alpha=1.0)}
+\DoxyCodeLine{00769 \{}
+\DoxyCodeLine{00770     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00771 }
+\DoxyCodeLine{00772     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00773     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"label"}, PyString\_FromString(label.c\_str()));}
+\DoxyCodeLine{00774     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"bins"}, PyLong\_FromLong(bins));}
+\DoxyCodeLine{00775     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"color"}, PyString\_FromString(color.c\_str()));}
+\DoxyCodeLine{00776     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"alpha"}, PyFloat\_FromDouble(alpha));}
+\DoxyCodeLine{00777 }
+\DoxyCodeLine{00778 }
+\DoxyCodeLine{00779     PyObject* plot\_args = PyTuple\_New(1);}
+\DoxyCodeLine{00780     PyTuple\_SetItem(plot\_args, 0, yarray);}
+\DoxyCodeLine{00781 }
+\DoxyCodeLine{00782     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_hist, plot\_args, kwargs);}
+\DoxyCodeLine{00783 }
+\DoxyCodeLine{00784     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00785     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00786     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00787 }
+\DoxyCodeLine{00788     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00789 \}}
+\DoxyCodeLine{00790 }
+\DoxyCodeLine{00791 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY>}
+\DoxyCodeLine{00792 \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} std::vector<NumericX>\& x, \textcolor{keyword}{const} std::vector<NumericY>\& y, \textcolor{keyword}{const} std::string\& s = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{00793 \{}
+\DoxyCodeLine{00794     assert(x.size() == y.size());}
+\DoxyCodeLine{00795 }
+\DoxyCodeLine{00796     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00797     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00798 }
+\DoxyCodeLine{00799     PyObject* pystring = PyString\_FromString(s.c\_str());}
+\DoxyCodeLine{00800 }
+\DoxyCodeLine{00801     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{00802     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00803     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00804     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{00805 }
+\DoxyCodeLine{00806     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_plot, plot\_args);}
+\DoxyCodeLine{00807 }
+\DoxyCodeLine{00808     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00809     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00810 }
+\DoxyCodeLine{00811     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00812 \}}
+\DoxyCodeLine{00813 }
+\DoxyCodeLine{00814 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY, \textcolor{keyword}{typename} NumericU, \textcolor{keyword}{typename} NumericW>}
+\DoxyCodeLine{00815 \textcolor{keywordtype}{bool} quiver(\textcolor{keyword}{const} std::vector<NumericX>\& x, \textcolor{keyword}{const} std::vector<NumericY>\& y, \textcolor{keyword}{const} std::vector<NumericU>\& u, \textcolor{keyword}{const} std::vector<NumericW>\& w, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords = \{\})}
+\DoxyCodeLine{00816 \{}
+\DoxyCodeLine{00817     assert(x.size() == y.size() \&\& x.size() == u.size() \&\& u.size() == w.size());}
+\DoxyCodeLine{00818 }
+\DoxyCodeLine{00819     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00820     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00821     PyObject* uarray = get\_array(u);}
+\DoxyCodeLine{00822     PyObject* warray = get\_array(w);}
+\DoxyCodeLine{00823 }
+\DoxyCodeLine{00824     PyObject* plot\_args = PyTuple\_New(4);}
+\DoxyCodeLine{00825     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00826     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00827     PyTuple\_SetItem(plot\_args, 2, uarray);}
+\DoxyCodeLine{00828     PyTuple\_SetItem(plot\_args, 3, warray);}
+\DoxyCodeLine{00829 }
+\DoxyCodeLine{00830     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{00831     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00832     \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{00833     \{}
+\DoxyCodeLine{00834         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00835     \}}
+\DoxyCodeLine{00836 }
+\DoxyCodeLine{00837     PyObject* res = PyObject\_Call(}
+\DoxyCodeLine{00838             detail::\_interpreter::get().s\_python\_function\_quiver, plot\_args, kwargs);}
+\DoxyCodeLine{00839 }
+\DoxyCodeLine{00840     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00841     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00842     \textcolor{keywordflow}{if} (res)}
+\DoxyCodeLine{00843         Py\_DECREF(res);}
+\DoxyCodeLine{00844 }
+\DoxyCodeLine{00845     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00846 \}}
+\DoxyCodeLine{00847 }
+\DoxyCodeLine{00848 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY>}
+\DoxyCodeLine{00849 \textcolor{keywordtype}{bool} stem(\textcolor{keyword}{const} std::vector<NumericX>\& x, \textcolor{keyword}{const} std::vector<NumericY>\& y, \textcolor{keyword}{const} std::string\& s = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{00850 \{}
+\DoxyCodeLine{00851     assert(x.size() == y.size());}
+\DoxyCodeLine{00852 }
+\DoxyCodeLine{00853     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00854     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00855 }
+\DoxyCodeLine{00856     PyObject* pystring = PyString\_FromString(s.c\_str());}
+\DoxyCodeLine{00857 }
+\DoxyCodeLine{00858     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{00859     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00860     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00861     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{00862 }
+\DoxyCodeLine{00863     PyObject* res = PyObject\_CallObject(}
+\DoxyCodeLine{00864             detail::\_interpreter::get().s\_python\_function\_stem, plot\_args);}
+\DoxyCodeLine{00865 }
+\DoxyCodeLine{00866     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00867     \textcolor{keywordflow}{if} (res)}
+\DoxyCodeLine{00868         Py\_DECREF(res);}
+\DoxyCodeLine{00869 }
+\DoxyCodeLine{00870     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00871 \}}
+\DoxyCodeLine{00872 }
+\DoxyCodeLine{00873 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY>}
+\DoxyCodeLine{00874 \textcolor{keywordtype}{bool} semilogx(\textcolor{keyword}{const} std::vector<NumericX>\& x, \textcolor{keyword}{const} std::vector<NumericY>\& y, \textcolor{keyword}{const} std::string\& s = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{00875 \{}
+\DoxyCodeLine{00876     assert(x.size() == y.size());}
+\DoxyCodeLine{00877 }
+\DoxyCodeLine{00878     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00879     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00880 }
+\DoxyCodeLine{00881     PyObject* pystring = PyString\_FromString(s.c\_str());}
+\DoxyCodeLine{00882 }
+\DoxyCodeLine{00883     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{00884     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00885     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00886     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{00887 }
+\DoxyCodeLine{00888     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_semilogx, plot\_args);}
+\DoxyCodeLine{00889 }
+\DoxyCodeLine{00890     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00891     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00892 }
+\DoxyCodeLine{00893     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00894 \}}
+\DoxyCodeLine{00895 }
+\DoxyCodeLine{00896 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY>}
+\DoxyCodeLine{00897 \textcolor{keywordtype}{bool} semilogy(\textcolor{keyword}{const} std::vector<NumericX>\& x, \textcolor{keyword}{const} std::vector<NumericY>\& y, \textcolor{keyword}{const} std::string\& s = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{00898 \{}
+\DoxyCodeLine{00899     assert(x.size() == y.size());}
+\DoxyCodeLine{00900 }
+\DoxyCodeLine{00901     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00902     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00903 }
+\DoxyCodeLine{00904     PyObject* pystring = PyString\_FromString(s.c\_str());}
+\DoxyCodeLine{00905 }
+\DoxyCodeLine{00906     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{00907     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00908     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00909     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{00910 }
+\DoxyCodeLine{00911     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_semilogy, plot\_args);}
+\DoxyCodeLine{00912 }
+\DoxyCodeLine{00913     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00914     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00915 }
+\DoxyCodeLine{00916     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00917 \}}
+\DoxyCodeLine{00918 }
+\DoxyCodeLine{00919 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY>}
+\DoxyCodeLine{00920 \textcolor{keywordtype}{bool} loglog(\textcolor{keyword}{const} std::vector<NumericX>\& x, \textcolor{keyword}{const} std::vector<NumericY>\& y, \textcolor{keyword}{const} std::string\& s = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{00921 \{}
+\DoxyCodeLine{00922     assert(x.size() == y.size());}
+\DoxyCodeLine{00923 }
+\DoxyCodeLine{00924     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00925     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00926 }
+\DoxyCodeLine{00927     PyObject* pystring = PyString\_FromString(s.c\_str());}
+\DoxyCodeLine{00928 }
+\DoxyCodeLine{00929     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{00930     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00931     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00932     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{00933 }
+\DoxyCodeLine{00934     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_loglog, plot\_args);}
+\DoxyCodeLine{00935 }
+\DoxyCodeLine{00936     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00937     \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{00938 }
+\DoxyCodeLine{00939     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00940 \}}
+\DoxyCodeLine{00941 }
+\DoxyCodeLine{00942 \textcolor{keyword}{template}<\textcolor{keyword}{typename} NumericX, \textcolor{keyword}{typename} NumericY>}
+\DoxyCodeLine{00943 \textcolor{keywordtype}{bool} errorbar(\textcolor{keyword}{const} std::vector<NumericX> \&x, \textcolor{keyword}{const} std::vector<NumericY> \&y, \textcolor{keyword}{const} std::vector<NumericX> \&yerr, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords = \{\})}
+\DoxyCodeLine{00944 \{}
+\DoxyCodeLine{00945     assert(x.size() == y.size());}
+\DoxyCodeLine{00946 }
+\DoxyCodeLine{00947     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{00948     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00949     PyObject* yerrarray = get\_array(yerr);}
+\DoxyCodeLine{00950 }
+\DoxyCodeLine{00951     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{00952     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00953     \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{00954     \{}
+\DoxyCodeLine{00955         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyString\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{00956     \}}
+\DoxyCodeLine{00957 }
+\DoxyCodeLine{00958     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"yerr"}, yerrarray);}
+\DoxyCodeLine{00959 }
+\DoxyCodeLine{00960     PyObject *plot\_args = PyTuple\_New(2);}
+\DoxyCodeLine{00961     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{00962     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{00963 }
+\DoxyCodeLine{00964     PyObject *res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_errorbar, plot\_args, kwargs);}
+\DoxyCodeLine{00965 }
+\DoxyCodeLine{00966     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00967     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00968 }
+\DoxyCodeLine{00969     \textcolor{keywordflow}{if} (res)}
+\DoxyCodeLine{00970         Py\_DECREF(res);}
+\DoxyCodeLine{00971     \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00972         \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to errorbar() failed."});}
+\DoxyCodeLine{00973 }
+\DoxyCodeLine{00974     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00975 \}}
+\DoxyCodeLine{00976 }
+\DoxyCodeLine{00977 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{00978 \textcolor{keywordtype}{bool} named\_plot(\textcolor{keyword}{const} std::string\& name, \textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{00979 \{}
+\DoxyCodeLine{00980     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{00981     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"label"}, PyString\_FromString(name.c\_str()));}
+\DoxyCodeLine{00982 }
+\DoxyCodeLine{00983     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{00984 }
+\DoxyCodeLine{00985     PyObject* pystring = PyString\_FromString(format.c\_str());}
+\DoxyCodeLine{00986 }
+\DoxyCodeLine{00987     PyObject* plot\_args = PyTuple\_New(2);}
+\DoxyCodeLine{00988 }
+\DoxyCodeLine{00989     PyTuple\_SetItem(plot\_args, 0, yarray);}
+\DoxyCodeLine{00990     PyTuple\_SetItem(plot\_args, 1, pystring);}
+\DoxyCodeLine{00991 }
+\DoxyCodeLine{00992     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_plot, plot\_args, kwargs);}
+\DoxyCodeLine{00993 }
+\DoxyCodeLine{00994     Py\_DECREF(kwargs);}
+\DoxyCodeLine{00995     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{00996     \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{00997 }
+\DoxyCodeLine{00998     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{00999 \}}
+\DoxyCodeLine{01000 }
+\DoxyCodeLine{01001 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01002 \textcolor{keywordtype}{bool} named\_plot(\textcolor{keyword}{const} std::string\& name, \textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01003 \{}
+\DoxyCodeLine{01004     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01005     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"label"}, PyString\_FromString(name.c\_str()));}
+\DoxyCodeLine{01006 }
+\DoxyCodeLine{01007     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{01008     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{01009 }
+\DoxyCodeLine{01010     PyObject* pystring = PyString\_FromString(format.c\_str());}
+\DoxyCodeLine{01011 }
+\DoxyCodeLine{01012     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{01013     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{01014     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{01015     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{01016 }
+\DoxyCodeLine{01017     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_plot, plot\_args, kwargs);}
+\DoxyCodeLine{01018 }
+\DoxyCodeLine{01019     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01020     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{01021     \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{01022 }
+\DoxyCodeLine{01023     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{01024 \}}
+\DoxyCodeLine{01025 }
+\DoxyCodeLine{01026 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01027 \textcolor{keywordtype}{bool} named\_semilogx(\textcolor{keyword}{const} std::string\& name, \textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01028 \{}
+\DoxyCodeLine{01029     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01030     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"label"}, PyString\_FromString(name.c\_str()));}
+\DoxyCodeLine{01031 }
+\DoxyCodeLine{01032     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{01033     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{01034 }
+\DoxyCodeLine{01035     PyObject* pystring = PyString\_FromString(format.c\_str());}
+\DoxyCodeLine{01036 }
+\DoxyCodeLine{01037     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{01038     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{01039     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{01040     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{01041 }
+\DoxyCodeLine{01042     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_semilogx, plot\_args, kwargs);}
+\DoxyCodeLine{01043 }
+\DoxyCodeLine{01044     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01045     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{01046     \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{01047 }
+\DoxyCodeLine{01048     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{01049 \}}
+\DoxyCodeLine{01050 }
+\DoxyCodeLine{01051 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01052 \textcolor{keywordtype}{bool} named\_semilogy(\textcolor{keyword}{const} std::string\& name, \textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01053 \{}
+\DoxyCodeLine{01054     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01055     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"label"}, PyString\_FromString(name.c\_str()));}
+\DoxyCodeLine{01056 }
+\DoxyCodeLine{01057     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{01058     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{01059 }
+\DoxyCodeLine{01060     PyObject* pystring = PyString\_FromString(format.c\_str());}
+\DoxyCodeLine{01061 }
+\DoxyCodeLine{01062     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{01063     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{01064     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{01065     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{01066 }
+\DoxyCodeLine{01067     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_semilogy, plot\_args, kwargs);}
+\DoxyCodeLine{01068 }
+\DoxyCodeLine{01069     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01070     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{01071     \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{01072 }
+\DoxyCodeLine{01073     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{01074 \}}
+\DoxyCodeLine{01075 }
+\DoxyCodeLine{01076 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01077 \textcolor{keywordtype}{bool} named\_loglog(\textcolor{keyword}{const} std::string\& name, \textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01078 \{}
+\DoxyCodeLine{01079     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01080     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"label"}, PyString\_FromString(name.c\_str()));}
+\DoxyCodeLine{01081 }
+\DoxyCodeLine{01082     PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{01083     PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{01084 }
+\DoxyCodeLine{01085     PyObject* pystring = PyString\_FromString(format.c\_str());}
+\DoxyCodeLine{01086 }
+\DoxyCodeLine{01087     PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{01088     PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{01089     PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{01090     PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{01091     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_loglog, plot\_args, kwargs);}
+\DoxyCodeLine{01092 }
+\DoxyCodeLine{01093     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01094     Py\_DECREF(plot\_args);}
+\DoxyCodeLine{01095     \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{01096 }
+\DoxyCodeLine{01097     \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{01098 \}}
+\DoxyCodeLine{01099 }
+\DoxyCodeLine{01100 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01101 \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01102 \{}
+\DoxyCodeLine{01103     std::vector<Numeric> x(y.size());}
+\DoxyCodeLine{01104     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{size\_t} i=0; i<x.size(); ++i) x.at(i) = i;}
+\DoxyCodeLine{01105     \textcolor{keywordflow}{return} plot(x,y,format);}
+\DoxyCodeLine{01106 \}}
+\DoxyCodeLine{01107 }
+\DoxyCodeLine{01108 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01109 \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords)}
+\DoxyCodeLine{01110 \{}
+\DoxyCodeLine{01111     std::vector<Numeric> x(y.size());}
+\DoxyCodeLine{01112     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{size\_t} i=0; i<x.size(); ++i) x.at(i) = i;}
+\DoxyCodeLine{01113     \textcolor{keywordflow}{return} plot(x,y,keywords);}
+\DoxyCodeLine{01114 \}}
+\DoxyCodeLine{01115 }
+\DoxyCodeLine{01116 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01117 \textcolor{keywordtype}{bool} stem(\textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01118 \{}
+\DoxyCodeLine{01119     std::vector<Numeric> x(y.size());}
+\DoxyCodeLine{01120     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < x.size(); ++i) x.at(i) = i;}
+\DoxyCodeLine{01121     \textcolor{keywordflow}{return} stem(x, y, format);}
+\DoxyCodeLine{01122 \}}
+\DoxyCodeLine{01123 }
+\DoxyCodeLine{01124 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01125 \textcolor{keywordtype}{void} text(Numeric x, Numeric y, \textcolor{keyword}{const} std::string\& s = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01126 \{}
+\DoxyCodeLine{01127     PyObject* args = PyTuple\_New(3);}
+\DoxyCodeLine{01128     PyTuple\_SetItem(args, 0, PyFloat\_FromDouble(x));}
+\DoxyCodeLine{01129     PyTuple\_SetItem(args, 1, PyFloat\_FromDouble(y));}
+\DoxyCodeLine{01130     PyTuple\_SetItem(args, 2, PyString\_FromString(s.c\_str()));}
+\DoxyCodeLine{01131 }
+\DoxyCodeLine{01132     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_text, args);}
+\DoxyCodeLine{01133     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to text() failed."});}
+\DoxyCodeLine{01134 }
+\DoxyCodeLine{01135     Py\_DECREF(args);}
+\DoxyCodeLine{01136     Py\_DECREF(res);}
+\DoxyCodeLine{01137 \}}
+\DoxyCodeLine{01138 }
+\DoxyCodeLine{01139 }
+\DoxyCodeLine{01140 \textcolor{keyword}{inline} \textcolor{keywordtype}{long} figure(\textcolor{keywordtype}{long} number = -\/1)}
+\DoxyCodeLine{01141 \{}
+\DoxyCodeLine{01142     PyObject *res;}
+\DoxyCodeLine{01143     \textcolor{keywordflow}{if} (number == -\/1)}
+\DoxyCodeLine{01144         res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_figure, detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01145     \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{01146         assert(number > 0);}
+\DoxyCodeLine{01147 }
+\DoxyCodeLine{01148         \textcolor{comment}{// Make sure interpreter is initialised}}
+\DoxyCodeLine{01149         detail::\_interpreter::get();}
+\DoxyCodeLine{01150 }
+\DoxyCodeLine{01151         PyObject *args = PyTuple\_New(1);}
+\DoxyCodeLine{01152         PyTuple\_SetItem(args, 0, PyLong\_FromLong(number));}
+\DoxyCodeLine{01153         res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_figure, args);}
+\DoxyCodeLine{01154         Py\_DECREF(args);}
+\DoxyCodeLine{01155     \}}
+\DoxyCodeLine{01156 }
+\DoxyCodeLine{01157     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to figure() failed."});}
+\DoxyCodeLine{01158 }
+\DoxyCodeLine{01159     PyObject* num = PyObject\_GetAttrString(res, \textcolor{stringliteral}{"number"});}
+\DoxyCodeLine{01160     \textcolor{keywordflow}{if} (!num) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Could not get number attribute of figure object"});}
+\DoxyCodeLine{01161     \textcolor{keyword}{const} \textcolor{keywordtype}{long} figureNumber = PyLong\_AsLong(num);}
+\DoxyCodeLine{01162 }
+\DoxyCodeLine{01163     Py\_DECREF(num);}
+\DoxyCodeLine{01164     Py\_DECREF(res);}
+\DoxyCodeLine{01165 }
+\DoxyCodeLine{01166     \textcolor{keywordflow}{return} figureNumber;}
+\DoxyCodeLine{01167 \}}
+\DoxyCodeLine{01168 }
+\DoxyCodeLine{01169 \textcolor{keyword}{inline} \textcolor{keywordtype}{bool} fignum\_exists(\textcolor{keywordtype}{long} number)}
+\DoxyCodeLine{01170 \{}
+\DoxyCodeLine{01171     \textcolor{comment}{// Make sure interpreter is initialised}}
+\DoxyCodeLine{01172     detail::\_interpreter::get();}
+\DoxyCodeLine{01173 }
+\DoxyCodeLine{01174     PyObject *args = PyTuple\_New(1);}
+\DoxyCodeLine{01175     PyTuple\_SetItem(args, 0, PyLong\_FromLong(number));}
+\DoxyCodeLine{01176     PyObject *res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_fignum\_exists, args);}
+\DoxyCodeLine{01177     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to fignum\_exists() failed."});}
+\DoxyCodeLine{01178 }
+\DoxyCodeLine{01179     \textcolor{keywordtype}{bool} ret = PyObject\_IsTrue(res);}
+\DoxyCodeLine{01180     Py\_DECREF(res);}
+\DoxyCodeLine{01181     Py\_DECREF(args);}
+\DoxyCodeLine{01182 }
+\DoxyCodeLine{01183     \textcolor{keywordflow}{return} ret;}
+\DoxyCodeLine{01184 \}}
+\DoxyCodeLine{01185 }
+\DoxyCodeLine{01186 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} figure\_size(\textcolor{keywordtype}{size\_t} w, \textcolor{keywordtype}{size\_t} h)}
+\DoxyCodeLine{01187 \{}
+\DoxyCodeLine{01188     \textcolor{comment}{// Make sure interpreter is initialised}}
+\DoxyCodeLine{01189     detail::\_interpreter::get();}
+\DoxyCodeLine{01190 }
+\DoxyCodeLine{01191     \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} dpi = 100;}
+\DoxyCodeLine{01192     PyObject* size = PyTuple\_New(2);}
+\DoxyCodeLine{01193     PyTuple\_SetItem(size, 0, PyFloat\_FromDouble((\textcolor{keywordtype}{double})w / dpi));}
+\DoxyCodeLine{01194     PyTuple\_SetItem(size, 1, PyFloat\_FromDouble((\textcolor{keywordtype}{double})h / dpi));}
+\DoxyCodeLine{01195 }
+\DoxyCodeLine{01196     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01197     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"figsize"}, size);}
+\DoxyCodeLine{01198     PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"dpi"}, PyLong\_FromSize\_t(dpi));}
+\DoxyCodeLine{01199 }
+\DoxyCodeLine{01200     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_figure,}
+\DoxyCodeLine{01201             detail::\_interpreter::get().s\_python\_empty\_tuple, kwargs);}
+\DoxyCodeLine{01202 }
+\DoxyCodeLine{01203     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01204 }
+\DoxyCodeLine{01205     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to figure\_size() failed."});}
+\DoxyCodeLine{01206     Py\_DECREF(res);}
+\DoxyCodeLine{01207 \}}
+\DoxyCodeLine{01208 }
+\DoxyCodeLine{01209 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} legend()}
+\DoxyCodeLine{01210 \{}
+\DoxyCodeLine{01211     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_legend, detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01212     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to legend() failed."});}
+\DoxyCodeLine{01213 }
+\DoxyCodeLine{01214     Py\_DECREF(res);}
+\DoxyCodeLine{01215 \}}
+\DoxyCodeLine{01216 }
+\DoxyCodeLine{01217 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01218 \textcolor{keywordtype}{void} ylim(Numeric left, Numeric right)}
+\DoxyCodeLine{01219 \{}
+\DoxyCodeLine{01220     PyObject* list = PyList\_New(2);}
+\DoxyCodeLine{01221     PyList\_SetItem(list, 0, PyFloat\_FromDouble(left));}
+\DoxyCodeLine{01222     PyList\_SetItem(list, 1, PyFloat\_FromDouble(right));}
+\DoxyCodeLine{01223 }
+\DoxyCodeLine{01224     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01225     PyTuple\_SetItem(args, 0, list);}
+\DoxyCodeLine{01226 }
+\DoxyCodeLine{01227     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_ylim, args);}
+\DoxyCodeLine{01228     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to ylim() failed."});}
+\DoxyCodeLine{01229 }
+\DoxyCodeLine{01230     Py\_DECREF(args);}
+\DoxyCodeLine{01231     Py\_DECREF(res);}
+\DoxyCodeLine{01232 \}}
+\DoxyCodeLine{01233 }
+\DoxyCodeLine{01234 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01235 \textcolor{keywordtype}{void} xlim(Numeric left, Numeric right)}
+\DoxyCodeLine{01236 \{}
+\DoxyCodeLine{01237     PyObject* list = PyList\_New(2);}
+\DoxyCodeLine{01238     PyList\_SetItem(list, 0, PyFloat\_FromDouble(left));}
+\DoxyCodeLine{01239     PyList\_SetItem(list, 1, PyFloat\_FromDouble(right));}
+\DoxyCodeLine{01240 }
+\DoxyCodeLine{01241     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01242     PyTuple\_SetItem(args, 0, list);}
+\DoxyCodeLine{01243 }
+\DoxyCodeLine{01244     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_xlim, args);}
+\DoxyCodeLine{01245     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to xlim() failed."});}
+\DoxyCodeLine{01246 }
+\DoxyCodeLine{01247     Py\_DECREF(args);}
+\DoxyCodeLine{01248     Py\_DECREF(res);}
+\DoxyCodeLine{01249 \}}
+\DoxyCodeLine{01250 }
+\DoxyCodeLine{01251 }
+\DoxyCodeLine{01252 \textcolor{keyword}{inline} \textcolor{keywordtype}{double}* xlim()}
+\DoxyCodeLine{01253 \{}
+\DoxyCodeLine{01254     PyObject* args = PyTuple\_New(0);}
+\DoxyCodeLine{01255     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_xlim, args);}
+\DoxyCodeLine{01256     PyObject* left = PyTuple\_GetItem(res,0);}
+\DoxyCodeLine{01257     PyObject* right = PyTuple\_GetItem(res,1);}
+\DoxyCodeLine{01258 }
+\DoxyCodeLine{01259     \textcolor{keywordtype}{double}* arr = \textcolor{keyword}{new} \textcolor{keywordtype}{double}[2];}
+\DoxyCodeLine{01260     arr[0] = PyFloat\_AsDouble(left);}
+\DoxyCodeLine{01261     arr[1] = PyFloat\_AsDouble(right);}
+\DoxyCodeLine{01262 }
+\DoxyCodeLine{01263     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to xlim() failed."});}
+\DoxyCodeLine{01264 }
+\DoxyCodeLine{01265     Py\_DECREF(res);}
+\DoxyCodeLine{01266     \textcolor{keywordflow}{return} arr;}
+\DoxyCodeLine{01267 \}}
+\DoxyCodeLine{01268 }
+\DoxyCodeLine{01269 }
+\DoxyCodeLine{01270 \textcolor{keyword}{inline} \textcolor{keywordtype}{double}* ylim()}
+\DoxyCodeLine{01271 \{}
+\DoxyCodeLine{01272     PyObject* args = PyTuple\_New(0);}
+\DoxyCodeLine{01273     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_ylim, args);}
+\DoxyCodeLine{01274     PyObject* left = PyTuple\_GetItem(res,0);}
+\DoxyCodeLine{01275     PyObject* right = PyTuple\_GetItem(res,1);}
+\DoxyCodeLine{01276 }
+\DoxyCodeLine{01277     \textcolor{keywordtype}{double}* arr = \textcolor{keyword}{new} \textcolor{keywordtype}{double}[2];}
+\DoxyCodeLine{01278     arr[0] = PyFloat\_AsDouble(left);}
+\DoxyCodeLine{01279     arr[1] = PyFloat\_AsDouble(right);}
+\DoxyCodeLine{01280 }
+\DoxyCodeLine{01281     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to ylim() failed."});}
+\DoxyCodeLine{01282 }
+\DoxyCodeLine{01283     Py\_DECREF(res);}
+\DoxyCodeLine{01284     \textcolor{keywordflow}{return} arr;}
+\DoxyCodeLine{01285 \}}
+\DoxyCodeLine{01286 }
+\DoxyCodeLine{01287 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01288 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} xticks(\textcolor{keyword}{const} std::vector<Numeric> \&ticks, \textcolor{keyword}{const} std::vector<std::string> \&labels = \{\}, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords = \{\})}
+\DoxyCodeLine{01289 \{}
+\DoxyCodeLine{01290     assert(labels.size() == 0 || ticks.size() == labels.size());}
+\DoxyCodeLine{01291 }
+\DoxyCodeLine{01292     \textcolor{comment}{// using numpy array}}
+\DoxyCodeLine{01293     PyObject* ticksarray = get\_array(ticks);}
+\DoxyCodeLine{01294 }
+\DoxyCodeLine{01295     PyObject* args;}
+\DoxyCodeLine{01296     \textcolor{keywordflow}{if}(labels.size() == 0) \{}
+\DoxyCodeLine{01297         \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{01298         args = PyTuple\_New(1);}
+\DoxyCodeLine{01299         PyTuple\_SetItem(args, 0, ticksarray);}
+\DoxyCodeLine{01300     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{01301         \textcolor{comment}{// make tuple of tick labels}}
+\DoxyCodeLine{01302         PyObject* labelstuple = PyTuple\_New(labels.size());}
+\DoxyCodeLine{01303         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < labels.size(); i++)}
+\DoxyCodeLine{01304             PyTuple\_SetItem(labelstuple, i, PyUnicode\_FromString(labels[i].c\_str()));}
+\DoxyCodeLine{01305 }
+\DoxyCodeLine{01306         \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{01307         args = PyTuple\_New(2);}
+\DoxyCodeLine{01308         PyTuple\_SetItem(args, 0, ticksarray);}
+\DoxyCodeLine{01309         PyTuple\_SetItem(args, 1, labelstuple);}
+\DoxyCodeLine{01310     \}}
+\DoxyCodeLine{01311 }
+\DoxyCodeLine{01312     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{01313     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01314     \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{01315     \{}
+\DoxyCodeLine{01316         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyString\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01317     \}}
+\DoxyCodeLine{01318 }
+\DoxyCodeLine{01319     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_xticks, args, kwargs);}
+\DoxyCodeLine{01320 }
+\DoxyCodeLine{01321     Py\_DECREF(args);}
+\DoxyCodeLine{01322     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01323     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to xticks() failed"});}
+\DoxyCodeLine{01324 }
+\DoxyCodeLine{01325     Py\_DECREF(res);}
+\DoxyCodeLine{01326 \}}
+\DoxyCodeLine{01327 }
+\DoxyCodeLine{01328 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01329 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} xticks(\textcolor{keyword}{const} std::vector<Numeric> \&ticks, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords)}
+\DoxyCodeLine{01330 \{}
+\DoxyCodeLine{01331     xticks(ticks, \{\}, keywords);}
+\DoxyCodeLine{01332 \}}
+\DoxyCodeLine{01333 }
+\DoxyCodeLine{01334 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01335 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} yticks(\textcolor{keyword}{const} std::vector<Numeric> \&ticks, \textcolor{keyword}{const} std::vector<std::string> \&labels = \{\}, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords = \{\})}
+\DoxyCodeLine{01336 \{}
+\DoxyCodeLine{01337     assert(labels.size() == 0 || ticks.size() == labels.size());}
+\DoxyCodeLine{01338 }
+\DoxyCodeLine{01339     \textcolor{comment}{// using numpy array}}
+\DoxyCodeLine{01340     PyObject* ticksarray = get\_array(ticks);}
+\DoxyCodeLine{01341 }
+\DoxyCodeLine{01342     PyObject* args;}
+\DoxyCodeLine{01343     \textcolor{keywordflow}{if}(labels.size() == 0) \{}
+\DoxyCodeLine{01344         \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{01345         args = PyTuple\_New(1);}
+\DoxyCodeLine{01346         PyTuple\_SetItem(args, 0, ticksarray);}
+\DoxyCodeLine{01347     \} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{01348         \textcolor{comment}{// make tuple of tick labels}}
+\DoxyCodeLine{01349         PyObject* labelstuple = PyTuple\_New(labels.size());}
+\DoxyCodeLine{01350         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < labels.size(); i++)}
+\DoxyCodeLine{01351             PyTuple\_SetItem(labelstuple, i, PyUnicode\_FromString(labels[i].c\_str()));}
+\DoxyCodeLine{01352 }
+\DoxyCodeLine{01353         \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{01354         args = PyTuple\_New(2);}
+\DoxyCodeLine{01355         PyTuple\_SetItem(args, 0, ticksarray);}
+\DoxyCodeLine{01356         PyTuple\_SetItem(args, 1, labelstuple);}
+\DoxyCodeLine{01357     \}}
+\DoxyCodeLine{01358 }
+\DoxyCodeLine{01359     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{01360     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01361     \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{01362     \{}
+\DoxyCodeLine{01363         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyString\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01364     \}}
+\DoxyCodeLine{01365 }
+\DoxyCodeLine{01366     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_yticks, args, kwargs);}
+\DoxyCodeLine{01367 }
+\DoxyCodeLine{01368     Py\_DECREF(args);}
+\DoxyCodeLine{01369     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01370     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to yticks() failed"});}
+\DoxyCodeLine{01371 }
+\DoxyCodeLine{01372     Py\_DECREF(res);}
+\DoxyCodeLine{01373 \}}
+\DoxyCodeLine{01374 }
+\DoxyCodeLine{01375 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01376 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} yticks(\textcolor{keyword}{const} std::vector<Numeric> \&ticks, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords)}
+\DoxyCodeLine{01377 \{}
+\DoxyCodeLine{01378     yticks(ticks, \{\}, keywords);}
+\DoxyCodeLine{01379 \}}
+\DoxyCodeLine{01380 }
+\DoxyCodeLine{01381 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} tick\_params(\textcolor{keyword}{const} std::map<std::string, std::string>\& keywords, \textcolor{keyword}{const} std::string axis = \textcolor{stringliteral}{"both"})}
+\DoxyCodeLine{01382 \{}
+\DoxyCodeLine{01383   \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{01384   PyObject* args;}
+\DoxyCodeLine{01385   args = PyTuple\_New(1);}
+\DoxyCodeLine{01386   PyTuple\_SetItem(args, 0, PyString\_FromString(axis.c\_str()));}
+\DoxyCodeLine{01387   }
+\DoxyCodeLine{01388   \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{01389   PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01390   \textcolor{keywordflow}{for} (std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{01391   \{}
+\DoxyCodeLine{01392     PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyString\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01393   \}}
+\DoxyCodeLine{01394   }
+\DoxyCodeLine{01395   }
+\DoxyCodeLine{01396   PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_tick\_params, args, kwargs);}
+\DoxyCodeLine{01397   }
+\DoxyCodeLine{01398   Py\_DECREF(args);}
+\DoxyCodeLine{01399   Py\_DECREF(kwargs);}
+\DoxyCodeLine{01400   \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to tick\_params() failed"});}
+\DoxyCodeLine{01401   }
+\DoxyCodeLine{01402   Py\_DECREF(res);}
+\DoxyCodeLine{01403 \}}
+\DoxyCodeLine{01404 }
+\DoxyCodeLine{01405 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} subplot(\textcolor{keywordtype}{long} nrows, \textcolor{keywordtype}{long} ncols, \textcolor{keywordtype}{long} plot\_number)}
+\DoxyCodeLine{01406 \{}
+\DoxyCodeLine{01407     \textcolor{comment}{// construct positional args}}
+\DoxyCodeLine{01408     PyObject* args = PyTuple\_New(3);}
+\DoxyCodeLine{01409     PyTuple\_SetItem(args, 0, PyFloat\_FromDouble(nrows));}
+\DoxyCodeLine{01410     PyTuple\_SetItem(args, 1, PyFloat\_FromDouble(ncols));}
+\DoxyCodeLine{01411     PyTuple\_SetItem(args, 2, PyFloat\_FromDouble(plot\_number));}
+\DoxyCodeLine{01412 }
+\DoxyCodeLine{01413     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_subplot, args);}
+\DoxyCodeLine{01414     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to subplot() failed."});}
+\DoxyCodeLine{01415 }
+\DoxyCodeLine{01416     Py\_DECREF(args);}
+\DoxyCodeLine{01417     Py\_DECREF(res);}
+\DoxyCodeLine{01418 \}}
+\DoxyCodeLine{01419 }
+\DoxyCodeLine{01420 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} subplot2grid(\textcolor{keywordtype}{long} nrows, \textcolor{keywordtype}{long} ncols, \textcolor{keywordtype}{long} rowid=0, \textcolor{keywordtype}{long} colid=0, \textcolor{keywordtype}{long} rowspan=1, \textcolor{keywordtype}{long} colspan=1)}
+\DoxyCodeLine{01421 \{}
+\DoxyCodeLine{01422     PyObject* shape = PyTuple\_New(2);}
+\DoxyCodeLine{01423     PyTuple\_SetItem(shape, 0, PyLong\_FromLong(nrows));}
+\DoxyCodeLine{01424     PyTuple\_SetItem(shape, 1, PyLong\_FromLong(ncols));}
+\DoxyCodeLine{01425 }
+\DoxyCodeLine{01426     PyObject* loc = PyTuple\_New(2);}
+\DoxyCodeLine{01427     PyTuple\_SetItem(loc, 0, PyLong\_FromLong(rowid));}
+\DoxyCodeLine{01428     PyTuple\_SetItem(loc, 1, PyLong\_FromLong(colid));}
+\DoxyCodeLine{01429 }
+\DoxyCodeLine{01430     PyObject* args = PyTuple\_New(4);}
+\DoxyCodeLine{01431     PyTuple\_SetItem(args, 0, shape);}
+\DoxyCodeLine{01432     PyTuple\_SetItem(args, 1, loc);}
+\DoxyCodeLine{01433     PyTuple\_SetItem(args, 2, PyLong\_FromLong(rowspan));}
+\DoxyCodeLine{01434     PyTuple\_SetItem(args, 3, PyLong\_FromLong(colspan));}
+\DoxyCodeLine{01435 }
+\DoxyCodeLine{01436     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_subplot2grid, args);}
+\DoxyCodeLine{01437     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to subplot2grid() failed."});}
+\DoxyCodeLine{01438 }
+\DoxyCodeLine{01439     Py\_DECREF(shape);}
+\DoxyCodeLine{01440     Py\_DECREF(loc);}
+\DoxyCodeLine{01441     Py\_DECREF(args);}
+\DoxyCodeLine{01442     Py\_DECREF(res);}
+\DoxyCodeLine{01443 \}}
+\DoxyCodeLine{01444 }
+\DoxyCodeLine{01445 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} title(\textcolor{keyword}{const} std::string \&titlestr, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords = \{\})}
+\DoxyCodeLine{01446 \{}
+\DoxyCodeLine{01447     PyObject* pytitlestr = PyString\_FromString(titlestr.c\_str());}
+\DoxyCodeLine{01448     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01449     PyTuple\_SetItem(args, 0, pytitlestr);}
+\DoxyCodeLine{01450 }
+\DoxyCodeLine{01451     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01452     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} it = keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{01453         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01454     \}}
+\DoxyCodeLine{01455 }
+\DoxyCodeLine{01456     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_title, args, kwargs);}
+\DoxyCodeLine{01457     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to title() failed."});}
+\DoxyCodeLine{01458 }
+\DoxyCodeLine{01459     Py\_DECREF(args);}
+\DoxyCodeLine{01460     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01461     Py\_DECREF(res);}
+\DoxyCodeLine{01462 \}}
+\DoxyCodeLine{01463 }
+\DoxyCodeLine{01464 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} suptitle(\textcolor{keyword}{const} std::string \&suptitlestr, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords = \{\})}
+\DoxyCodeLine{01465 \{}
+\DoxyCodeLine{01466     PyObject* pysuptitlestr = PyString\_FromString(suptitlestr.c\_str());}
+\DoxyCodeLine{01467     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01468     PyTuple\_SetItem(args, 0, pysuptitlestr);}
+\DoxyCodeLine{01469 }
+\DoxyCodeLine{01470     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01471     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} it = keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{01472         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01473     \}}
+\DoxyCodeLine{01474 }
+\DoxyCodeLine{01475     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_suptitle, args, kwargs);}
+\DoxyCodeLine{01476     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to suptitle() failed."});}
+\DoxyCodeLine{01477 }
+\DoxyCodeLine{01478     Py\_DECREF(args);}
+\DoxyCodeLine{01479     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01480     Py\_DECREF(res);}
+\DoxyCodeLine{01481 \}}
+\DoxyCodeLine{01482 }
+\DoxyCodeLine{01483 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} axis(\textcolor{keyword}{const} std::string \&axisstr)}
+\DoxyCodeLine{01484 \{}
+\DoxyCodeLine{01485     PyObject* str = PyString\_FromString(axisstr.c\_str());}
+\DoxyCodeLine{01486     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01487     PyTuple\_SetItem(args, 0, str);}
+\DoxyCodeLine{01488 }
+\DoxyCodeLine{01489     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_axis, args);}
+\DoxyCodeLine{01490     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to title() failed."});}
+\DoxyCodeLine{01491 }
+\DoxyCodeLine{01492     Py\_DECREF(args);}
+\DoxyCodeLine{01493     Py\_DECREF(res);}
+\DoxyCodeLine{01494 \}}
+\DoxyCodeLine{01495 }
+\DoxyCodeLine{01496 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} xlabel(\textcolor{keyword}{const} std::string \&str, \textcolor{keyword}{const} std::map<std::string, std::string> \&keywords = \{\})}
+\DoxyCodeLine{01497 \{}
+\DoxyCodeLine{01498     PyObject* pystr = PyString\_FromString(str.c\_str());}
+\DoxyCodeLine{01499     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01500     PyTuple\_SetItem(args, 0, pystr);}
+\DoxyCodeLine{01501 }
+\DoxyCodeLine{01502     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01503     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} it = keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{01504         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01505     \}}
+\DoxyCodeLine{01506 }
+\DoxyCodeLine{01507     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_xlabel, args, kwargs);}
+\DoxyCodeLine{01508     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to xlabel() failed."});}
+\DoxyCodeLine{01509 }
+\DoxyCodeLine{01510     Py\_DECREF(args);}
+\DoxyCodeLine{01511     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01512     Py\_DECREF(res);}
+\DoxyCodeLine{01513 \}}
+\DoxyCodeLine{01514 }
+\DoxyCodeLine{01515 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} ylabel(\textcolor{keyword}{const} std::string \&str, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords = \{\})}
+\DoxyCodeLine{01516 \{}
+\DoxyCodeLine{01517     PyObject* pystr = PyString\_FromString(str.c\_str());}
+\DoxyCodeLine{01518     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01519     PyTuple\_SetItem(args, 0, pystr);}
+\DoxyCodeLine{01520 }
+\DoxyCodeLine{01521     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01522     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} it = keywords.begin(); it != keywords.end(); ++it) \{}
+\DoxyCodeLine{01523         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01524     \}}
+\DoxyCodeLine{01525 }
+\DoxyCodeLine{01526     PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_ylabel, args, kwargs);}
+\DoxyCodeLine{01527     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to ylabel() failed."});}
+\DoxyCodeLine{01528 }
+\DoxyCodeLine{01529     Py\_DECREF(args);}
+\DoxyCodeLine{01530     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01531     Py\_DECREF(res);}
+\DoxyCodeLine{01532 \}}
+\DoxyCodeLine{01533 }
+\DoxyCodeLine{01534 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} grid(\textcolor{keywordtype}{bool} flag)}
+\DoxyCodeLine{01535 \{}
+\DoxyCodeLine{01536     PyObject* pyflag = flag ? Py\_True : Py\_False;}
+\DoxyCodeLine{01537     Py\_INCREF(pyflag);}
+\DoxyCodeLine{01538 }
+\DoxyCodeLine{01539     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01540     PyTuple\_SetItem(args, 0, pyflag);}
+\DoxyCodeLine{01541 }
+\DoxyCodeLine{01542     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_grid, args);}
+\DoxyCodeLine{01543     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to grid() failed."});}
+\DoxyCodeLine{01544 }
+\DoxyCodeLine{01545     Py\_DECREF(args);}
+\DoxyCodeLine{01546     Py\_DECREF(res);}
+\DoxyCodeLine{01547 \}}
+\DoxyCodeLine{01548 }
+\DoxyCodeLine{01549 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} show(\textcolor{keyword}{const} \textcolor{keywordtype}{bool} block = \textcolor{keyword}{true})}
+\DoxyCodeLine{01550 \{}
+\DoxyCodeLine{01551     PyObject* res;}
+\DoxyCodeLine{01552     \textcolor{keywordflow}{if}(block)}
+\DoxyCodeLine{01553     \{}
+\DoxyCodeLine{01554         res = PyObject\_CallObject(}
+\DoxyCodeLine{01555                 detail::\_interpreter::get().s\_python\_function\_show,}
+\DoxyCodeLine{01556                 detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01557     \}}
+\DoxyCodeLine{01558     \textcolor{keywordflow}{else}}
+\DoxyCodeLine{01559     \{}
+\DoxyCodeLine{01560         PyObject *kwargs = PyDict\_New();}
+\DoxyCodeLine{01561         PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"block"}, Py\_False);}
+\DoxyCodeLine{01562         res = PyObject\_Call( detail::\_interpreter::get().s\_python\_function\_show, detail::\_interpreter::get().s\_python\_empty\_tuple, kwargs);}
+\DoxyCodeLine{01563        Py\_DECREF(kwargs);}
+\DoxyCodeLine{01564     \}}
+\DoxyCodeLine{01565 }
+\DoxyCodeLine{01566 }
+\DoxyCodeLine{01567     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to show() failed."});}
+\DoxyCodeLine{01568 }
+\DoxyCodeLine{01569     Py\_DECREF(res);}
+\DoxyCodeLine{01570 \}}
+\DoxyCodeLine{01571 }
+\DoxyCodeLine{01572 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} close()}
+\DoxyCodeLine{01573 \{}
+\DoxyCodeLine{01574     PyObject* res = PyObject\_CallObject(}
+\DoxyCodeLine{01575             detail::\_interpreter::get().s\_python\_function\_close,}
+\DoxyCodeLine{01576             detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01577 }
+\DoxyCodeLine{01578     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to close() failed."});}
+\DoxyCodeLine{01579 }
+\DoxyCodeLine{01580     Py\_DECREF(res);}
+\DoxyCodeLine{01581 \}}
+\DoxyCodeLine{01582 }
+\DoxyCodeLine{01583 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} xkcd() \{}
+\DoxyCodeLine{01584     PyObject* res;}
+\DoxyCodeLine{01585     PyObject *kwargs = PyDict\_New();}
+\DoxyCodeLine{01586 }
+\DoxyCodeLine{01587     res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_xkcd,}
+\DoxyCodeLine{01588             detail::\_interpreter::get().s\_python\_empty\_tuple, kwargs);}
+\DoxyCodeLine{01589 }
+\DoxyCodeLine{01590     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01591 }
+\DoxyCodeLine{01592     \textcolor{keywordflow}{if} (!res)}
+\DoxyCodeLine{01593         \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to show() failed."});}
+\DoxyCodeLine{01594 }
+\DoxyCodeLine{01595     Py\_DECREF(res);}
+\DoxyCodeLine{01596 \}}
+\DoxyCodeLine{01597 }
+\DoxyCodeLine{01598 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} draw()}
+\DoxyCodeLine{01599 \{}
+\DoxyCodeLine{01600     PyObject* res = PyObject\_CallObject(}
+\DoxyCodeLine{01601         detail::\_interpreter::get().s\_python\_function\_draw,}
+\DoxyCodeLine{01602         detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01603 }
+\DoxyCodeLine{01604     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to draw() failed."});}
+\DoxyCodeLine{01605 }
+\DoxyCodeLine{01606     Py\_DECREF(res);}
+\DoxyCodeLine{01607 \}}
+\DoxyCodeLine{01608 }
+\DoxyCodeLine{01609 \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01610 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} pause(Numeric interval)}
+\DoxyCodeLine{01611 \{}
+\DoxyCodeLine{01612     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01613     PyTuple\_SetItem(args, 0, PyFloat\_FromDouble(interval));}
+\DoxyCodeLine{01614 }
+\DoxyCodeLine{01615     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_pause, args);}
+\DoxyCodeLine{01616     \textcolor{keywordflow}{if}(!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to pause() failed."});}
+\DoxyCodeLine{01617 }
+\DoxyCodeLine{01618     Py\_DECREF(args);}
+\DoxyCodeLine{01619     Py\_DECREF(res);}
+\DoxyCodeLine{01620 \}}
+\DoxyCodeLine{01621 }
+\DoxyCodeLine{01622 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} save(\textcolor{keyword}{const} std::string\& filename)}
+\DoxyCodeLine{01623 \{}
+\DoxyCodeLine{01624     PyObject* pyfilename = PyString\_FromString(filename.c\_str());}
+\DoxyCodeLine{01625 }
+\DoxyCodeLine{01626     PyObject* args = PyTuple\_New(1);}
+\DoxyCodeLine{01627     PyTuple\_SetItem(args, 0, pyfilename);}
+\DoxyCodeLine{01628 }
+\DoxyCodeLine{01629     PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_save, args);}
+\DoxyCodeLine{01630     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to save() failed."});}
+\DoxyCodeLine{01631 }
+\DoxyCodeLine{01632     Py\_DECREF(args);}
+\DoxyCodeLine{01633     Py\_DECREF(res);}
+\DoxyCodeLine{01634 \}}
+\DoxyCodeLine{01635 }
+\DoxyCodeLine{01636 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} clf() \{}
+\DoxyCodeLine{01637     PyObject *res = PyObject\_CallObject(}
+\DoxyCodeLine{01638         detail::\_interpreter::get().s\_python\_function\_clf,}
+\DoxyCodeLine{01639         detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01640 }
+\DoxyCodeLine{01641     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to clf() failed."});}
+\DoxyCodeLine{01642 }
+\DoxyCodeLine{01643     Py\_DECREF(res);}
+\DoxyCodeLine{01644 \}}
+\DoxyCodeLine{01645 }
+\DoxyCodeLine{01646     \textcolor{keyword}{inline} \textcolor{keywordtype}{void} ion() \{}
+\DoxyCodeLine{01647     PyObject *res = PyObject\_CallObject(}
+\DoxyCodeLine{01648         detail::\_interpreter::get().s\_python\_function\_ion,}
+\DoxyCodeLine{01649         detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01650 }
+\DoxyCodeLine{01651     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to ion() failed."});}
+\DoxyCodeLine{01652 }
+\DoxyCodeLine{01653     Py\_DECREF(res);}
+\DoxyCodeLine{01654 \}}
+\DoxyCodeLine{01655 }
+\DoxyCodeLine{01656 \textcolor{keyword}{inline} std::vector<std::array<double, 2>> ginput(\textcolor{keyword}{const} \textcolor{keywordtype}{int} numClicks = 1, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords = \{\})}
+\DoxyCodeLine{01657 \{}
+\DoxyCodeLine{01658     PyObject *args = PyTuple\_New(1);}
+\DoxyCodeLine{01659     PyTuple\_SetItem(args, 0, PyLong\_FromLong(numClicks));}
+\DoxyCodeLine{01660 }
+\DoxyCodeLine{01661     \textcolor{comment}{// construct keyword args}}
+\DoxyCodeLine{01662     PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01663     \textcolor{keywordflow}{for}(std::map<std::string, std::string>::const\_iterator it = keywords.begin(); it != keywords.end(); ++it)}
+\DoxyCodeLine{01664     \{}
+\DoxyCodeLine{01665         PyDict\_SetItemString(kwargs, it-\/>first.c\_str(), PyUnicode\_FromString(it-\/>second.c\_str()));}
+\DoxyCodeLine{01666     \}}
+\DoxyCodeLine{01667 }
+\DoxyCodeLine{01668     PyObject* res = PyObject\_Call(}
+\DoxyCodeLine{01669         detail::\_interpreter::get().s\_python\_function\_ginput, args, kwargs);}
+\DoxyCodeLine{01670 }
+\DoxyCodeLine{01671     Py\_DECREF(kwargs);}
+\DoxyCodeLine{01672     Py\_DECREF(args);}
+\DoxyCodeLine{01673     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to ginput() failed."});}
+\DoxyCodeLine{01674 }
+\DoxyCodeLine{01675     \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} len = PyList\_Size(res);}
+\DoxyCodeLine{01676     std::vector<std::array<double, 2>> out;}
+\DoxyCodeLine{01677     out.reserve(len);}
+\DoxyCodeLine{01678     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < len; i++) \{}
+\DoxyCodeLine{01679         PyObject *current = PyList\_GetItem(res, i);}
+\DoxyCodeLine{01680         std::array<double, 2> position;}
+\DoxyCodeLine{01681         position[0] = PyFloat\_AsDouble(PyTuple\_GetItem(current, 0));}
+\DoxyCodeLine{01682         position[1] = PyFloat\_AsDouble(PyTuple\_GetItem(current, 1));}
+\DoxyCodeLine{01683         out.push\_back(position);}
+\DoxyCodeLine{01684     \}}
+\DoxyCodeLine{01685     Py\_DECREF(res);}
+\DoxyCodeLine{01686 }
+\DoxyCodeLine{01687     \textcolor{keywordflow}{return} out;}
+\DoxyCodeLine{01688 \}}
+\DoxyCodeLine{01689 }
+\DoxyCodeLine{01690 \textcolor{comment}{// Actually, is there any reason not to call this automatically for every plot?}}
+\DoxyCodeLine{01691 \textcolor{keyword}{inline} \textcolor{keywordtype}{void} tight\_layout() \{}
+\DoxyCodeLine{01692     PyObject *res = PyObject\_CallObject(}
+\DoxyCodeLine{01693         detail::\_interpreter::get().s\_python\_function\_tight\_layout,}
+\DoxyCodeLine{01694         detail::\_interpreter::get().s\_python\_empty\_tuple);}
+\DoxyCodeLine{01695 }
+\DoxyCodeLine{01696     \textcolor{keywordflow}{if} (!res) \textcolor{keywordflow}{throw} std::runtime\_error(\textcolor{stringliteral}{"Call to tight\_layout() failed."});}
+\DoxyCodeLine{01697 }
+\DoxyCodeLine{01698     Py\_DECREF(res);}
+\DoxyCodeLine{01699 \}}
+\DoxyCodeLine{01700 }
+\DoxyCodeLine{01701 \textcolor{comment}{// Support for variadic plot() and initializer lists:}}
+\DoxyCodeLine{01702 }
+\DoxyCodeLine{01703 \textcolor{keyword}{namespace }detail \{}
+\DoxyCodeLine{01704 }
+\DoxyCodeLine{01705 \textcolor{keyword}{template}<\textcolor{keyword}{typename} T>}
+\DoxyCodeLine{01706 \textcolor{keyword}{using} is\_function = \textcolor{keyword}{typename} std::is\_function<std::remove\_pointer<std::remove\_reference<T>>>::type;}
+\DoxyCodeLine{01707 }
+\DoxyCodeLine{01708 \textcolor{keyword}{template}<\textcolor{keywordtype}{bool} obj, \textcolor{keyword}{typename} T>}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01709}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl}{01709}} \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl}{is\_callable\_impl}};}
+\DoxyCodeLine{01710 }
+\DoxyCodeLine{01711 \textcolor{keyword}{template}<\textcolor{keyword}{typename} T>}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01712}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl_3_01false_00_01_t_01_4}{01712}} \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl}{is\_callable\_impl}}<false, T>}
+\DoxyCodeLine{01713 \{}
+\DoxyCodeLine{01714     \textcolor{keyword}{typedef} is\_function<T> type;}
+\DoxyCodeLine{01715 \}; \textcolor{comment}{// a non-\/object is callable iff it is a function}}
+\DoxyCodeLine{01716 }
+\DoxyCodeLine{01717 \textcolor{keyword}{template}<\textcolor{keyword}{typename} T>}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01718}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl_3_01true_00_01_t_01_4}{01718}} \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl}{is\_callable\_impl}}<true, T>}
+\DoxyCodeLine{01719 \{}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01720}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl_3_01true_00_01_t_01_4_1_1_fallback}{01720}}     \textcolor{keyword}{struct }Fallback \{ \textcolor{keywordtype}{void} operator()(); \};}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01721}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl_3_01true_00_01_t_01_4_1_1_derived}{01721}}     \textcolor{keyword}{struct }Derived : T, Fallback \{ \};}
+\DoxyCodeLine{01722 }
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01723}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl_3_01true_00_01_t_01_4_1_1_check}{01723}}     \textcolor{keyword}{template}<\textcolor{keyword}{typename} U, U> \textcolor{keyword}{struct }Check;}
+\DoxyCodeLine{01724 }
+\DoxyCodeLine{01725     \textcolor{keyword}{template}<\textcolor{keyword}{typename} U>}
+\DoxyCodeLine{01726     \textcolor{keyword}{static} std::true\_type test( ... ); \textcolor{comment}{// use a variadic function to make sure (1) it accepts everything and (2) its always the worst match}}
+\DoxyCodeLine{01727 }
+\DoxyCodeLine{01728     \textcolor{keyword}{template}<\textcolor{keyword}{typename} U>}
+\DoxyCodeLine{01729     \textcolor{keyword}{static} std::false\_type test( Check<\textcolor{keywordtype}{void}(Fallback::*)(), \&U::operator()>* );}
+\DoxyCodeLine{01730 }
+\DoxyCodeLine{01731 \textcolor{keyword}{public}:}
+\DoxyCodeLine{01732     \textcolor{keyword}{typedef} decltype(test<Derived>(\textcolor{keyword}{nullptr})) type;}
+\DoxyCodeLine{01733     typedef decltype(\&Fallback::operator()) dtype;}
+\DoxyCodeLine{01734     static constexpr \textcolor{keywordtype}{bool} value = type::value;}
+\DoxyCodeLine{01735 \}; \textcolor{comment}{// an object is callable iff it defines operator()}}
+\DoxyCodeLine{01736 }
+\DoxyCodeLine{01737 template<typename T>}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01738}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable}{01738}} struct \mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable}{is\_callable}}}
+\DoxyCodeLine{01739 \{}
+\DoxyCodeLine{01740     \textcolor{comment}{// dispatch to is\_callable\_impl<true, T> or is\_callable\_impl<false, T> depending on whether T is of class type or not}}
+\DoxyCodeLine{01741     \textcolor{keyword}{typedef} \textcolor{keyword}{typename} \mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1is__callable__impl}{is\_callable\_impl<std::is\_class<T>::value}}, T>::type type;}
+\DoxyCodeLine{01742 \};}
+\DoxyCodeLine{01743 }
+\DoxyCodeLine{01744 \textcolor{keyword}{template}<\textcolor{keyword}{typename} IsYDataCallable>}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01745}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1plot__impl}{01745}} \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1plot__impl}{plot\_impl}} \{ \};}
+\DoxyCodeLine{01746 }
+\DoxyCodeLine{01747 \textcolor{keyword}{template}<>}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01748}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1plot__impl_3_01std_1_1false__type_01_4}{01748}} \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1plot__impl}{plot\_impl}}<std::false\_type>}
+\DoxyCodeLine{01749 \{}
+\DoxyCodeLine{01750     \textcolor{keyword}{template}<\textcolor{keyword}{typename} IterableX, \textcolor{keyword}{typename} IterableY>}
+\DoxyCodeLine{01751     \textcolor{keywordtype}{bool} operator()(\textcolor{keyword}{const} IterableX\& x, \textcolor{keyword}{const} IterableY\& y, \textcolor{keyword}{const} std::string\& format)}
+\DoxyCodeLine{01752     \{}
+\DoxyCodeLine{01753         \textcolor{comment}{// 2-\/phase lookup for distance, begin, end}}
+\DoxyCodeLine{01754         \textcolor{keyword}{using} std::distance;}
+\DoxyCodeLine{01755         \textcolor{keyword}{using} std::begin;}
+\DoxyCodeLine{01756         \textcolor{keyword}{using} std::end;}
+\DoxyCodeLine{01757 }
+\DoxyCodeLine{01758         \textcolor{keyword}{auto} xs = distance(begin(x), end(x));}
+\DoxyCodeLine{01759         \textcolor{keyword}{auto} ys = distance(begin(y), end(y));}
+\DoxyCodeLine{01760         assert(xs == ys \&\& \textcolor{stringliteral}{"x and y data must have the same number of elements!"});}
+\DoxyCodeLine{01761 }
+\DoxyCodeLine{01762         PyObject* xlist = PyList\_New(xs);}
+\DoxyCodeLine{01763         PyObject* ylist = PyList\_New(ys);}
+\DoxyCodeLine{01764         PyObject* pystring = PyString\_FromString(format.c\_str());}
+\DoxyCodeLine{01765 }
+\DoxyCodeLine{01766         \textcolor{keyword}{auto} itx = begin(x), ity = begin(y);}
+\DoxyCodeLine{01767         \textcolor{keywordflow}{for}(\textcolor{keywordtype}{size\_t} i = 0; i < xs; ++i) \{}
+\DoxyCodeLine{01768             PyList\_SetItem(xlist, i, PyFloat\_FromDouble(*itx++));}
+\DoxyCodeLine{01769             PyList\_SetItem(ylist, i, PyFloat\_FromDouble(*ity++));}
+\DoxyCodeLine{01770         \}}
+\DoxyCodeLine{01771 }
+\DoxyCodeLine{01772         PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{01773         PyTuple\_SetItem(plot\_args, 0, xlist);}
+\DoxyCodeLine{01774         PyTuple\_SetItem(plot\_args, 1, ylist);}
+\DoxyCodeLine{01775         PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{01776 }
+\DoxyCodeLine{01777         PyObject* res = PyObject\_CallObject(detail::\_interpreter::get().s\_python\_function\_plot, plot\_args);}
+\DoxyCodeLine{01778 }
+\DoxyCodeLine{01779         Py\_DECREF(plot\_args);}
+\DoxyCodeLine{01780         \textcolor{keywordflow}{if}(res) Py\_DECREF(res);}
+\DoxyCodeLine{01781 }
+\DoxyCodeLine{01782         \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{01783     \}}
+\DoxyCodeLine{01784 \};}
+\DoxyCodeLine{01785 }
+\DoxyCodeLine{01786 \textcolor{keyword}{template}<>}
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01787}\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1plot__impl_3_01std_1_1true__type_01_4}{01787}} \textcolor{keyword}{struct }\mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1plot__impl}{plot\_impl}}<std::true\_type>}
+\DoxyCodeLine{01788 \{}
+\DoxyCodeLine{01789     \textcolor{keyword}{template}<\textcolor{keyword}{typename} Iterable, \textcolor{keyword}{typename} Callable>}
+\DoxyCodeLine{01790     \textcolor{keywordtype}{bool} operator()(\textcolor{keyword}{const} Iterable\& ticks, \textcolor{keyword}{const} Callable\& f, \textcolor{keyword}{const} std::string\& format)}
+\DoxyCodeLine{01791     \{}
+\DoxyCodeLine{01792         \textcolor{keywordflow}{if}(begin(ticks) == end(ticks)) \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{01793 }
+\DoxyCodeLine{01794         \textcolor{comment}{// We could use additional meta-\/programming to deduce the correct element type of y,}}
+\DoxyCodeLine{01795         \textcolor{comment}{// but all values have to be convertible to double anyways}}
+\DoxyCodeLine{01796         std::vector<double> y;}
+\DoxyCodeLine{01797         \textcolor{keywordflow}{for}(\textcolor{keyword}{auto} x : ticks) y.push\_back(f(x));}
+\DoxyCodeLine{01798         \textcolor{keywordflow}{return} \mbox{\hyperlink{structmatplotlibcpp_1_1detail_1_1plot__impl_3_01std_1_1false__type_01_4}{plot\_impl<std::false\_type>}}()(ticks,y,format);}
+\DoxyCodeLine{01799     \}}
+\DoxyCodeLine{01800 \};}
+\DoxyCodeLine{01801 }
+\DoxyCodeLine{01802 \} \textcolor{comment}{// end namespace detail}}
+\DoxyCodeLine{01803 }
+\DoxyCodeLine{01804 \textcolor{comment}{// recursion stop for the above}}
+\DoxyCodeLine{01805 \textcolor{keyword}{template}<\textcolor{keyword}{typename}... Args>}
+\DoxyCodeLine{01806 \textcolor{keywordtype}{bool} plot() \{ \textcolor{keywordflow}{return} \textcolor{keyword}{true}; \}}
+\DoxyCodeLine{01807 }
+\DoxyCodeLine{01808 \textcolor{keyword}{template}<\textcolor{keyword}{typename} A, \textcolor{keyword}{typename} B, \textcolor{keyword}{typename}... Args>}
+\DoxyCodeLine{01809 \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} A\& a, \textcolor{keyword}{const} B\& b, \textcolor{keyword}{const} std::string\& format, Args... args)}
+\DoxyCodeLine{01810 \{}
+\DoxyCodeLine{01811     \textcolor{keywordflow}{return} detail::plot\_impl<typename detail::is\_callable<B>::type>()(a,b,format) \&\& plot(args...);}
+\DoxyCodeLine{01812 \}}
+\DoxyCodeLine{01813 }
+\DoxyCodeLine{01814 \textcolor{comment}{/*}}
+\DoxyCodeLine{01815 \textcolor{comment}{ * This group of plot() functions is needed to support initializer lists, i.e. calling}}
+\DoxyCodeLine{01816 \textcolor{comment}{ *    plot( \{1,2,3,4\} )}}
+\DoxyCodeLine{01817 \textcolor{comment}{ */}}
+\DoxyCodeLine{01818 \textcolor{keyword}{inline} \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} std::vector<double>\& x, \textcolor{keyword}{const} std::vector<double>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""}) \{}
+\DoxyCodeLine{01819     \textcolor{keywordflow}{return} plot<double,double>(x,y,format);}
+\DoxyCodeLine{01820 \}}
+\DoxyCodeLine{01821 }
+\DoxyCodeLine{01822 \textcolor{keyword}{inline} \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} std::vector<double>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""}) \{}
+\DoxyCodeLine{01823     \textcolor{keywordflow}{return} plot<double>(y,format);}
+\DoxyCodeLine{01824 \}}
+\DoxyCodeLine{01825 }
+\DoxyCodeLine{01826 \textcolor{keyword}{inline} \textcolor{keywordtype}{bool} plot(\textcolor{keyword}{const} std::vector<double>\& x, \textcolor{keyword}{const} std::vector<double>\& y, \textcolor{keyword}{const} std::map<std::string, std::string>\& keywords) \{}
+\DoxyCodeLine{01827     \textcolor{keywordflow}{return} plot<double>(x,y,keywords);}
+\DoxyCodeLine{01828 \}}
+\DoxyCodeLine{01829 }
+\DoxyCodeLine{01830 \textcolor{comment}{/*}}
+\DoxyCodeLine{01831 \textcolor{comment}{ * This class allows dynamic plots, ie changing the plotted data without clearing and re-\/plotting}}
+\DoxyCodeLine{01832 \textcolor{comment}{ */}}
+\DoxyCodeLine{01833 }
+\DoxyCodeLine{\Hypertarget{matplotlibcpp_8h_source_l01834}\mbox{\hyperlink{classmatplotlibcpp_1_1_plot}{01834}} \textcolor{keyword}{class }\mbox{\hyperlink{classmatplotlibcpp_1_1_plot}{Plot}}}
+\DoxyCodeLine{01835 \{}
+\DoxyCodeLine{01836 \textcolor{keyword}{public}:}
+\DoxyCodeLine{01837     \textcolor{comment}{// default initialization with plot label, some data and format}}
+\DoxyCodeLine{01838     \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01839     \mbox{\hyperlink{classmatplotlibcpp_1_1_plot}{Plot}}(\textcolor{keyword}{const} std::string\& name, \textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""}) \{}
+\DoxyCodeLine{01840 }
+\DoxyCodeLine{01841         assert(x.size() == y.size());}
+\DoxyCodeLine{01842 }
+\DoxyCodeLine{01843         PyObject* kwargs = PyDict\_New();}
+\DoxyCodeLine{01844         \textcolor{keywordflow}{if}(name != \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01845             PyDict\_SetItemString(kwargs, \textcolor{stringliteral}{"label"}, PyString\_FromString(name.c\_str()));}
+\DoxyCodeLine{01846 }
+\DoxyCodeLine{01847         PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{01848         PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{01849 }
+\DoxyCodeLine{01850         PyObject* pystring = PyString\_FromString(format.c\_str());}
+\DoxyCodeLine{01851 }
+\DoxyCodeLine{01852         PyObject* plot\_args = PyTuple\_New(3);}
+\DoxyCodeLine{01853         PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{01854         PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{01855         PyTuple\_SetItem(plot\_args, 2, pystring);}
+\DoxyCodeLine{01856 }
+\DoxyCodeLine{01857         PyObject* res = PyObject\_Call(detail::\_interpreter::get().s\_python\_function\_plot, plot\_args, kwargs);}
+\DoxyCodeLine{01858 }
+\DoxyCodeLine{01859         Py\_DECREF(kwargs);}
+\DoxyCodeLine{01860         Py\_DECREF(plot\_args);}
+\DoxyCodeLine{01861 }
+\DoxyCodeLine{01862         \textcolor{keywordflow}{if}(res)}
+\DoxyCodeLine{01863         \{}
+\DoxyCodeLine{01864             line= PyList\_GetItem(res, 0);}
+\DoxyCodeLine{01865 }
+\DoxyCodeLine{01866             \textcolor{keywordflow}{if}(line)}
+\DoxyCodeLine{01867                 set\_data\_fct = PyObject\_GetAttrString(line,\textcolor{stringliteral}{"set\_data"});}
+\DoxyCodeLine{01868             \textcolor{keywordflow}{else}}
+\DoxyCodeLine{01869                 Py\_DECREF(line);}
+\DoxyCodeLine{01870             Py\_DECREF(res);}
+\DoxyCodeLine{01871         \}}
+\DoxyCodeLine{01872     \}}
+\DoxyCodeLine{01873 }
+\DoxyCodeLine{01874     \textcolor{comment}{// shorter initialization with name or format only}}
+\DoxyCodeLine{01875     \textcolor{comment}{// basically calls line, = plot([], [])}}
+\DoxyCodeLine{01876     \mbox{\hyperlink{classmatplotlibcpp_1_1_plot}{Plot}}(\textcolor{keyword}{const} std::string\& name = \textcolor{stringliteral}{""}, \textcolor{keyword}{const} std::string\& format = \textcolor{stringliteral}{""})}
+\DoxyCodeLine{01877         : \mbox{\hyperlink{classmatplotlibcpp_1_1_plot}{Plot}}(name, std::vector<double>(), std::vector<double>(), format) \{\}}
+\DoxyCodeLine{01878 }
+\DoxyCodeLine{01879     \textcolor{keyword}{template}<\textcolor{keyword}{typename} Numeric>}
+\DoxyCodeLine{01880     \textcolor{keywordtype}{bool} update(\textcolor{keyword}{const} std::vector<Numeric>\& x, \textcolor{keyword}{const} std::vector<Numeric>\& y) \{}
+\DoxyCodeLine{01881         assert(x.size() == y.size());}
+\DoxyCodeLine{01882         \textcolor{keywordflow}{if}(set\_data\_fct)}
+\DoxyCodeLine{01883         \{}
+\DoxyCodeLine{01884             PyObject* xarray = get\_array(x);}
+\DoxyCodeLine{01885             PyObject* yarray = get\_array(y);}
+\DoxyCodeLine{01886 }
+\DoxyCodeLine{01887             PyObject* plot\_args = PyTuple\_New(2);}
+\DoxyCodeLine{01888             PyTuple\_SetItem(plot\_args, 0, xarray);}
+\DoxyCodeLine{01889             PyTuple\_SetItem(plot\_args, 1, yarray);}
+\DoxyCodeLine{01890 }
+\DoxyCodeLine{01891             PyObject* res = PyObject\_CallObject(set\_data\_fct, plot\_args);}
+\DoxyCodeLine{01892             \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{01893             \textcolor{keywordflow}{return} res;}
+\DoxyCodeLine{01894         \}}
+\DoxyCodeLine{01895         \textcolor{keywordflow}{return} \textcolor{keyword}{false};}
+\DoxyCodeLine{01896     \}}
+\DoxyCodeLine{01897 }
+\DoxyCodeLine{01898     \textcolor{comment}{// clears the plot but keep it available}}
+\DoxyCodeLine{01899     \textcolor{keywordtype}{bool} clear() \{}
+\DoxyCodeLine{01900         \textcolor{keywordflow}{return} update(std::vector<double>(), std::vector<double>());}
+\DoxyCodeLine{01901     \}}
+\DoxyCodeLine{01902 }
+\DoxyCodeLine{01903     \textcolor{comment}{// definitely remove this line}}
+\DoxyCodeLine{01904     \textcolor{keywordtype}{void} remove() \{}
+\DoxyCodeLine{01905         \textcolor{keywordflow}{if}(line)}
+\DoxyCodeLine{01906         \{}
+\DoxyCodeLine{01907             \textcolor{keyword}{auto} remove\_fct = PyObject\_GetAttrString(line,\textcolor{stringliteral}{"remove"});}
+\DoxyCodeLine{01908             PyObject* args = PyTuple\_New(0);}
+\DoxyCodeLine{01909             PyObject* res = PyObject\_CallObject(remove\_fct, args);}
+\DoxyCodeLine{01910             \textcolor{keywordflow}{if} (res) Py\_DECREF(res);}
+\DoxyCodeLine{01911         \}}
+\DoxyCodeLine{01912         decref();}
+\DoxyCodeLine{01913     \}}
+\DoxyCodeLine{01914 }
+\DoxyCodeLine{01915     \string~\mbox{\hyperlink{classmatplotlibcpp_1_1_plot}{Plot}}() \{}
+\DoxyCodeLine{01916         decref();}
+\DoxyCodeLine{01917     \}}
+\DoxyCodeLine{01918 \textcolor{keyword}{private}:}
+\DoxyCodeLine{01919 }
+\DoxyCodeLine{01920     \textcolor{keywordtype}{void} decref() \{}
+\DoxyCodeLine{01921         \textcolor{keywordflow}{if}(line)}
+\DoxyCodeLine{01922             Py\_DECREF(line);}
+\DoxyCodeLine{01923         \textcolor{keywordflow}{if}(set\_data\_fct)}
+\DoxyCodeLine{01924             Py\_DECREF(set\_data\_fct);}
+\DoxyCodeLine{01925     \}}
+\DoxyCodeLine{01926 }
+\DoxyCodeLine{01927 }
+\DoxyCodeLine{01928     PyObject* line = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{01929     PyObject* set\_data\_fct = \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{01930 \};}
+\DoxyCodeLine{01931 }
+\DoxyCodeLine{01932 \} \textcolor{comment}{// end namespace matplotlibcpp}}
+
+\end{DoxyCode}

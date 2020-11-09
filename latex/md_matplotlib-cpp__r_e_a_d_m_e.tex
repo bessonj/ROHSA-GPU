@@ -1,0 +1,229 @@
+Welcome to matplotlib-\/cpp, possibly the simplest C++ plotting library. It is built to resemble the plotting A\+PI used by Matlab and matplotlib.\hypertarget{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md7}{}\doxysection{Usage}\label{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md7}
+Complete minimal example\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include "matplotlibcpp.h"}}
+\DoxyCodeLine{\textcolor{keyword}{namespace }plt = matplotlibcpp;}
+\DoxyCodeLine{\textcolor{keywordtype}{int} main() \{}
+\DoxyCodeLine{    plt::plot(\{1,3,2,4\});}
+\DoxyCodeLine{    plt::show();}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+ \begin{DoxyVerb}g++ minimal.cpp -std=c++11 -I/usr/include/python2.7 -lpython2.7
+\end{DoxyVerb}
+
+
+{\bfseries{Result\+:}}
+
+
+
+A more comprehensive example\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include "matplotlibcpp.h"}}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include <cmath>}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keyword}{namespace }plt = matplotlibcpp;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordtype}{int} main() }
+\DoxyCodeLine{\{}
+\DoxyCodeLine{    \textcolor{comment}{// Prepare data.}}
+\DoxyCodeLine{    \textcolor{keywordtype}{int} n = 5000;}
+\DoxyCodeLine{    std::vector<double> x(n), y(n), z(n), w(n,2);}
+\DoxyCodeLine{    \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i=0; i<n; ++i) \{}
+\DoxyCodeLine{        x.at(i) = i*i;}
+\DoxyCodeLine{        y.at(i) = sin(2*M\_PI*i/360.0);}
+\DoxyCodeLine{        z.at(i) = log(i);}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{}
+\DoxyCodeLine{    \textcolor{comment}{// Set the size of output image to 1200x780 pixels}}
+\DoxyCodeLine{    plt::figure\_size(1200, 780);}
+\DoxyCodeLine{    \textcolor{comment}{// Plot line from given x and y data. Color is selected automatically.}}
+\DoxyCodeLine{    plt::plot(x, y);}
+\DoxyCodeLine{    \textcolor{comment}{// Plot a red dashed line from given x and y data.}}
+\DoxyCodeLine{    plt::plot(x, w,\textcolor{stringliteral}{"r-\/-\/"});}
+\DoxyCodeLine{    \textcolor{comment}{// Plot a line whose name will show up as "log(x)" in the legend.}}
+\DoxyCodeLine{    plt::named\_plot(\textcolor{stringliteral}{"log(x)"}, x, z);}
+\DoxyCodeLine{    \textcolor{comment}{// Set x-\/axis to interval [0,1000000]}}
+\DoxyCodeLine{    plt::xlim(0, 1000*1000);}
+\DoxyCodeLine{    \textcolor{comment}{// Add graph title}}
+\DoxyCodeLine{    plt::title(\textcolor{stringliteral}{"Sample figure"});}
+\DoxyCodeLine{    \textcolor{comment}{// Enable legend.}}
+\DoxyCodeLine{    plt::legend();}
+\DoxyCodeLine{    \textcolor{comment}{// Save the image (file format is determined by the extension)}}
+\DoxyCodeLine{    plt::save(\textcolor{stringliteral}{"./basic.png"});}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+ \begin{DoxyVerb}g++ basic.cpp -I/usr/include/python2.7 -lpython2.7
+\end{DoxyVerb}
+
+
+{\bfseries{Result\+:}}
+
+
+
+Alternatively, matplotlib-\/cpp also supports some C++11-\/powered syntactic sugar\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include <cmath>}}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include "matplotlibcpp.h"}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keyword}{using namespace }std;}
+\DoxyCodeLine{\textcolor{keyword}{namespace }plt = matplotlibcpp;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordtype}{int} main() }
+\DoxyCodeLine{\{    }
+\DoxyCodeLine{    \textcolor{comment}{// Prepare data.}}
+\DoxyCodeLine{    \textcolor{keywordtype}{int} n = 5000; \textcolor{comment}{// number of data points}}
+\DoxyCodeLine{    vector<double> x(n),y(n); }
+\DoxyCodeLine{    \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i=0; i<n; ++i) \{}
+\DoxyCodeLine{        \textcolor{keywordtype}{double} t = 2*M\_PI*i/n;}
+\DoxyCodeLine{        x.at(i) = 16*sin(t)*sin(t)*sin(t);}
+\DoxyCodeLine{        y.at(i) = 13*cos(t) -\/ 5*cos(2*t) -\/ 2*cos(3*t) -\/ cos(4*t);}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{}
+\DoxyCodeLine{    \textcolor{comment}{// plot() takes an arbitrary number of (x,y,format)-\/triples. }}
+\DoxyCodeLine{    \textcolor{comment}{// x must be iterable (that is, anything providing begin(x) and end(x)),}}
+\DoxyCodeLine{    \textcolor{comment}{// y must either be callable (providing operator() const) or iterable. }}
+\DoxyCodeLine{    plt::plot(x, y, \textcolor{stringliteral}{"r-\/"}, x, [](\textcolor{keywordtype}{double} d) \{ \textcolor{keywordflow}{return} 12.5+abs(sin(d)); \}, \textcolor{stringliteral}{"k-\/"});}
+\DoxyCodeLine{}
+\DoxyCodeLine{}
+\DoxyCodeLine{    \textcolor{comment}{// show plots}}
+\DoxyCodeLine{    plt::show();}
+\DoxyCodeLine{\} }
+\end{DoxyCode}
+ \begin{DoxyVerb}g++ modern.cpp -std=c++11 -I/usr/include/python2.7 -lpython
+\end{DoxyVerb}
+
+
+{\bfseries{Result\+:}}
+
+
+
+Or some {\itshape funny-\/looking xkcd-\/styled} example\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include "matplotlibcpp.h"}}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include <vector>}}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include <cmath>}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keyword}{namespace }plt = matplotlibcpp;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordtype}{int} main() \{}
+\DoxyCodeLine{    std::vector<double> t(1000);}
+\DoxyCodeLine{    std::vector<double> x(t.size());}
+\DoxyCodeLine{}
+\DoxyCodeLine{    \textcolor{keywordflow}{for}(\textcolor{keywordtype}{size\_t} i = 0; i < t.size(); i++) \{}
+\DoxyCodeLine{        t[i] = i / 100.0;}
+\DoxyCodeLine{        x[i] = sin(2.0 * M\_PI * 1.0 * t[i]);}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{}
+\DoxyCodeLine{    plt::xkcd();}
+\DoxyCodeLine{    plt::plot(t, x);}
+\DoxyCodeLine{    plt::title(\textcolor{stringliteral}{"AN ORDINARY SIN WAVE"});}
+\DoxyCodeLine{    plt::save(\textcolor{stringliteral}{"xkcd.png"});}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+ \begin{DoxyVerb}g++ xkcd.cpp -std=c++11 -I/usr/include/python2.7 -lpython2.7
+\end{DoxyVerb}
+
+
+{\bfseries{Result\+:}}
+
+
+
+When working with vector fields, you might be interested in quiver plots\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include "../matplotlibcpp.h"}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keyword}{namespace }plt = matplotlibcpp;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordtype}{int} main()}
+\DoxyCodeLine{\{}
+\DoxyCodeLine{    \textcolor{comment}{// u and v are respectively the x and y components of the arrows we're plotting}}
+\DoxyCodeLine{    std::vector<int> x, y, u, v;}
+\DoxyCodeLine{    \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = -\/5; i <= 5; i++) \{}
+\DoxyCodeLine{        \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j = -\/5; j <= 5; j++) \{}
+\DoxyCodeLine{            x.push\_back(i);}
+\DoxyCodeLine{            u.push\_back(-\/i);}
+\DoxyCodeLine{            y.push\_back(j);}
+\DoxyCodeLine{            v.push\_back(-\/j);}
+\DoxyCodeLine{        \}}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{}
+\DoxyCodeLine{    plt::quiver(x, y, u, v);}
+\DoxyCodeLine{    plt::show();}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+ \begin{DoxyVerb}g++ quiver.cpp -std=c++11 -I/usr/include/python2.7 -lpython2.7
+\end{DoxyVerb}
+
+
+{\bfseries{Result\+:}}
+
+
+
+When working with 3d functions, you might be interested in 3d plots\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{preprocessor}{\#include "../matplotlibcpp.h"}}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keyword}{namespace }plt = matplotlibcpp;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordtype}{int} main()}
+\DoxyCodeLine{\{}
+\DoxyCodeLine{    std::vector<std::vector<double>> x, y, z;}
+\DoxyCodeLine{    \textcolor{keywordflow}{for} (\textcolor{keywordtype}{double} i = -\/5; i <= 5;  i += 0.25) \{}
+\DoxyCodeLine{        std::vector<double> x\_row, y\_row, z\_row;}
+\DoxyCodeLine{        \textcolor{keywordflow}{for} (\textcolor{keywordtype}{double} j = -\/5; j <= 5; j += 0.25) \{}
+\DoxyCodeLine{            x\_row.push\_back(i);}
+\DoxyCodeLine{            y\_row.push\_back(j);}
+\DoxyCodeLine{            z\_row.push\_back(::std::sin(::std::hypot(i, j)));}
+\DoxyCodeLine{        \}}
+\DoxyCodeLine{        x.push\_back(x\_row);}
+\DoxyCodeLine{        y.push\_back(y\_row);}
+\DoxyCodeLine{        z.push\_back(z\_row);}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{}
+\DoxyCodeLine{    plt::plot\_surface(x, y, z);}
+\DoxyCodeLine{    plt::show();}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+{\bfseries{Result\+:}}
+
+\hypertarget{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md8}{}\doxysection{Installation}\label{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md8}
+matplotlib-\/cpp works by wrapping the popular python plotting library matplotlib. (matplotlib.\+org) This means you have to have a working python installation, including development headers. On Ubuntu\+: \begin{DoxyVerb}sudo apt-get install python-matplotlib python-numpy python2.7-dev
+\end{DoxyVerb}
+
+
+If, for some reason, you\textquotesingle{}re unable to get a working installation of numpy on your system, you can add the define {\ttfamily W\+I\+T\+H\+O\+U\+T\+\_\+\+N\+U\+M\+PY} to erase this dependency.
+
+The C++-\/part of the library consists of the single header file {\ttfamily \mbox{\hyperlink{matplotlibcpp_8h_source}{matplotlibcpp.\+h}}} which can be placed anywhere.
+
+Since a python interpreter is opened internally, it is necessary to link against {\ttfamily libpython2.\+7} in order to use matplotlib-\/cpp.\hypertarget{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md9}{}\doxysection{C\+Make}\label{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md9}
+If you prefer to use C\+Make as build system, you will want to add something like this to your C\+Make\+Lists.\+txt\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{find\_package(PythonLibs 2.7)}
+\DoxyCodeLine{target\_include\_directories(myproject PRIVATE \$\{PYTHON\_INCLUDE\_DIRS\})}
+\DoxyCodeLine{target\_link\_libraries(myproject \$\{PYTHON\_LIBRARIES\})}
+\end{DoxyCode}
+\hypertarget{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md10}{}\doxysection{C++11}\label{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md10}
+Currently, c++11 is required to build matplotlib-\/cpp. The last working commit that did not have this requirement was {\ttfamily 717e98e752260245407c5329846f5d62605eff08}.
+
+Note that support for c++98 was dropped more or less accidentally, so if you have to work with an ancient compiler and still want to enjoy the latest additional features, I\textquotesingle{}d probably merge a PR that restores support.\hypertarget{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md11}{}\doxysection{Python 3}\label{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md11}
+This library supports both python2 and python3 (although the python3 support is probably far less tested, so it is recommended to prefer python2.\+7). To switch the used python version, simply change the compiler flags accordingly. \begin{DoxyVerb}g++ example.cpp -I/usr/include/python3.6 -lpython3.6
+\end{DoxyVerb}
+
+
+The same technique can be used for linking against a custom build of python \begin{DoxyVerb}g++ example.cpp -I/usr/local/include/fancy-python4 -L/usr/local/lib -lfancy-python4
+\end{DoxyVerb}
+\hypertarget{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md12}{}\doxysubsection{Why?}\label{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md12}
+I initially started this library during my diploma thesis. The usual approach of writing data from the c++ algorithm to a file and afterwards parsing and plotting it in python using matplotlib proved insufficient\+: Keeping the algorithm and plotting code in sync requires a lot of effort when the C++ code frequently and substantially changes. Additionally, the python yaml parser was not able to cope with files that exceed a few hundred megabytes in size.
+
+Therefore, I was looking for a C++ plotting library that was extremely easy to use and to add into an existing codebase, preferably header-\/only. When I found none, I decided to write one myself, which is basically a C++ wrapper around matplotlib. As you can see from the above examples, plotting data and saving it to an image file can be done as few as two lines of code.
+
+The general approach of providing a simple C++ A\+PI for utilizing python code was later generalized and extracted into a separate, more powerful library in another project of mine, \href{http://www.github.com/lava/wrappy}{\texttt{ wrappy}}.\hypertarget{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md13}{}\doxysubsection{Todo/\+Issues/\+Wishlist}\label{md_matplotlib-cpp__r_e_a_d_m_e_autotoc_md13}
+
+\begin{DoxyItemize}
+\item This library is not thread safe. Protect all concurrent access with a mutex. Sadly, this is not easy to fix since it is not caused by the library itself but by the python interpreter, which is itself not thread-\/safe.
+\item It would be nice to have a more object-\/oriented design with a Plot class which would allow multiple independent plots per program.
+\item Right now, only a small subset of matplotlibs functionality is exposed. Stuff like xlabel()/ylabel() etc. should be easy to add.
+\item If you use Anaconda on Windows, you might need to set P\+Y\+T\+H\+O\+N\+H\+O\+ME to Anaconda home directory and Q\+T\+\_\+\+Q\+P\+A\+\_\+\+P\+L\+A\+T\+F\+O\+R\+M\+\_\+\+P\+L\+U\+G\+I\+N\+\_\+\+P\+A\+TH to P\+Y\+T\+H\+O\+N\+H\+O\+MELibrary/plugins/platforms. The latter is for especially when you get the error which says \textquotesingle{}This application failed to start because it could not find or load the Qt platform plugin \char`\"{}windows\char`\"{} in \char`\"{}\char`\"{}.\textquotesingle{} 
+\end{DoxyItemize}

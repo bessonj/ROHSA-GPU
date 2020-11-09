@@ -1,0 +1,213 @@
+\hypertarget{classalgo__rohsa}{}\doxysection{algo\+\_\+rohsa Class Reference}
+\label{classalgo__rohsa}\index{algo\_rohsa@{algo\_rohsa}}
+
+
+Courte description.  
+
+
+
+
+{\ttfamily \#include $<$algo\+\_\+rohsa.\+hpp$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a4b593414ce1b42a9cc3ffee3ee22107b}\label{classalgo__rohsa_a4b593414ce1b42a9cc3ffee3ee22107b}} 
+{\bfseries algo\+\_\+rohsa} (\mbox{\hyperlink{classparameters}{parameters}} \&M, \mbox{\hyperlink{classhypercube}{hypercube}} \&Hypercube)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a91e1f979d2d06d95b4a1ce27eb729c54}\label{classalgo__rohsa_a91e1f979d2d06d95b4a1ce27eb729c54}} 
+void {\bfseries descente} (\mbox{\hyperlink{classparameters}{parameters}} \&M, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&grid\+\_\+params, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&fit\+\_\+params)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a803c556cae0de92a8ae301fb870717f0}\label{classalgo__rohsa_a803c556cae0de92a8ae301fb870717f0}} 
+void {\bfseries descente\+\_\+sans\+\_\+regu} (\mbox{\hyperlink{classparameters}{parameters}} \&M, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&grid\+\_\+params, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&fit\+\_\+params)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a00faa8093d025ec0b2ed3a8658d74f0c}\label{classalgo__rohsa_a00faa8093d025ec0b2ed3a8658d74f0c}} 
+void {\bfseries convolution\+\_\+2\+D\+\_\+mirror} (const \mbox{\hyperlink{classparameters}{parameters}} \&M, const std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&image, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&conv, int dim\+\_\+y, int dim\+\_\+x, int dim\+\_\+k)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a55d182a100ecbd2728faf509c60644e7}\label{classalgo__rohsa_a55d182a100ecbd2728faf509c60644e7}} 
+void {\bfseries convolution\+\_\+2\+D\+\_\+mirror\+\_\+flat} (const \mbox{\hyperlink{classparameters}{parameters}} \&M, double $\ast$image, double $\ast$\&conv, int dim\+\_\+y, int dim\+\_\+x, int dim\+\_\+k)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a6db4f71828670c9bb1e53df35b506d3e}\label{classalgo__rohsa_a6db4f71828670c9bb1e53df35b506d3e}} 
+void {\bfseries convolution\+\_\+2\+D\+\_\+mirror\+\_\+flat} (const \mbox{\hyperlink{classparameters}{parameters}} \&M, float $\ast$image, float $\ast$\&conv, int dim\+\_\+y, int dim\+\_\+x, int dim\+\_\+k, float temps\+\_\+transfert, float temps\+\_\+mirroirs)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a932db416b95172f2c08685ef221df1be}\label{classalgo__rohsa_a932db416b95172f2c08685ef221df1be}} 
+void {\bfseries ravel\+\_\+2D} (const std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&map, std\+::vector$<$ double $>$ \&vector, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a2a14e9ef2ae075d73dea4cab0487b049}\label{classalgo__rohsa_a2a14e9ef2ae075d73dea4cab0487b049}} 
+void {\bfseries ravel\+\_\+3D} (const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double vector\mbox{[}$\,$\mbox{]}, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a22da7dcc810acf9fc57abf0f997f44d6}\label{classalgo__rohsa_a22da7dcc810acf9fc57abf0f997f44d6}} 
+void {\bfseries ravel\+\_\+3D} (const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, std\+::vector$<$ double $>$ \&vector, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a459f536c47c34bcd7ffce1d524e8f5b9}\label{classalgo__rohsa_a459f536c47c34bcd7ffce1d524e8f5b9}} 
+void {\bfseries ravel\+\_\+3\+D\+\_\+bis} (const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double vector\mbox{[}$\,$\mbox{]}, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ad3ce9637ae91e9877af4be403f1eb97a}\label{classalgo__rohsa_ad3ce9637ae91e9877af4be403f1eb97a}} 
+void {\bfseries ravel\+\_\+3\+D\+\_\+abs} (const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, const std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube\+\_\+abs, std\+::vector$<$ double $>$ \&vector, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a4e8557b6f607d40f13cae2463f329993}\label{classalgo__rohsa_a4e8557b6f607d40f13cae2463f329993}} 
+void {\bfseries unravel\+\_\+3D} (const std\+::vector$<$ double $>$ \&vector, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a3532aee0599dff3ad4f3ccb5aa3e034c}\label{classalgo__rohsa_a3532aee0599dff3ad4f3ccb5aa3e034c}} 
+void {\bfseries unravel\+\_\+3D} (double vector\mbox{[}$\,$\mbox{]}, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ad6a6ddd07d76a3ceb3c9c01a5f7feacf}\label{classalgo__rohsa_ad6a6ddd07d76a3ceb3c9c01a5f7feacf}} 
+void {\bfseries unravel\+\_\+3\+D\+\_\+with\+\_\+formula\+\_\+transpose\+\_\+xy} (double vector\mbox{[}$\,$\mbox{]}, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a8f90e08f2cc222246c7b241f30912bdc}\label{classalgo__rohsa_a8f90e08f2cc222246c7b241f30912bdc}} 
+void {\bfseries unravel\+\_\+3\+D\+\_\+T} (double vector\mbox{[}$\,$\mbox{]}, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a8a315a114352c78ce0297d2bdc3ea1cd}\label{classalgo__rohsa_a8a315a114352c78ce0297d2bdc3ea1cd}} 
+void {\bfseries unravel\+\_\+3\+D\+\_\+abs} (const std\+::vector$<$ double $>$ \&vector, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube\+\_\+abs, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, int dim\+\_\+v, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a9790e871874c0c83e5c789e5a3fbfef0}\label{classalgo__rohsa_a9790e871874c0c83e5c789e5a3fbfef0}} 
+double {\bfseries Std} (const std\+::vector$<$ double $>$ \&array)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a095f2a922386b6ef5a26119a22fd7080}\label{classalgo__rohsa_a095f2a922386b6ef5a26119a22fd7080}} 
+double {\bfseries mean} (const std\+::vector$<$ double $>$ \&array)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a36fda7e18fab2a0ff2ab67c01bef467b}\label{classalgo__rohsa_a36fda7e18fab2a0ff2ab67c01bef467b}} 
+double {\bfseries std\+\_\+2D} (const std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&map, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a42a4c870ad162b992e71b8a0c516074c}\label{classalgo__rohsa_a42a4c870ad162b992e71b8a0c516074c}} 
+double {\bfseries max\+\_\+2D} (const std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&map, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a974eefcd1d4820bf5e48a575117ece89}\label{classalgo__rohsa_a974eefcd1d4820bf5e48a575117ece89}} 
+double {\bfseries mean\+\_\+2D} (const std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&map, int dim\+\_\+y, int dim\+\_\+x)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_abf88496529c1e2d6d7c81bc7ae9e0825}\label{classalgo__rohsa_abf88496529c1e2d6d7c81bc7ae9e0825}} 
+void {\bfseries std\+\_\+spectrum} (int dim\+\_\+x, int dim\+\_\+y, int dim\+\_\+v)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ae1f162489471abc71a4845d437e2d06d}\label{classalgo__rohsa_ae1f162489471abc71a4845d437e2d06d}} 
+void {\bfseries mean\+\_\+spectrum} (int dim\+\_\+x, int dim\+\_\+y, int dim\+\_\+v)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ac89b9c32ff238b18dc559c17822047df}\label{classalgo__rohsa_ac89b9c32ff238b18dc559c17822047df}} 
+void {\bfseries max\+\_\+spectrum} (int dim\+\_\+x, int dim\+\_\+y, int dim\+\_\+v)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a67ecfd54a63b32f72b71c64f33b02fbb}\label{classalgo__rohsa_a67ecfd54a63b32f72b71c64f33b02fbb}} 
+void {\bfseries max\+\_\+spectrum\+\_\+norm} (int dim\+\_\+x, int dim\+\_\+y, int dim\+\_\+v, double norm\+\_\+value)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ad73e186a5be67a64052790e3de34adba}\label{classalgo__rohsa_ad73e186a5be67a64052790e3de34adba}} 
+void {\bfseries init\+\_\+bounds} (\mbox{\hyperlink{classparameters}{parameters}} \&M, std\+::vector$<$ double $>$ line, int n\+\_\+gauss\+\_\+local, std\+::vector$<$ double $>$ \&lb, std\+::vector$<$ double $>$ \&ub, bool \+\_\+init)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a96ebaacc6a117030dc722dbd2b1d71ae}\label{classalgo__rohsa_a96ebaacc6a117030dc722dbd2b1d71ae}} 
+void {\bfseries mean\+\_\+array} (int power, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&mean\+\_\+array\+\_\+)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a7282e04c8e3d994baba96f5943b059d7}\label{classalgo__rohsa_a7282e04c8e3d994baba96f5943b059d7}} 
+void {\bfseries init\+\_\+spectrum} (\mbox{\hyperlink{classparameters}{parameters}} \&M, std\+::vector$<$ double $>$ \&line, std\+::vector$<$ double $>$ \&params)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_aac9e812e31df7d2692ceb8f0792de2a5}\label{classalgo__rohsa_aac9e812e31df7d2692ceb8f0792de2a5}} 
+double {\bfseries model\+\_\+function} (int x, double a, double m, double s)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ab9d25fe0cc707a7765c9d219d3637a9f}\label{classalgo__rohsa_ab9d25fe0cc707a7765c9d219d3637a9f}} 
+int {\bfseries minloc} (std\+::vector$<$ double $>$ \&tab)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_aea9da2931b907b1410dd5a36975d9991}\label{classalgo__rohsa_aea9da2931b907b1410dd5a36975d9991}} 
+void {\bfseries minimize\+\_\+spec} (\mbox{\hyperlink{classparameters}{parameters}} \&M, long n, long m, std\+::vector$<$ double $>$ \&x\+\_\+v, std\+::vector$<$ double $>$ \&lb\+\_\+v, int n\+\_\+gauss\+\_\+i, std\+::vector$<$ double $>$ \&ub\+\_\+v, std\+::vector$<$ double $>$ \&line\+\_\+v)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a58c115d7e1e324f58a7736aaaa19fb28}\label{classalgo__rohsa_a58c115d7e1e324f58a7736aaaa19fb28}} 
+void {\bfseries minimize} (\mbox{\hyperlink{classparameters}{parameters}} \&M, long n, long m, std\+::vector$<$ double $>$ \&x\+\_\+v, std\+::vector$<$ double $>$ \&lb\+\_\+v, std\+::vector$<$ double $>$ \&ub\+\_\+v, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig, int indice\+\_\+x, int indice\+\_\+y, int indice\+\_\+v, double $\ast$cube\+\_\+flattened)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a6fa1ef17f061c77fcf132c10183a3fb6}\label{classalgo__rohsa_a6fa1ef17f061c77fcf132c10183a3fb6}} 
+void {\bfseries myresidual} (double params\mbox{[}$\,$\mbox{]}, double line\mbox{[}$\,$\mbox{]}, std\+::vector$<$ double $>$ \&residual, int n\+\_\+gauss\+\_\+i)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a10fa629ed436011921ea3f9e33999742}\label{classalgo__rohsa_a10fa629ed436011921ea3f9e33999742}} 
+void {\bfseries myresidual} (std\+::vector$<$ double $>$ \&params, std\+::vector$<$ double $>$ \&line, std\+::vector$<$ double $>$ \&residual, int n\+\_\+gauss\+\_\+i)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ab6b21a1b489da03e14070aa2d147020d}\label{classalgo__rohsa_ab6b21a1b489da03e14070aa2d147020d}} 
+void {\bfseries tab\+\_\+from\+\_\+1\+Dvector\+\_\+to\+\_\+double} (std\+::vector$<$ double $>$ vect)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ad7a808ca88cd6294f932cde362304896}\label{classalgo__rohsa_ad7a808ca88cd6294f932cde362304896}} 
+double {\bfseries myfunc\+\_\+spec} (std\+::vector$<$ double $>$ \&residual)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_af7fdd8a706306dac03acd3993ff8f231}\label{classalgo__rohsa_af7fdd8a706306dac03acd3993ff8f231}} 
+void {\bfseries mygrad\+\_\+spec} (double gradient\mbox{[}$\,$\mbox{]}, std\+::vector$<$ double $>$ \&residual, double params\mbox{[}$\,$\mbox{]}, int n\+\_\+gauss\+\_\+i)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_aeb400769e028b3b1cb9795fd67a76b73}\label{classalgo__rohsa_aeb400769e028b3b1cb9795fd67a76b73}} 
+void {\bfseries upgrade} (\mbox{\hyperlink{classparameters}{parameters}} \&M, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, int power)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a90188b650c902d26adc5848297c8b49d}\label{classalgo__rohsa_a90188b650c902d26adc5848297c8b49d}} 
+void {\bfseries go\+\_\+up\+\_\+level} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&fit\+\_\+params)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a9507123ce878c11016b924c08c57dad5}\label{classalgo__rohsa_a9507123ce878c11016b924c08c57dad5}} 
+void {\bfseries set\+\_\+stdmap} (std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, int lb, int ub)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a034f5cba90025d96cb4087301f5de7d6}\label{classalgo__rohsa_a034f5cba90025d96cb4087301f5de7d6}} 
+void {\bfseries set\+\_\+stdmap\+\_\+transpose} (std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, int lb, int ub)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_af1939344bdaf3fbe988577fec55bcdd8}\label{classalgo__rohsa_af1939344bdaf3fbe988577fec55bcdd8}} 
+void {\bfseries update} (\mbox{\hyperlink{classparameters}{parameters}} \&M, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, int indice\+\_\+x, int indice\+\_\+y, int indice\+\_\+v, std\+::vector$<$ double $>$ \&b\+\_\+params)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_af62814fa3e5efb0f2e280be4921024dd}\label{classalgo__rohsa_af62814fa3e5efb0f2e280be4921024dd}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+vector} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ad6f499686bdcd2dd60d193778ebcb730}\label{classalgo__rohsa_ad6f499686bdcd2dd60d193778ebcb730}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+old\+\_\+archive} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ac91e88ae874908d75aead7b77fe14c2f}\label{classalgo__rohsa_ac91e88ae874908d75aead7b77fe14c2f}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+sep} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_ac95966672669e9ed0dd761c3669c4343}\label{classalgo__rohsa_ac95966672669e9ed0dd761c3669c4343}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+test} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a36dd9acb0713555597a25d62320ce53b}\label{classalgo__rohsa_a36dd9acb0713555597a25d62320ce53b}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+naive} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a75d395c1a9aa7020e725012b2b263e05}\label{classalgo__rohsa_a75d395c1a9aa7020e725012b2b263e05}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+fast} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a93b98059cc9dcbbf1bd38566c1f0aaf1}\label{classalgo__rohsa_a93b98059cc9dcbbf1bd38566c1f0aaf1}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+fast\+\_\+without\+\_\+regul} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a6fd75b1c915166fcb0c72c563e6ea487}\label{classalgo__rohsa_a6fd75b1c915166fcb0c72c563e6ea487}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+cuda\+\_\+L} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig, double $\ast$cube\+\_\+flattened)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_aa2748b7f797eca080da868636a513522}\label{classalgo__rohsa_aa2748b7f797eca080da868636a513522}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+cuda\+\_\+\+L\+\_\+deux\+\_\+tiers} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig, double $\ast$cube\+\_\+flattened)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a1e2432291b3d528a16252b377a8a0440}\label{classalgo__rohsa_a1e2432291b3d528a16252b377a8a0440}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+cuda\+\_\+\+L\+\_\+debug} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a69bfef688648ee4e7be1e98802ed6987}\label{classalgo__rohsa_a69bfef688648ee4e7be1e98802ed6987}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+cuda\+\_\+\+L\+\_\+2} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a13596df95325208f6d20e1dded49ee28}\label{classalgo__rohsa_a13596df95325208f6d20e1dded49ee28}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+cuda\+\_\+\+L\+\_\+2\+\_\+2\+Bverified} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a3a091215204d0bca079252b65fc3cfd1}\label{classalgo__rohsa_a3a091215204d0bca079252b65fc3cfd1}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+omp} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a576f0e3246c0471dd0ab9a1c3792821f}\label{classalgo__rohsa_a576f0e3246c0471dd0ab9a1c3792821f}} 
+void {\bfseries f\+\_\+g\+\_\+cube\+\_\+omp\+\_\+without\+\_\+regul} (\mbox{\hyperlink{classparameters}{parameters}} \&M, double \&f, double g\mbox{[}$\,$\mbox{]}, int n, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&cube, double beta\mbox{[}$\,$\mbox{]}, int indice\+\_\+v, int indice\+\_\+y, int indice\+\_\+x, std\+::vector$<$ std\+::vector$<$ double $>$$>$ \&std\+\_\+map, std\+::vector$<$ double $>$ \&mean\+\_\+amp, std\+::vector$<$ double $>$ \&mean\+\_\+mu, std\+::vector$<$ double $>$ \&mean\+\_\+sig)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a4cab8e7177133cd35931fefa4b9a0f6b}\label{classalgo__rohsa_a4cab8e7177133cd35931fefa4b9a0f6b}} 
+void {\bfseries reshape\+\_\+down} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&tab1, std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&tab2)
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_addcb263b7fddcb618d9690d0762899ae}\label{classalgo__rohsa_addcb263b7fddcb618d9690d0762899ae}} 
+void {\bfseries mean\+\_\+parameters} (std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$$>$$>$ \&params)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_af2ef2dcbbdb1441eedaa4792ba125c3f}\label{classalgo__rohsa_af2ef2dcbbdb1441eedaa4792ba125c3f}} 
+std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$ $>$ $>$ {\bfseries grid\+\_\+params}
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a3d92b6531fc9786a202e65c4a069ae28}\label{classalgo__rohsa_a3d92b6531fc9786a202e65c4a069ae28}} 
+std\+::vector$<$ std\+::vector$<$ std\+::vector$<$ double $>$ $>$ $>$ {\bfseries fit\+\_\+params}
+\item 
+\mbox{\Hypertarget{classalgo__rohsa_a9ade44d2e75c9ef7918d2a1098357c48}\label{classalgo__rohsa_a9ade44d2e75c9ef7918d2a1098357c48}} 
+double $\ast$ {\bfseries cube\+\_\+or\+\_\+dat\+\_\+flattened}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Courte description. 
+
+\[ |I_2|=\left| \int_{0}^T \psi(t) \left\{ u(a,t)- \int_{\gamma(t)}^a \frac{d\theta}{k(\theta,t)} \int_{a}^\theta c(\xi)u_t(\xi,t)\,d\xi \right\} dt \right| \]
+
+The distance between $(x_1,y_1)$ and $(x_2,y_2)$ is $\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}$. Class for solving the optimization problem. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+inc/algo\+\_\+rohsa.\+hpp\item 
+src/\+C\+P\+P/algo\+\_\+rohsa.\+cpp\end{DoxyCompactItemize}

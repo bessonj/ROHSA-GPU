@@ -5,6 +5,7 @@
 #include "f_g_cube_gpu.hpp"
 
 
+
 algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 {
 
@@ -440,7 +441,7 @@ void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<double>>> &tab
 
 }
 
-void algo_rohsa::update(parameters &M, std::vector<std::vector<std::vector<double>>> &cube_or_data, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<double> &b_params) {
+void algo_rohsa::update(parameters &M, std::vector<std::vector<std::vector<double>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<double> &b_params) {
 
 //printf("b_params[0] = %f \n",b_params[0] );
 //printf("beta \n");
@@ -454,7 +455,7 @@ void algo_rohsa::update(parameters &M, std::vector<std::vector<std::vector<doubl
 	for(int i=0; i<indice_x; i++) {
 		for(int j=0; j<indice_y; j++) {
 			for(int k=0; k<indice_v; k++) {
-				cube_flattened[k*indice_x*indice_y+j*indice_x+i] = cube_or_data[i][j][k];
+				cube_flattened[k*indice_x*indice_y+j*indice_x+i] = cube_avgd_or_data[i][j][k];
 			}
 		}
 	}
@@ -506,7 +507,7 @@ std::cout<<"n_gauss = "<<M.n_gauss<<std::endl;
 	std::vector<double> ravel_mu(indice_y*indice_x,0.);
 	std::vector<double> ravel_sig(indice_y*indice_x,0.);
 
-	std::vector<double> cube_flat(cube_or_data[0][0].size(),0.);
+	std::vector<double> cube_flat(cube_avgd_or_data[0][0].size(),0.);
 	std::vector<double> lb_3D_flat(lb_3D.size(),0.);
 
 	std::vector<std::vector<std::vector<double>>> ub_3D(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
@@ -520,16 +521,16 @@ std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " 
 //	std::cout<<"ERREUR 0"<<std::endl;
 	std::cout << "indice_x = " << indice_x <<std::endl;
 	std::cout << "indice_y = " << indice_y <<std::endl;
-	std::cout << "cube.size() : " << cube_or_data.size() << " , " << cube_or_data[0].size() << " , " << cube_or_data[0][0].size() <<  std::endl;
+	std::cout << "cube.size() : " << cube_avgd_or_data.size() << " , " << cube_avgd_or_data[0].size() << " , " << cube_avgd_or_data[0][0].size() <<  std::endl;
 /*
-if(cube_or_data[0].size() == 35){
+if(cube_avgd_or_data[0].size() == 35){
 	exit(0);
 }
 */
 	for(int j=0; j<indice_x; j++) {
 		for(int i=0; i<indice_y; i++) {
 			for(int p=0; p<cube_flat.size(); p++){
-				cube_flat[p]=cube_or_data[j][i][p];
+				cube_flat[p]=cube_avgd_or_data[j][i][p];
 			}
 
 //	std::cout<<"ERREUR 1"<<std::endl;
@@ -589,7 +590,7 @@ if(cube_or_data[0].size() == 35){
 */
 	std::cout<<"AVANT MINIMIZE"<<std::endl;
 	//erreur ici
-	minimize(M, n_beta, M.m, beta, lb, ub, cube_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
+	minimize(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
 
 	std::cout<< "--> beta[0] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! = "<<beta[0] <<std::endl;
 
@@ -3517,7 +3518,7 @@ void algo_rohsa::f_g_cube_naive(parameters &M, double &f, double g[], int n, std
 }
 
 
-void algo_rohsa::minimize(parameters &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int indice_x, int indice_y, int indice_v, double* cube_flattened) {
+void algo_rohsa::minimize(parameters &M, long n, long m, std::vector<double> &beta, std::vector<double> &lb_v, std::vector<double> &ub_v, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
     /* System generated locals */
     int i__1;
 	int  i__c = 0;
@@ -3539,8 +3540,6 @@ void algo_rohsa::minimize(parameters &M, long n, long m, std::vector<double> &x_
     nbd = (long*)malloc(n*sizeof(double)); 
     long* iwa = NULL;
     iwa = (long*)malloc(taille_iwa*sizeof(double)); 
-
-//	std::cout<< "MILIEU" <<std::endl;
 
 //    long nbd[n], iwa[taille_iwa];
 /*
@@ -3571,21 +3570,21 @@ memoireAllouee = malloc(sizeof(int)); // La fonction malloc inscrit dans notre p
 
 //std::cout << " DEBUG  TEST 2" << std::endl;
 /*
-std::cout << "x_v.size() = " <<x_v.size()<< std::endl;
+std::cout << "beta.size() = " <<beta.size()<< std::endl;
 std::cout << "lb_v.size() = " <<lb_v.size()<< std::endl;
 std::cout << "ub_v.size() = " <<ub_v.size()<< std::endl;
 */
 // converts the vectors into a regular list
 //2Bfixed
 //std::cout << " DEBUG  TEST 0" << std::endl;
-	double* x = (double*)malloc(x_v.size()*sizeof(double));
+	double* x = (double*)malloc(beta.size()*sizeof(double));
 	double* lb = (double*)malloc(lb_v.size()*sizeof(double));
 	double* ub = (double*)malloc(ub_v.size()*sizeof(double));
 
 	double temps2_tableau_update = omp_get_wtime();
 
-    for(int i(0); i<x_v.size(); i++) {
-	x[i]=x_v[i];
+    for(int i(0); i<beta.size(); i++) {
+	x[i]=beta[i];
     } 
     for(int i(0); i<lb_v.size(); i++) {
 	lb[i]=lb_v[i];
@@ -3651,20 +3650,20 @@ L111:
 //µ$£ù
 //either f_g_cube or f_g_cube_vector or f_g_cube_test
 // Wrong values
-//	f_g_cube_old_archive(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_omp(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_old_archive(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_omp(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
 
 // good values
 // CPU
-//	f_g_cube_vector(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // OK grandes données
-//	f_g_cube_naive(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_fast(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); //OK
+//	f_g_cube_vector(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); // OK grandes données
+//	f_g_cube_naive(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_fast(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); //OK
 
 // GPU
 
-//	f_g_cube_cuda_L(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
-//	f_g_cube_cuda_L_2(M, f, g, n, cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); // ça marche !! (c'est f_g_cube_cuda_L_2_2Bverified sans la partie vérification)
-	f_g_cube_parallel(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube);
+//	f_g_cube_cuda_L(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
+//	f_g_cube_cuda_L_2(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); // ça marche !! (c'est f_g_cube_cuda_L_2_2Bverified sans la partie vérification)
+	f_g_cube_parallel(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube);
 
 
 //exit(0);
@@ -3695,7 +3694,7 @@ if (i__c >2){
 }
 
 /*
-for(int i = 0; i<(3*M.n_gauss*indice_x*indice_y)+M.n_gauss; i++){
+for(int i = 0; i<(3*M.n_gauss*dim_x*dim_y)+M.n_gauss; i++){
 	printf("g[%d] = %f \n",i,g[i] );
 }
 printf("f = %f \n",f );
@@ -3704,17 +3703,17 @@ printf("f = %f \n",f );
 
 
 
-//	f_g_cube_cuda_L_deux_tiers(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // doesn't work
-//	f_g_cube_cuda_L_2_2Bverified(M, f, g, n, cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); //gradient qui marche
+//	f_g_cube_cuda_L_deux_tiers(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // doesn't work
+//	f_g_cube_cuda_L_2_2Bverified(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); //gradient qui marche
 
 
 
 // not precise
 
 
-//	f_g_cube_fast_without_regul(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig); 
-//	f_g_cube_sep(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_test(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_fast_without_regul(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); 
+//	f_g_cube_sep(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_test(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
 
 /*
 std::cout<< "Après gradient " <<std::endl;
@@ -3727,7 +3726,7 @@ std::cout<< "pas d'erreur ? " <<std::endl;
 */
 
 //usual gradient with vectors
-//	f_g_cube_vector(M, f, g, n,cube, x, indice_v, indice_y, indice_x, std_map, mean_amp, mean_mu, mean_sig);
+//	f_g_cube_vector(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
 
 //	std::cout<<"DEBUG 3"<<std::endl;
 	}
@@ -3753,8 +3752,8 @@ std::cout<< "pas d'erreur ? " <<std::endl;
 //std::cout << " DEBUG  TEST 3" << std::endl;
 	double temps4_tableau_update = omp_get_wtime();
 	
-	for(int i(0); i<x_v.size(); i++) {
-		x_v[i]=x[i];
+	for(int i(0); i<beta.size(); i++) {
+		beta[i]=x[i];
 //		printf("x[%d] = %f\n",i,x[i]);
 	}
 //	std::cin.ignore();

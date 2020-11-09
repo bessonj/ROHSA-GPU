@@ -1,0 +1,5 @@
+<map id="algo_rohsa::update" name="algo_rohsa::update">
+<area shape="rect" id="node1" title="We prepare the boundary conditions and we call the routine that will make the model fit the data." alt="" coords="5,31,152,57"/>
+<area shape="rect" id="node2" href="$classalgo__rohsa.html#ad73e186a5be67a64052790e3de34adba" title="Sets boundary conditions for spectrum." alt="" coords="200,5,376,32"/>
+<area shape="rect" id="node3" href="$classalgo__rohsa.html#ac38d6954e64c3b309e03390aa4d9d554" title="Routine solving the optimization problem." alt="" coords="207,56,369,83"/>
+</map>

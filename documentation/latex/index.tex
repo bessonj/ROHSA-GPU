@@ -1,0 +1,26 @@
+\hypertarget{index_comp}{}\doxysection{Compiling and running the program}\label{index_comp}
+We use C\+Make which is a cross-\/platform solftware managing the build process. First, create a build directory in R\+O\+H\+S\+A-\/\+G\+PU and go inside this directory.
+
+mkdir build \&\& cd build
+
+Using C\+Make we can produce a Makefile. We may run it using make.
+
+cmake ../ \&\& make
+
+When launching the program, we need to specify the parameters.\+txt file filled in by the user \+: ~\newline
+
+
+./\+R\+O\+H\+S\+A-\/\+G\+PU parameters.\+txts\hypertarget{index_main}{}\doxysection{main.\+cpp code}\label{index_main}
+\hypertarget{index_par_txt}{}\doxysubsection{Reading the user file parameters.\+txt}\label{index_par_txt}
+We declare an parameters-\/type object that will the parameters.\+txt file.
+
+parameters user\+\_\+parametres(argv\mbox{[}1\mbox{]});\hypertarget{index_hyp}{}\doxysubsection{Getting the hypercube.}\label{index_hyp}
+We can read the F\+I\+TS or D\+AT file by using the class hypercube.
+
+hypercube Hypercube\+\_\+file(user\+\_\+parametres, user\+\_\+parametres.\+slice\+\_\+index\+\_\+min, user\+\_\+parametres.\+slice\+\_\+index\+\_\+max, whole\+\_\+data\+\_\+in\+\_\+cube);\hypertarget{index_gauss_par}{}\doxysubsection{Getting the gaussian parameters (call to the R\+O\+H\+S\+A algorithm).}\label{index_gauss_par}
+The class \mbox{\hyperlink{classalgo__rohsa}{algo\+\_\+rohsa}} runs the R\+O\+H\+SA algorithm based on the two objects previously declared.
+
+\mbox{\hyperlink{classalgo__rohsa}{algo\+\_\+rohsa}} algo(user\+\_\+parametres, Hypercube\+\_\+file);\hypertarget{index_plot}{}\doxysubsection{Plotting and storing the results.}\label{index_plot}
+We can plot the smooth gaussian parameters maps and store the results back into a F\+I\+TS file by using some of the routines of the class hypercube.
+
+\mbox{\hyperlink{classalgo__rohsa}{algo\+\_\+rohsa}} algo(user\+\_\+parametres, Hypercube\+\_\+file); 

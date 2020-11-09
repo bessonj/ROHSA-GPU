@@ -1,0 +1,100 @@
+\hypertarget{parameters_8hpp_source}{}\doxysection{parameters.\+hpp}
+\label{parameters_8hpp_source}\index{inc/parameters.hpp@{inc/parameters.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001 \textcolor{preprocessor}{\#ifndef DEF\_PARAMETERS}}
+\DoxyCodeLine{00002 \textcolor{preprocessor}{\#define DEF\_PARAMETERS}}
+\DoxyCodeLine{00003 }
+\DoxyCodeLine{00004 \textcolor{preprocessor}{\#include "../L-\/BFGS-\/B-\/C/src/lbfgsb.h"} \textcolor{comment}{//needed for the integer and logical type of the minimize\_spec function}}
+\DoxyCodeLine{00005 \textcolor{preprocessor}{\#include <iostream>}}
+\DoxyCodeLine{00006 \textcolor{preprocessor}{\#include <stdio.h>}}
+\DoxyCodeLine{00007 \textcolor{preprocessor}{\#include <cmath>}}
+\DoxyCodeLine{00008 \textcolor{comment}{//\#include <math.h>}}
+\DoxyCodeLine{00009 \textcolor{preprocessor}{\#include <string>}}
+\DoxyCodeLine{00010 \textcolor{preprocessor}{\#include <fstream>}}
+\DoxyCodeLine{00011 \textcolor{preprocessor}{\#include <valarray>}}
+\DoxyCodeLine{00012 \textcolor{preprocessor}{\#include <CCfits/CCfits>}}
+\DoxyCodeLine{00013 \textcolor{preprocessor}{\#include <vector>}}
+\DoxyCodeLine{00014 }
+\DoxyCodeLine{00015 }
+\DoxyCodeLine{00016 \textcolor{comment}{// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs}}
+\DoxyCodeLine{00017 }
+\DoxyCodeLine{00021 }
+\DoxyCodeLine{00022 }
+\DoxyCodeLine{\Hypertarget{parameters_8hpp_source_l00023}\mbox{\hyperlink{classparameters}{00023}} \textcolor{keyword}{class }\mbox{\hyperlink{classparameters}{parameters}}}
+\DoxyCodeLine{00024 \{}
+\DoxyCodeLine{00025     \textcolor{keyword}{public}:}
+\DoxyCodeLine{00026 }
+\DoxyCodeLine{00027     \mbox{\hyperlink{classparameters}{parameters}}();}
+\DoxyCodeLine{00028     \mbox{\hyperlink{classparameters}{parameters}}(std::string str);}
+\DoxyCodeLine{00029     \textcolor{keywordtype}{void} write\_in\_binary();}
+\DoxyCodeLine{00030 }
+\DoxyCodeLine{00031     std::vector<std::vector<double>> kernel;}
+\DoxyCodeLine{00032     std::vector<int> dim\_data; \textcolor{comment}{//inutile : file.dim\_data}}
+\DoxyCodeLine{00033     \textcolor{keywordtype}{int} dim\_x;}
+\DoxyCodeLine{00034     \textcolor{keywordtype}{int} dim\_y;}
+\DoxyCodeLine{00035     \textcolor{keywordtype}{int} dim\_v;}
+\DoxyCodeLine{00036 }
+\DoxyCodeLine{00037     \textcolor{keywordtype}{int} n\_gauss\_add; \textcolor{comment}{//EN DISCUTER AVEC ANTOINE}}
+\DoxyCodeLine{00038     }
+\DoxyCodeLine{00039 }
+\DoxyCodeLine{00040 \textcolor{comment}{//  parameters}}
+\DoxyCodeLine{00041     std::string filename\_dat;}
+\DoxyCodeLine{00042     std::string filename\_fits;}
+\DoxyCodeLine{00043     std::string file\_type\_dat\_check;}
+\DoxyCodeLine{00044     std::string file\_type\_fits\_check;}
+\DoxyCodeLine{00045     \textcolor{keywordtype}{int} slice\_index\_min;}
+\DoxyCodeLine{00046     \textcolor{keywordtype}{int} slice\_index\_max;}
+\DoxyCodeLine{00047     \textcolor{keywordtype}{bool} file\_type\_dat;}
+\DoxyCodeLine{00048     \textcolor{keywordtype}{bool} file\_type\_fits;}
+\DoxyCodeLine{00049     std::string fileout;}
+\DoxyCodeLine{00050     std::string filename\_noise;}
+\DoxyCodeLine{00051     \textcolor{keywordtype}{int} n\_gauss;}
+\DoxyCodeLine{00052     \textcolor{keywordtype}{double} lambda\_amp;}
+\DoxyCodeLine{00053     \textcolor{keywordtype}{double} lambda\_mu;}
+\DoxyCodeLine{00054     \textcolor{keywordtype}{double} lambda\_sig;}
+\DoxyCodeLine{00055     \textcolor{keywordtype}{double} lambda\_var\_amp;}
+\DoxyCodeLine{00056     \textcolor{keywordtype}{double} lambda\_var\_mu;}
+\DoxyCodeLine{00057     \textcolor{keywordtype}{double} lambda\_var\_sig;}
+\DoxyCodeLine{00058     \textcolor{keywordtype}{double} amp\_fact\_init;}
+\DoxyCodeLine{00059     \textcolor{keywordtype}{double} sig\_init;}
+\DoxyCodeLine{00060     std::string init\_option;    }
+\DoxyCodeLine{00061     \textcolor{keywordtype}{int} maxiter\_init;}
+\DoxyCodeLine{00062     \textcolor{keywordtype}{int} maxiter;}
+\DoxyCodeLine{00063     \textcolor{keywordtype}{int} m;}
+\DoxyCodeLine{00064     std::string check\_noise;}
+\DoxyCodeLine{00065     std::string check\_regul;}
+\DoxyCodeLine{00066     std::string check\_descent;}
+\DoxyCodeLine{00067     \textcolor{keywordtype}{bool} noise;}
+\DoxyCodeLine{00068     \textcolor{keywordtype}{bool} regul;}
+\DoxyCodeLine{00069     \textcolor{keywordtype}{bool} descent;}
+\DoxyCodeLine{00070     \textcolor{keywordtype}{int} lstd;}
+\DoxyCodeLine{00071     \textcolor{keywordtype}{int} ustd;}
+\DoxyCodeLine{00072     \textcolor{keywordtype}{long} iprint;}
+\DoxyCodeLine{00073     \textcolor{keywordtype}{int} iprint\_init;}
+\DoxyCodeLine{00074     std::string check\_save\_grid;}
+\DoxyCodeLine{00075     \textcolor{keywordtype}{bool} save\_grid;}
+\DoxyCodeLine{00076     \textcolor{keywordtype}{double} ub\_sig;}
+\DoxyCodeLine{00077     \textcolor{keywordtype}{double} lb\_sig;}
+\DoxyCodeLine{00078     \textcolor{keywordtype}{double} ub\_sig\_init;}
+\DoxyCodeLine{00079     \textcolor{keywordtype}{double} lb\_sig\_init;}
+\DoxyCodeLine{00080 }
+\DoxyCodeLine{00081     std::vector<double> std\_spect, mean\_spect, max\_spect, max\_spect\_norm;}
+\DoxyCodeLine{00082 }
+\DoxyCodeLine{00083 \textcolor{comment}{/*}}
+\DoxyCodeLine{00084 \textcolor{comment}{    int n\_gauss\_add;}}
+\DoxyCodeLine{00085 \textcolor{comment}{    int nside;}}
+\DoxyCodeLine{00086 \textcolor{comment}{    int n;}}
+\DoxyCodeLine{00087 \textcolor{comment}{    int power;}}
+\DoxyCodeLine{00088 \textcolor{comment}{    double ub\_sig\_init;}}
+\DoxyCodeLine{00089 \textcolor{comment}{    double ub\_sig;}}
+\DoxyCodeLine{00090 \textcolor{comment}{}}
+\DoxyCodeLine{00091 \textcolor{comment}{    std::vector<int> dim\_data;}}
+\DoxyCodeLine{00092 \textcolor{comment}{    std::vector<int> dim\_cube; }}
+\DoxyCodeLine{00093 \textcolor{comment}{}}
+\DoxyCodeLine{00094 \textcolor{comment}{*/}}
+\DoxyCodeLine{00095 \};}
+\DoxyCodeLine{00096 }
+\DoxyCodeLine{00097 \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,28 @@
+This folder contains contributions that may be useful to users of this library, but have a too specialized audience to become part of the main tree.
+
+In particular, things in here will have a higher rate of bit-\/rot, since contributors are not required to and may be unable to check whether their changes break any of them.\hypertarget{md_matplotlib-cpp_contrib__r_e_a_d_m_e_autotoc_md5}{}\doxysection{Windows support}\label{md_matplotlib-cpp_contrib__r_e_a_d_m_e_autotoc_md5}
+Tested on the following environment
+\begin{DoxyItemize}
+\item Windows 10 -\/ 64bit
+\item Anaconda 4.\+3 (64 bit)
+\item Python 3.\+6.\+0
+\item C\+Make 3.\+9.\+4
+\item Visual Studio 2017, 2015, 2013
+\end{DoxyItemize}\hypertarget{md_matplotlib-cpp_contrib__r_e_a_d_m_e_autotoc_md6}{}\doxysubsection{Configuring and Building Samples}\label{md_matplotlib-cpp_contrib__r_e_a_d_m_e_autotoc_md6}
+
+\begin{DoxyEnumerate}
+\item Edit Win\+Build.\+cmd for your environment(Line\+:5-\/7) if N\+OT D\+E\+F\+I\+N\+ED M\+S\+V\+C\+\_\+\+V\+E\+R\+S\+I\+ON set M\+S\+V\+C\+\_\+\+V\+E\+R\+S\+I\+ON=\mbox{[}Your Visual Studio Version(12, 14, 15)\mbox{]} if N\+OT D\+E\+F\+I\+N\+ED C\+M\+A\+K\+E\+\_\+\+C\+O\+N\+F\+IG set C\+M\+A\+K\+E\+\_\+\+C\+O\+N\+F\+IG=Release if N\+OT D\+E\+F\+I\+N\+ED P\+Y\+T\+H\+O\+N\+H\+O\+ME set P\+Y\+T\+H\+O\+N\+H\+O\+ME=\mbox{[}Your Python Path\mbox{]}
+\item Run Win\+Build.\+cmd to build 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{> cd contrib}
+\DoxyCodeLine{> WinBuild.cmd}
+\end{DoxyCode}
+
+\end{DoxyEnumerate}
+
+The {\ttfamily Win\+Build.\+cmd} will set up temporal E\+NV variables and build binaries in (matplotlib root)/examples with the Release configuration.
+
+
+\begin{DoxyEnumerate}
+\item Find exe files in examples/build/\+Release Note\+: platforms folder is necessary to make qt works. 
+\end{DoxyEnumerate}

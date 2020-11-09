@@ -1,0 +1,17 @@
+<map id="algo_rohsa::descente" name="algo_rohsa::descente">
+<area shape="rect" id="node1" title="Each iteration into the main loop corresponds to a resolution. At each iteration, we compute a piecew..." alt="" coords="5,157,165,184"/>
+<area shape="rect" id="node2" href="$classalgo__rohsa.html#a90188b650c902d26adc5848297c8b49d" title="Projects the solution to the next resolution level." alt="" coords="234,5,413,32"/>
+<area shape="rect" id="node3" href="$classalgo__rohsa.html#a7282e04c8e3d994baba96f5943b059d7" title="Initializes spectrum (called during first iteration)" alt="" coords="228,157,419,184"/>
+<area shape="rect" id="node10" href="$classalgo__rohsa.html#a96ebaacc6a117030dc722dbd2b1d71ae" title="Computes a piecewise spatially averaged array for multiresolution." alt="" coords="234,208,413,235"/>
+<area shape="rect" id="node11" href="$classalgo__rohsa.html#addcb263b7fddcb618d9690d0762899ae" title="This routine prints the mean value of each of the &#160;gaussian parameters." alt="" coords="213,259,433,285"/>
+<area shape="rect" id="node12" href="$classalgo__rohsa.html#a9507123ce878c11016b924c08c57dad5" title="Computes the standard deviation map for every spatial position." alt="" coords="235,309,412,336"/>
+<area shape="rect" id="node13" href="$classalgo__rohsa.html#aef915659d10fb3ebbde1e7462000c9b0" title="We prepare the boundary conditions and we call the routine that will make the model fit the data." alt="" coords="250,56,397,83"/>
+<area shape="rect" id="node15" href="$classalgo__rohsa.html#aeb400769e028b3b1cb9795fd67a76b73" title="Prepares boundary conditions and calls the minimize function. This function is used for the 1D case o..." alt="" coords="246,107,401,133"/>
+<area shape="rect" id="node4" href="$classalgo__rohsa.html#ad73e186a5be67a64052790e3de34adba" title="Sets boundary conditions for spectrum." alt="" coords="493,81,669,108"/>
+<area shape="rect" id="node5" href="$classalgo__rohsa.html#aea9da2931b907b1410dd5a36975d9991" title="Solves the optimization problem during the first iteration, it calls the L&#45;BFGS&#45;B black box." alt="" coords="481,132,680,159"/>
+<area shape="rect" id="node8" href="$classalgo__rohsa.html#aac9e812e31df7d2692ceb8f0792de2a5" title="returns exp(&#45;(x&#45;m)^2/(2*s^2))" alt="" coords="964,157,1167,184"/>
+<area shape="rect" id="node9" href="$classalgo__rohsa.html#ab9d25fe0cc707a7765c9d219d3637a9f" title="argmin function for a std::vector type array" alt="" coords="508,233,653,260"/>
+<area shape="rect" id="node6" href="$classalgo__rohsa.html#af7fdd8a706306dac03acd3993ff8f231" title="Gradient for first iteration (called in minimize_spec)" alt="" coords="728,81,916,108"/>
+<area shape="rect" id="node7" href="$classalgo__rohsa.html#a6fa1ef17f061c77fcf132c10183a3fb6" title="Computes the residual along a spatial position (for a double array)" alt="" coords="735,132,909,159"/>
+<area shape="rect" id="node14" href="$classalgo__rohsa.html#ac38d6954e64c3b309e03390aa4d9d554" title="Routine solving the optimization problem." alt="" coords="499,31,662,57"/>
+</map>

@@ -1,0 +1,41 @@
+\hypertarget{gradient_8hpp_source}{}\doxysection{gradient.\+hpp}
+\label{gradient_8hpp_source}\index{inc/gradient.hpp@{inc/gradient.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_X 32}}
+\DoxyCodeLine{00002 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Y 32}}
+\DoxyCodeLine{00003 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Z 1}}
+\DoxyCodeLine{00004 }
+\DoxyCodeLine{00005 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_X\_BIS 8}}
+\DoxyCodeLine{00006 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Y\_BIS 8}}
+\DoxyCodeLine{00007 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Z\_BIS 16}}
+\DoxyCodeLine{00008 }
+\DoxyCodeLine{00009 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_L2\_X 8}}
+\DoxyCodeLine{00010 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_L2\_Y 8}}
+\DoxyCodeLine{00011 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_L2\_Z 8}}
+\DoxyCodeLine{00012 }
+\DoxyCodeLine{00013 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_REDUCTION 256}}
+\DoxyCodeLine{00014 }
+\DoxyCodeLine{00015 \textcolor{comment}{//\#define N 256}}
+\DoxyCodeLine{00016 \textcolor{preprocessor}{\#include "parameters.hpp"}}
+\DoxyCodeLine{00017 \textcolor{comment}{//\#include "algo\_rohsa.hpp"}}
+\DoxyCodeLine{00018 \textcolor{preprocessor}{\#include <iostream>} }
+\DoxyCodeLine{00019 \textcolor{preprocessor}{\#include <stdio.h>}}
+\DoxyCodeLine{00020 \textcolor{preprocessor}{\#include <stdlib.h>}}
+\DoxyCodeLine{00021 \textcolor{comment}{//\#include <cuda\_runtime\_api.h>}}
+\DoxyCodeLine{00022 \textcolor{preprocessor}{\#include <math.h>}}
+\DoxyCodeLine{00023 \textcolor{preprocessor}{\#include <cmath>}}
+\DoxyCodeLine{00024 }
+\DoxyCodeLine{00025 \textcolor{preprocessor}{\#define INDEXING\_2D(t,x,y) t[y+(t\#\#\_SHAPE1)*x]}}
+\DoxyCodeLine{00026 \textcolor{preprocessor}{\#define INDEXING\_3D(t,x,y,z) t[(t\#\#\_SHAPE2)*(t\#\#\_SHAPE1)*x+(t\#\#\_SHAPE2)*y+z]}}
+\DoxyCodeLine{00027 }
+\DoxyCodeLine{00028 \textcolor{comment}{//\#include "gradient.cu"}}
+\DoxyCodeLine{00029 \textcolor{keywordtype}{void} gradient\_L(\textcolor{keywordtype}{double}* dF\_over\_dB, \textcolor{keywordtype}{int}* taille\_dF\_over\_dB, \textcolor{keywordtype}{int} product\_taille\_dF\_over\_dB, \textcolor{keywordtype}{double}* params, \textcolor{keywordtype}{int}* taille\_params, \textcolor{keywordtype}{int} product\_taille\_params, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00030 \textcolor{keywordtype}{void} gradient\_L\_2(\textcolor{keywordtype}{double}* deriv, \textcolor{keywordtype}{int}* taille\_deriv, \textcolor{keywordtype}{int} product\_taille\_deriv, \textcolor{keywordtype}{double}* params, \textcolor{keywordtype}{int}* taille\_params, \textcolor{keywordtype}{int} product\_taille\_params, \textcolor{keywordtype}{double}* residual, \textcolor{keywordtype}{int}* taille\_residual, \textcolor{keywordtype}{int} product\_residual, \textcolor{keywordtype}{double}* std\_map, \textcolor{keywordtype}{int}* taille\_std\_map, \textcolor{keywordtype}{int} product\_std\_map, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00031 \textcolor{keywordtype}{void} gradient\_L\_2\_beta(\textcolor{keywordtype}{double}* deriv, \textcolor{keywordtype}{int}* taille\_deriv, \textcolor{keywordtype}{int} product\_taille\_deriv, \textcolor{keywordtype}{double}* params, \textcolor{keywordtype}{int}* taille\_params, \textcolor{keywordtype}{int} product\_taille\_params, \textcolor{keywordtype}{double}* residual, \textcolor{keywordtype}{int}* taille\_residual, \textcolor{keywordtype}{int} product\_residual, \textcolor{keywordtype}{double}* std\_map, \textcolor{keywordtype}{int}* taille\_std\_map, \textcolor{keywordtype}{int} product\_std\_map, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00032 \textcolor{keywordtype}{void} gradient\_L\_3(\textcolor{keywordtype}{double}* deriv, \textcolor{keywordtype}{int}* taille\_deriv, \textcolor{keywordtype}{int} product\_taille\_deriv, \textcolor{keywordtype}{double}* params, \textcolor{keywordtype}{int}* taille\_params, \textcolor{keywordtype}{int} product\_taille\_params, \textcolor{keywordtype}{double}* residual, \textcolor{keywordtype}{int}* taille\_residual, \textcolor{keywordtype}{int} product\_residual, \textcolor{keywordtype}{double}* std\_map, \textcolor{keywordtype}{int}* taille\_std\_map, \textcolor{keywordtype}{int} product\_std\_map, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00033 \textcolor{comment}{//extern void gradient(double* dF\_over\_dB, int* taille\_dF\_over\_dB, int product\_taille\_dF\_over\_dB, double* params, int* taille\_params, int product\_taille\_params, model \&M);}}
+\DoxyCodeLine{00034 \textcolor{keywordtype}{double} compute\_residual\_and\_f(\textcolor{keywordtype}{double}* beta, \textcolor{keywordtype}{int}* taille\_beta, \textcolor{keywordtype}{int} product\_taille\_beta, \textcolor{keywordtype}{double}* cube, \textcolor{keywordtype}{int}* taille\_cube, \textcolor{keywordtype}{int} product\_taille\_cube, \textcolor{keywordtype}{double}* residual, \textcolor{keywordtype}{int}* taille\_residual, \textcolor{keywordtype}{int} product\_taille\_residual, \textcolor{keywordtype}{double}* std\_map, \textcolor{keywordtype}{int}* taille\_std\_map, \textcolor{keywordtype}{int} product\_taille\_std\_map, \textcolor{keywordtype}{int} indice\_x, \textcolor{keywordtype}{int} indice\_y, \textcolor{keywordtype}{int} indice\_v, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00035 \textcolor{keywordtype}{void} reduction\_loop(\textcolor{keywordtype}{double}* array\_in, \textcolor{keywordtype}{double}* array\_f, \textcolor{keywordtype}{int} size\_array);}
+
+\end{DoxyCode}

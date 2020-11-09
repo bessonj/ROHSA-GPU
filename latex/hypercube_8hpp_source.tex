@@ -1,0 +1,83 @@
+\hypertarget{hypercube_8hpp_source}{}\doxysection{hypercube.\+hpp}
+\label{hypercube_8hpp_source}\index{inc/hypercube.hpp@{inc/hypercube.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001 \textcolor{preprocessor}{\#ifndef DEF\_HYPERCUBE}}
+\DoxyCodeLine{00002 \textcolor{preprocessor}{\#define DEF\_HYPERCUBE}}
+\DoxyCodeLine{00003 }
+\DoxyCodeLine{00004 \textcolor{preprocessor}{\#include "parameters.hpp"}}
+\DoxyCodeLine{00005 \textcolor{preprocessor}{\#include <iostream>}}
+\DoxyCodeLine{00006 \textcolor{preprocessor}{\#include <stdio.h>}}
+\DoxyCodeLine{00007 \textcolor{preprocessor}{\#include <cmath>}}
+\DoxyCodeLine{00008 \textcolor{comment}{//\#include <math.h>}}
+\DoxyCodeLine{00009 \textcolor{preprocessor}{\#include <string>}}
+\DoxyCodeLine{00010 \textcolor{preprocessor}{\#include <fstream>}}
+\DoxyCodeLine{00011 \textcolor{preprocessor}{\#include <valarray>}}
+\DoxyCodeLine{00012 \textcolor{preprocessor}{\#include <CCfits/CCfits>}}
+\DoxyCodeLine{00013 \textcolor{preprocessor}{\#include <vector>}}
+\DoxyCodeLine{00014 }
+\DoxyCodeLine{00018 }
+\DoxyCodeLine{\Hypertarget{hypercube_8hpp_source_l00019}\mbox{\hyperlink{classhypercube}{00019}} \textcolor{keyword}{class }\mbox{\hyperlink{classhypercube}{hypercube}}}
+\DoxyCodeLine{00020 \{}
+\DoxyCodeLine{00021     \textcolor{keyword}{public}:}
+\DoxyCodeLine{00022 }
+\DoxyCodeLine{00023     \mbox{\hyperlink{classhypercube}{hypercube}}();}
+\DoxyCodeLine{00024     \mbox{\hyperlink{classhypercube}{hypercube}}(\mbox{\hyperlink{classparameters}{parameters}} \&M);}
+\DoxyCodeLine{00025     \mbox{\hyperlink{classhypercube}{hypercube}}(\mbox{\hyperlink{classparameters}{parameters}} \&M,\textcolor{keywordtype}{int} indice\_debut, \textcolor{keywordtype}{int} indice\_fin); \textcolor{comment}{// assuming whole\_data\_in\_cube = false (faster and better provided the dimensions are close)}}
+\DoxyCodeLine{00026     \mbox{\hyperlink{classhypercube}{hypercube}}(\mbox{\hyperlink{classparameters}{parameters}} \&M,\textcolor{keywordtype}{int} indice\_debut, \textcolor{keywordtype}{int} indice\_fin, \textcolor{keywordtype}{bool} whole\_data\_in\_cube);}
+\DoxyCodeLine{00027 }
+\DoxyCodeLine{00028     \textcolor{keywordtype}{void} display\_cube(\textcolor{keywordtype}{int} rang);}
+\DoxyCodeLine{00029     \textcolor{keywordtype}{void} display\_data(\textcolor{keywordtype}{int} rang);}
+\DoxyCodeLine{00030     \textcolor{keywordtype}{void} display(std::vector<std::vector<std::vector<double>>> \&tab, \textcolor{keywordtype}{int} rang);}
+\DoxyCodeLine{00031     \textcolor{keywordtype}{void} plot\_line(std::vector<std::vector<std::vector<double>>> \&params, \textcolor{keywordtype}{int} ind\_x, \textcolor{keywordtype}{int} ind\_y, \textcolor{keywordtype}{int} n\_gauss\_i);}
+\DoxyCodeLine{00032     \textcolor{keywordtype}{void} display\_result\_and\_data(std::vector<std::vector<std::vector<double>>> \&params,\textcolor{keywordtype}{int} rang, \textcolor{keywordtype}{int} n\_gauss\_i, \textcolor{keywordtype}{bool} dat\_or\_not);}
+\DoxyCodeLine{00033     \textcolor{keywordtype}{void} display\_avec\_et\_sans\_regu(std::vector<std::vector<std::vector<double>>> \&params, \textcolor{keywordtype}{int} num\_gauss, \textcolor{keywordtype}{int} num\_par, \textcolor{keywordtype}{int} plot\_numero);}
+\DoxyCodeLine{00034     \textcolor{keywordtype}{void} display\_2\_gaussiennes(std::vector<std::vector<std::vector<double>>> \&params,\textcolor{keywordtype}{int} rang, \textcolor{keywordtype}{int} n\_gauss\_i, \textcolor{keywordtype}{int} n1, \textcolor{keywordtype}{int} n2);}
+\DoxyCodeLine{00035     \textcolor{keywordtype}{void} display\_2\_gaussiennes\_par\_par\_par(std::vector<std::vector<std::vector<double>>> \&params,\textcolor{keywordtype}{int} rang, \textcolor{keywordtype}{int} n\_gauss\_i, \textcolor{keywordtype}{int} n1, \textcolor{keywordtype}{int} n2);}
+\DoxyCodeLine{00036     \textcolor{keywordtype}{void} mean\_parameters(std::vector<std::vector<std::vector<double>>> \&params, \textcolor{keywordtype}{int} num\_gauss);}
+\DoxyCodeLine{00037 }
+\DoxyCodeLine{00038 }
+\DoxyCodeLine{00039 }
+\DoxyCodeLine{00040 }
+\DoxyCodeLine{00041     \textcolor{keywordtype}{double} model\_function(\textcolor{keywordtype}{int} x, \textcolor{keywordtype}{double} a, \textcolor{keywordtype}{double} m, \textcolor{keywordtype}{double} s);}
+\DoxyCodeLine{00042     \textcolor{keywordtype}{void} display\_result(std::vector<std::vector<std::vector<double>>> \&params, \textcolor{keywordtype}{int} rang, \textcolor{keywordtype}{int} n\_gauss\_i);}
+\DoxyCodeLine{00043 }
+\DoxyCodeLine{00044     \textcolor{keywordtype}{int} dim2nside(); \textcolor{comment}{//obtenir les dimensions 2\string^n}}
+\DoxyCodeLine{00045     \textcolor{keywordtype}{void} brute\_show(\textcolor{keyword}{const} std::vector<std::vector<std::vector<double>>> \&z, \textcolor{keywordtype}{int} depth, \textcolor{keywordtype}{int} length1, \textcolor{keywordtype}{int} length2);}
+\DoxyCodeLine{00046     \textcolor{keywordtype}{void} multiresolution(\textcolor{keywordtype}{int} nside); }
+\DoxyCodeLine{00047     \textcolor{keywordtype}{int} get\_binary\_from\_fits();}
+\DoxyCodeLine{00048     \textcolor{keywordtype}{void} get\_array\_from\_fits(\mbox{\hyperlink{classparameters}{parameters}} \&M);}
+\DoxyCodeLine{00049     \textcolor{keywordtype}{void} get\_vector\_from\_binary(std::vector<std::vector<std::vector<double>>> \&z);}
+\DoxyCodeLine{00050     \textcolor{keywordtype}{void} show\_data(); }
+\DoxyCodeLine{00051     std::vector<int> get\_dim\_data();}
+\DoxyCodeLine{00052     std::vector<int> get\_dim\_cube();}
+\DoxyCodeLine{00053     \textcolor{keywordtype}{int} get\_nside() \textcolor{keyword}{const};}
+\DoxyCodeLine{00054     std::vector<std::vector<std::vector<double>>> use\_dat\_file(\mbox{\hyperlink{classparameters}{parameters}} \&M);}
+\DoxyCodeLine{00055     std::vector<std::vector<std::vector<double>>> reshape\_up();}
+\DoxyCodeLine{00056     std::vector<std::vector<std::vector<double>>> reshape\_up(\textcolor{keywordtype}{int} borne\_inf, \textcolor{keywordtype}{int} borne\_sup);}
+\DoxyCodeLine{00057 }
+\DoxyCodeLine{00058     \textcolor{keywordtype}{void} write\_into\_binary(\mbox{\hyperlink{classparameters}{parameters}} \&M, std::vector<std::vector<std::vector<double>>> \&grid\_params);}
+\DoxyCodeLine{00059 }
+\DoxyCodeLine{00060 }
+\DoxyCodeLine{00061     \textcolor{keywordtype}{int} indice\_debut, indice\_fin;}
+\DoxyCodeLine{00062     std::vector<std::vector<std::vector<double>>> cube; \textcolor{comment}{//data format 2\string^n and width given by user (parameters.txt)}}
+\DoxyCodeLine{00063 \textcolor{comment}{//  std::vector<std::vector<std::vector<double>>> data\_not\_reshaped; //data without width given by user (parameters.txt) might blow up memory}}
+\DoxyCodeLine{00064     std::vector<std::vector<std::vector<double>>> data; \textcolor{comment}{//data with width given by user (parameters.txt)}}
+\DoxyCodeLine{00065 }
+\DoxyCodeLine{00066     \textcolor{keywordtype}{int} dim\_data[3];}
+\DoxyCodeLine{00067     \textcolor{keywordtype}{int} dim\_cube[3];}
+\DoxyCodeLine{00068     std::vector<int> dim\_data\_v;}
+\DoxyCodeLine{00069     std::vector<int> dim\_cube\_v;}
+\DoxyCodeLine{00070     \textcolor{keywordtype}{int} nside;}
+\DoxyCodeLine{00071 }
+\DoxyCodeLine{00072     std::string filename; }
+\DoxyCodeLine{00073 \};}
+\DoxyCodeLine{00074 }
+\DoxyCodeLine{00075 }
+\DoxyCodeLine{00076 }
+\DoxyCodeLine{00077 }
+\DoxyCodeLine{00078 }
+\DoxyCodeLine{00079 }
+\DoxyCodeLine{00080 \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

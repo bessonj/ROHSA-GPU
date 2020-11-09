@@ -1,0 +1,72 @@
+\hypertarget{f__g__cube__gpu_8hpp_source}{}\doxysection{f\+\_\+g\+\_\+cube\+\_\+gpu.\+hpp}
+\label{f__g__cube__gpu_8hpp_source}\index{inc/f\_g\_cube\_gpu.hpp@{inc/f\_g\_cube\_gpu.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001 \textcolor{comment}{//PART 1/2}}
+\DoxyCodeLine{00002 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_X\_GRAD1 16}}
+\DoxyCodeLine{00003 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Y\_GRAD1 16}}
+\DoxyCodeLine{00004 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Z\_GRAD1 4}}
+\DoxyCodeLine{00005 }
+\DoxyCodeLine{00006 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_X\_SORT 8}}
+\DoxyCodeLine{00007 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Y\_SORT 8}}
+\DoxyCodeLine{00008 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Z\_SORT 16}}
+\DoxyCodeLine{00009 }
+\DoxyCodeLine{00010 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_X\_2D\_SORT 32}}
+\DoxyCodeLine{00011 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Y\_2D\_SORT 32}}
+\DoxyCodeLine{00012 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_Z\_2D\_SORT 1}}
+\DoxyCodeLine{00013 }
+\DoxyCodeLine{00014 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_L2\_X 8}}
+\DoxyCodeLine{00015 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_L2\_Y 8}}
+\DoxyCodeLine{00016 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_L2\_Z 8}}
+\DoxyCodeLine{00017 }
+\DoxyCodeLine{00018 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_REDUCTION 256}}
+\DoxyCodeLine{00019 }
+\DoxyCodeLine{00020 \textcolor{comment}{//PART 2/2}}
+\DoxyCodeLine{00021 \textcolor{keyword}{const} \textcolor{keywordtype}{int} BLOCK\_SIZE\_S     = 16 ;}
+\DoxyCodeLine{00022 \textcolor{comment}{//POUR LA VERSION SEPARABLE AVEC MEMOIRE SHARED}}
+\DoxyCodeLine{00023 \textcolor{preprocessor}{\#define NUMBER\_COMPUTED\_BLOCK 8}}
+\DoxyCodeLine{00024 \textcolor{preprocessor}{\#define NUMBER\_EDGE\_HALO\_BLOCK 1}}
+\DoxyCodeLine{00025 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_ROW\_X 4}}
+\DoxyCodeLine{00026 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_ROW\_Y 16}}
+\DoxyCodeLine{00027 }
+\DoxyCodeLine{00028 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_COL\_X 8}}
+\DoxyCodeLine{00029 \textcolor{preprocessor}{\#define BLOCK\_SIZE\_COL\_Y 16}}
+\DoxyCodeLine{00030 }
+\DoxyCodeLine{00031 \textcolor{comment}{//\#define N 256}}
+\DoxyCodeLine{00032 \textcolor{preprocessor}{\#include "parameters.hpp"}}
+\DoxyCodeLine{00033 \textcolor{comment}{//\#include "algo\_rohsa.hpp"}}
+\DoxyCodeLine{00034 \textcolor{preprocessor}{\#include <iostream>} }
+\DoxyCodeLine{00035 \textcolor{preprocessor}{\#include <stdio.h>}}
+\DoxyCodeLine{00036 \textcolor{preprocessor}{\#include <stdlib.h>}}
+\DoxyCodeLine{00037 \textcolor{comment}{//\#include <cuda\_runtime\_api.h>}}
+\DoxyCodeLine{00038 \textcolor{preprocessor}{\#include <math.h>}}
+\DoxyCodeLine{00039 \textcolor{preprocessor}{\#include <cmath>}}
+\DoxyCodeLine{00040 }
+\DoxyCodeLine{00041 \textcolor{preprocessor}{\#include <cuda\_runtime.h>}}
+\DoxyCodeLine{00042 \textcolor{preprocessor}{\#include <helper\_cuda.h>}}
+\DoxyCodeLine{00043 \textcolor{preprocessor}{\#include <helper\_functions.h>}}
+\DoxyCodeLine{00044 }
+\DoxyCodeLine{00045 \textcolor{preprocessor}{\#include <stdlib.h>}}
+\DoxyCodeLine{00046 \textcolor{preprocessor}{\#include <stdio.h>}}
+\DoxyCodeLine{00047 \textcolor{preprocessor}{\#include <string.h>}}
+\DoxyCodeLine{00048 \textcolor{preprocessor}{\#include <stdio.h>}      \textcolor{comment}{/* printf */}}
+\DoxyCodeLine{00049 \textcolor{preprocessor}{\#include <math.h>}       \textcolor{comment}{/* ceil */}}
+\DoxyCodeLine{00050 \textcolor{preprocessor}{\#include <omp.h>}}
+\DoxyCodeLine{00051 }
+\DoxyCodeLine{00052 \textcolor{preprocessor}{\#define INDEXING\_2D(t,x,y) t[y+(t\#\#\_SHAPE1)*x]}}
+\DoxyCodeLine{00053 \textcolor{preprocessor}{\#define INDEXING\_3D(t,x,y,z) t[(t\#\#\_SHAPE2)*(t\#\#\_SHAPE1)*x+(t\#\#\_SHAPE2)*y+z]}}
+\DoxyCodeLine{00054 }
+\DoxyCodeLine{00055 \textcolor{keywordtype}{void} gradient\_L\_2\_beta\_parallel(\textcolor{keywordtype}{double}* deriv\_dev, \textcolor{keywordtype}{int}* taille\_deriv, \textcolor{keywordtype}{int}* taille\_deriv\_dev, \textcolor{keywordtype}{double}* beta\_modif\_dev, \textcolor{keywordtype}{int}* taille\_beta\_modif\_dev, \textcolor{keywordtype}{double}* residual\_dev, \textcolor{keywordtype}{int}* taille\_residual\_dev, \textcolor{keywordtype}{double}* std\_map\_dev, \textcolor{keywordtype}{int}* taille\_std\_map\_dev, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00056 \textcolor{keywordtype}{void} gradient\_L\_3\_parallel(\textcolor{keywordtype}{double}* deriv, \textcolor{keywordtype}{int}* taille\_deriv, \textcolor{keywordtype}{int} product\_taille\_deriv, \textcolor{keywordtype}{double}* params, \textcolor{keywordtype}{int}* taille\_params, \textcolor{keywordtype}{int} product\_taille\_params, \textcolor{keywordtype}{double}* residual, \textcolor{keywordtype}{int}* taille\_residual, \textcolor{keywordtype}{int} product\_residual, \textcolor{keywordtype}{double}* std\_map, \textcolor{keywordtype}{int}* taille\_std\_map, \textcolor{keywordtype}{int} product\_std\_map, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00057 \textcolor{keywordtype}{void} compute\_residual\_and\_f\_parallel(\textcolor{keywordtype}{double}* array\_f\_dev, \textcolor{keywordtype}{double}* beta\_dev, \textcolor{keywordtype}{double}* cube\_dev, \textcolor{keywordtype}{double}* residual\_dev, \textcolor{keywordtype}{double}* std\_map\_dev, \textcolor{keywordtype}{int} indice\_x, \textcolor{keywordtype}{int} indice\_y, \textcolor{keywordtype}{int} indice\_v, \textcolor{keywordtype}{int} n\_gauss);}
+\DoxyCodeLine{00058 \textcolor{keywordtype}{void} reduction\_loop\_parallel(\textcolor{keywordtype}{double}* array\_in, \textcolor{keywordtype}{double}* d\_array\_f, \textcolor{keywordtype}{int} size\_array);}
+\DoxyCodeLine{00059 \textcolor{keywordtype}{void} f\_g\_cube\_parallel(\mbox{\hyperlink{classparameters}{parameters}} \&M, \textcolor{keywordtype}{double} \&f, \textcolor{keywordtype}{double}* g, \textcolor{keywordtype}{int} n, std::vector<std::vector<std::vector<double>>> \&cube, \textcolor{keywordtype}{double} beta[], \textcolor{keywordtype}{int} indice\_v, \textcolor{keywordtype}{int} indice\_y, \textcolor{keywordtype}{int} indice\_x, std::vector<std::vector<double>> \&std\_map, std::vector<double> \&mean\_amp, std::vector<double> \&mean\_mu, std::vector<double> \&mean\_sig, \textcolor{keywordtype}{double}* cube\_flattened, \textcolor{keywordtype}{double} temp\_conv, \textcolor{keywordtype}{double} temps\_deriv, \textcolor{keywordtype}{double} temps\_tableaux, \textcolor{keywordtype}{double} temps\_res\_f);}
+\DoxyCodeLine{00060 }
+\DoxyCodeLine{00061 \textcolor{keywordtype}{void} conv2D\_GPU\_sort(\textcolor{keywordtype}{double}* h\_IMAGE, \textcolor{keywordtype}{double}* h\_KERNEL, \textcolor{keywordtype}{double}* h\_RESULTAT\_GPU, \textcolor{keywordtype}{long} \textcolor{keywordtype}{int} image\_x, \textcolor{keywordtype}{long} \textcolor{keywordtype}{int} image\_y);}
+\DoxyCodeLine{00062 \textcolor{keywordtype}{void} dummyInstantiator\_sort();}
+\DoxyCodeLine{00063 \textcolor{keywordtype}{void} prepare\_for\_convolution\_sort(\textcolor{keywordtype}{double}* IMAGE, \textcolor{keywordtype}{double}* IMAGE\_ext, \textcolor{keywordtype}{int} image\_x, \textcolor{keywordtype}{int} image\_y, dim3 BlocksParGrille\_init, dim3 ThreadsParBlock\_init, dim3 BlocksParGrille, dim3 ThreadsParBlock);}
+\DoxyCodeLine{00064 \textcolor{keywordtype}{void} conv2D\_GPU\_all\_sort(\mbox{\hyperlink{classparameters}{parameters}}\& M, \textcolor{keywordtype}{double}* d\_g, \textcolor{keywordtype}{int} n\_beta, \textcolor{keywordtype}{double}* b\_params, \textcolor{keywordtype}{double}* deriv\_dev, \textcolor{keywordtype}{double}* beta\_modif\_dev, \textcolor{keywordtype}{double}* array\_f\_dev, \textcolor{keywordtype}{int} image\_x, \textcolor{keywordtype}{int} image\_y, \textcolor{keywordtype}{int} n\_gauss, \textcolor{keywordtype}{float} temps\_transfert, \textcolor{keywordtype}{float} temps\_mirroirs);}
+\DoxyCodeLine{00065 \textcolor{keywordtype}{void} update\_array\_f\_dev\_sort(\textcolor{keywordtype}{double} lambda, \textcolor{keywordtype}{double}* array\_f\_dev, \textcolor{keywordtype}{double}* map\_dev, \textcolor{keywordtype}{int} indice\_x, \textcolor{keywordtype}{int} indice\_y);}
+\DoxyCodeLine{00066 \textcolor{keywordtype}{void} update\_array\_f\_dev\_sort(\textcolor{keywordtype}{double} lambda, \textcolor{keywordtype}{double}* array\_f\_dev, \textcolor{keywordtype}{double}* map\_image\_dev, \textcolor{keywordtype}{double}* map\_conv\_dev, \textcolor{keywordtype}{int} indice\_x, \textcolor{keywordtype}{int} indice\_y, \textcolor{keywordtype}{int} k, \textcolor{keywordtype}{double}* b\_params);}
+
+\end{DoxyCode}

@@ -15,10 +15,15 @@
 
 // mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
 
-/// Class associated with the values given in the parameters.txt file.
-/// 
-/// 
-
+/**
+ * @brief Class associated to the values and choices given by the user in the parameters.txt file.
+ *
+ * We may use a DAT or a FITS file as the hypercube input file, we need to specify which file mode (DAT or FITS) we want to use. Some parameters are given as inputs for setulb(), the black box routine of L-BFGS-B-C used in the minimize() function.
+ * Some of these variables such as the numbers n_gauss or the lambda_* are defined by the user and involved into the model as well.
+ *
+ *
+ *
+ */
 
 class parameters
 {
@@ -34,21 +39,21 @@ class parameters
 	int dim_y;
 	int dim_v;
 
-	int n_gauss_add; //EN DISCUTER AVEC ANTOINE
+	int n_gauss_add; 
 	
 
 //	parameters
-	std::string filename_dat;
-	std::string filename_fits;
+	std::string filename_dat; //!< Name of the DAT file to be used as hypercube input file.
+	std::string filename_fits; //!< Name of the FITS file to be used as hypercube input file.
 	std::string file_type_dat_check;
 	std::string file_type_fits_check;
-	int slice_index_min;
-	int slice_index_max;
+	int slice_index_min; //!< Value of the minimum spectral index.
+	int slice_index_max; //!< Value of the maximum spectral index.
 	bool file_type_dat;
 	bool file_type_fits;
-	std::string fileout;
-	std::string filename_noise;
-	int n_gauss;
+	std::string fileout; //!< Name of the output file.
+	std::string filename_noise; 
+	int n_gauss; //!< Number of gaussians.
 	double lambda_amp;
 	double lambda_mu;
 	double lambda_sig;
@@ -60,16 +65,16 @@ class parameters
 	std::string init_option;	
 	int maxiter_init;
 	int maxiter;
-	int m;
+	int m; //!< m is the maximum number of variable metric corrections to define the limited memory matrix.
 	std::string check_noise;
 	std::string check_regul;
 	std::string check_descent;
 	bool noise;
-	bool regul;
+	bool regul; //!< Activates regularization
 	bool descent;
 	int lstd;
 	int ustd;
-	long iprint;
+	long iprint; //!< Verbose mode for L-BFGS-B-C.
 	int iprint_init;
 	std::string check_save_grid;
 	bool save_grid;
