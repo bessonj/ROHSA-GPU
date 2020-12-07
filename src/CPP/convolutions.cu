@@ -73,7 +73,7 @@ void dummyInstantiator(){
     parameter_maps_sliced_from_beta<double><<<1,1>>>(NULL, NULL, NULL, NULL, 0, 0, 0);
 }
 
-void conv2D_GPU(double *h_IMAGE, double* h_KERNEL, double* h_RESULTAT_GPU, long int image_x, long int image_y)
+void conv2D_GPU(double *h_IMAGE, double* h_KERNEL, double* h_RESULTAT_GPU, long int image_x, long int image_y, float temps_transfert, float temps_mirroirs)
 {
     dummyInstantiator();
     double Kernel[9] = {0,-1,0,-1,4,-1,0,-1,0};
@@ -86,46 +86,69 @@ void conv2D_GPU(double *h_IMAGE, double* h_KERNEL, double* h_RESULTAT_GPU, long 
 
     double* h_IMAGE_extended = (double*)malloc((image_x+4)*(image_y+4)*sizeof(double));
 
-	for(int j(0); j<image_x; j++)
+	for(int j(0); j<image_y+4; j++)
 	{
-		for(int i(0); i<image_y; i++)
+		for(int i(0); i<image_x+4; i++)
 		{
-			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i+image_x*j];
+			h_IMAGE_extended[(image_x+4)*(j)+i]=0.;
+		}
+	}
+
+	for(int j(0); j<image_y; j++)
+	{
+		for(int i(0); i<image_x; i++)
+		{
+			h_IMAGE_extended[(image_x+4)*(2+j)+i+2]=h_IMAGE[image_x*j+i];
 		}
 	}
 
 	for(int j(0); j<2; j++)
 	{
-		for(int i(0); i<image_y; i++)
+		for(int i(0); i<image_x; i++)
 		{
-			h_IMAGE_extended[2+i+(image_x+4)*j] = h_IMAGE[i+image_x*j];
+			h_IMAGE_extended[(image_x+4)*j+i+2] = h_IMAGE[image_x*j+i];
 		}
 	}
 
-	for(int i(0); i<2; i++)
+	for(int j(0); j<image_y; j++)
 	{
-		for(int j(0); j<image_x; j++)
+    	for(int i(0); i<2; i++)
 		{
-			h_IMAGE_extended[i+(image_x+4)*(2+j)] = h_IMAGE[i+image_x*j];
+			h_IMAGE_extended[(image_x+4)*(2+j)+i] = h_IMAGE[image_x*j+i];
 		}
 	}
 
-	for(int j=image_x; j<image_x+2; j++)
+   	for(int j=image_y; j<image_y+2; j++)
 	{
-		for(int i=0; i<image_y; i++)
+    	for(int i=0; i<image_x; i++)
 		{
-			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i+image_x*(j-2)];
+			h_IMAGE_extended[(image_x+4)*(2+j)+i+2]=h_IMAGE[image_x*(j-2)+i];
 		}
 	}
 
-	for(int j(0); j<image_x; j++)
+	for(int j(0); j<image_y; j++)
 	{
-		for(int i(image_y); i<image_y+2; i++)
+		for(int i=image_x; i<image_x+2; i++)
 		{
-			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i-2+image_x*j];
+			h_IMAGE_extended[(image_x+4)*(2+j)+2+i]=h_IMAGE[image_x*j+i-2];
 		}
 	}
     
+
+/*
+    printf("h_IMAGE_extended : \n");
+	for(int j(0); j<image_y+4; j++)
+	{
+		for(int i(0); i<image_x+4; i++)
+		{
+            printf("%f ", h_IMAGE_extended[i+(image_x+4)*j]);
+		}
+        printf("\n");
+	}
+    exit(0);
+*/
+
+
 //    T c_Kernel[9] = {0,-1,0,-1,4,-1,0,-1,0};
 //    long int c_image_x = 32;
 //    long int c_image_y = 32;
@@ -190,9 +213,7 @@ void conv2D_GPU(double *h_IMAGE, double* h_KERNEL, double* h_RESULTAT_GPU, long 
         dim3 ThreadsParBlock(threads, threads);
         dim3 BlocksParGrille(blocks_x , blocks_y );
 
-            for(int i = 0 ; i < (nb_cycles) ; i++)
-
-                ConvKernel<double><<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT,  d_IMAGE, image_x+4, image_y+4);
+        ConvKernel<double><<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT,  d_IMAGE, image_x+4, image_y+4);
 
             checkCudaErrors(cudaEventRecord(record_event[3], NULL));
     checkCudaErrors(cudaEventSynchronize(record_event[3]));    
@@ -265,14 +286,74 @@ void conv2D_GPU(float *h_IMAGE, float* h_KERNEL, float* h_RESULTAT_GPU, long int
     long int kernel_radius_x = 1;
     long int kernel_radius_y = 1;
 
-    int nb_cycles = 1;
-
     double temps_temp = omp_get_wtime();
 
     float* h_IMAGE_extended = (float*)malloc((image_x+4)*(image_y+4)*sizeof(float));
 
-    extension_mirror<float>(h_IMAGE, h_IMAGE_extended, image_x, image_y);
+    //extension_mirror<float>(h_IMAGE, h_IMAGE_extended, image_x, image_y);
+	for(int j(0); j<image_y+4; j++)
+	{
+		for(int i(0); i<image_x+4; i++)
+		{
+			h_IMAGE_extended[i+(image_x+4)*(j)]=0.;
+		}
+	}
     
+	for(int j(0); j<image_y; j++)
+	{
+		for(int i(0); i<image_x; i++)
+		{
+			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i+image_x*j];
+		}
+	}
+
+	for(int j(0); j<2; j++)
+	{
+		for(int i(0); i<image_x; i++)
+		{
+			h_IMAGE_extended[2+i+(image_x+4)*j] = h_IMAGE[i+image_x*j];
+		}
+	}
+
+	for(int j(0); j<image_y; j++)
+	{
+    	for(int i(0); i<2; i++)
+		{
+			h_IMAGE_extended[i+(image_x+4)*(2+j)] = h_IMAGE[i+image_x*j];
+		}
+	}
+
+   	for(int j=image_y; j<image_y+2; j++)
+	{
+    	for(int i=0; i<image_x; i++)
+		{
+			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i+image_x*(j-2)];
+		}
+	}
+
+	for(int j(0); j<image_y; j++)
+	{
+		for(int i=image_x; i<image_x+2; i++)
+		{
+			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i-2+image_x*j];
+		}
+	}
+    
+/*
+    printf("h_IMAGE_extended : \n");
+
+	for(int j(0); j<image_y+4; j++)
+	{
+		for(int i(0); i<image_x+4; i++)
+		{
+            printf("%f ", h_IMAGE_extended[i+(image_x+4)*j]);
+		}
+        printf("\n");
+	}
+
+    exit(0);
+*/
+
 
 /*
     printf("\n IMAGE EXT\n");
@@ -367,25 +448,24 @@ temps_mirroirs = omp_get_wtime() - temps_temp;
         dim3 ThreadsParBlock(threads, threads);
         dim3 BlocksParGrille(blocks_x , blocks_y );
 
-        for(int i = 0 ; i < (nb_cycles) ; i++)
-            ConvKernel<<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT,  d_IMAGE, image_x+4, image_y+4);
+        ConvKernel<<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT,  d_IMAGE, image_x+4, image_y+4);
 //        convolve_global<<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT,  d_IMAGE, image_x+4, image_y+4);
 
         checkCudaErrors(cudaEventRecord(record_event[3], NULL));
     checkCudaErrors(cudaEventSynchronize(record_event[3]));    
 
-    copy_gpu<<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT_RESHAPED, d_RESULTAT, image_x, image_y);
+    copy_gpu<float><<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT_RESHAPED, d_RESULTAT, image_x, image_y);
 
     //---------------------------------------------------------------------------------------------------------------------------
 //    printf("\n\t Transfering GPU Data back to HOST\n");
     
     cudaMemcpy(h_RESULTAT_GPU, d_RESULTAT_RESHAPED, size_j, cudaMemcpyDeviceToHost);
             
-        checkCudaErrors(cudaEventRecord(record_event[4], NULL));
+    checkCudaErrors(cudaEventRecord(record_event[4], NULL));
     checkCudaErrors(cudaEventSynchronize(record_event[4]));
         
     //---------------------------------------------------------------------------------------------------------------------------    
-checkCudaErrors(cudaEventElapsedTime(time_msec+0, record_event[0], record_event[1]));
+    checkCudaErrors(cudaEventElapsedTime(time_msec+0, record_event[0], record_event[1]));
     checkCudaErrors(cudaEventElapsedTime(time_msec+1, record_event[1], record_event[2]));
     checkCudaErrors(cudaEventElapsedTime(time_msec+2, record_event[2], record_event[3]));
     checkCudaErrors(cudaEventElapsedTime(time_msec+3, record_event[3], record_event[4]));
@@ -393,23 +473,23 @@ checkCudaErrors(cudaEventElapsedTime(time_msec+0, record_event[0], record_event[
 
 //    printf("\n\n\t Memory transfer speed :");
             
-        float total_mem_time         = time_msec[0]+ time_msec[1]+time_msec[3];
-        float total_time            = time_msec[4] ;
-        float upload_speed           = float(((size_i )*1e-9) / ( time_msec[1] *1e-3));
-        float download_speed         = float(( size_i*1e-9) / (time_msec[3]*1e-3));
-        float average_speed          = (upload_speed + download_speed) / 2 ;
-        float percentage_vs_memory  = ( total_mem_time / total_time )*100;
+    float total_mem_time         = time_msec[0]+ time_msec[1]+time_msec[3];
+    float total_time            = time_msec[4] ;
+    float upload_speed           = float(((size_i )*1e-9) / ( time_msec[1] *1e-3));
+    float download_speed         = float(( size_i*1e-9) / (time_msec[3]*1e-3));
+    float average_speed          = (upload_speed + download_speed) / 2 ;
+    float percentage_vs_memory  = ( total_mem_time / total_time )*100;
 
-        temps_transfert += total_time/1000;
-//        printf("temps = %f \n", total_time);
+    temps_transfert += total_time/1000;
+//  printf("temps = %f \n", total_time);
 /*
-        printf("\n\t\t Time taken by memory transfer = %.2f ms", total_mem_time);
-        printf("\n\t\t Upload  : %.2f GB/s  Download : %.2f GB/s",upload_speed ,download_speed );
-        printf("\n\t\t Average : %.2f GB/s", average_speed);
-        printf("\n\t\t memory transfer part: %.1f pct", percentage_vs_memory);
-        
-        printf("\n\n\t Total GPU (calc+memory) mean execution time   : %.2f ms", total_time);
-        printf("\n\t Total GPU (calc+memory) mean processing speed : %.1f Mpx/s\n", 1e-6 * image_x * image_x / (total_time * 1e-3) );
+    printf("\n\t\t Time taken by memory transfer = %.2f ms", total_mem_time);
+    printf("\n\t\t Upload  : %.2f GB/s  Download : %.2f GB/s",upload_speed ,download_speed );
+    printf("\n\t\t Average : %.2f GB/s", average_speed);
+    printf("\n\t\t memory transfer part: %.1f pct", percentage_vs_memory);
+    
+    printf("\n\n\t Total GPU (calc+memory) mean execution time   : %.2f ms", total_time);
+    printf("\n\t Total GPU (calc+memory) mean processing speed : %.1f Mpx/s\n", 1e-6 * image_x * image_x / (total_time * 1e-3) );
 
 
     //---------------------------------------------------------------------------------------------------------------------------
@@ -419,7 +499,6 @@ checkCudaErrors(cudaEventElapsedTime(time_msec+0, record_event[0], record_event[
     cudaFree(d_IMAGE);
     cudaFree(d_RESULTAT);
     cudaFree(d_RESULTAT_RESHAPED);
-
     free(h_IMAGE_extended);
 }
 

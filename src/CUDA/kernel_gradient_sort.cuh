@@ -139,7 +139,7 @@ __global__ void gradient_kernel_2_beta_with_INDEXING_sort_edit(double* deriv, in
 
 //		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
 //		printf(" buffer_0 = %f ,  buffer_1 = %f ,  buffer_2 = %f \n", buffer_0, buffer_1, buffer_2);// = %d , index_z = %d\n",index_x,index_y,index_z);
-		__syncthreads();
+
 		INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)=buffer_0;
 		INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)=buffer_1;
 		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)=buffer_2;
@@ -219,7 +219,7 @@ __global__ void gradient_kernel_2_beta_with_INDEXING_sort(double* deriv, int* t_
 
 //		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
 //		printf(" buffer_0 = %f ,  buffer_1 = %f ,  buffer_2 = %f \n", buffer_0, buffer_1, buffer_2);// = %d , index_z = %d\n",index_x,index_y,index_z);
-		__syncthreads();
+//		__syncthreads();
 		INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)=buffer_0;
 		INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)=buffer_1;
 		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)=buffer_2;
@@ -377,7 +377,7 @@ __global__ void kernel_norm_map_boucle_v_sort(double* map_norm_dev, double* resi
 //  printf("sum_temp = %f\n", sum_temp);
 //  printf("map_norm_dev[index_y*indice_x + index_x] = %f\n", map_norm_dev[index_y*indice_x + index_x]);
 
-	__syncthreads();
+//	__syncthreads();
 
 	map_norm_dev[index_y*indice_x+index_x] = 0.5*sum_temp/pow(std_map[index_y*indice_x + index_x],2);
 

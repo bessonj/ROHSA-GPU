@@ -584,6 +584,312 @@ void hypercube::plot_line(std::vector<std::vector<std::vector<double>>> &params,
 	//plt::show();
 }
 
+void hypercube::plot_lines(std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<std::vector<double>>> &cube_mean) {
+
+	std::cout<<"params.size() ="<<params.size()<<std::endl;
+	std::cout<<"params[0].size() ="<<params[0].size()<<std::endl;
+	std::cout<<"params[0][0].size() ="<<params[0][0].size()<<std::endl;
+	int nb_gaussian = int(floor(double(params.size())/3.));
+	for(int ind_x=0; ind_x<params[0].size(); ind_x++) {
+		for(int ind_y=0; ind_y<params[0][0].size(); ind_y++) {
+			std::vector<double> model(this->dim_cube[2],0.);
+			std::vector<double> cube_line(this->dim_cube[2],0.);
+			std::vector<double> params_line(params.size(),0.);
+//			std::cout<< dim_cube[2] <<std::endl;
+			for(int i=0; i<params_line.size(); i++) {
+				params_line[i]=params[i][ind_y][ind_x];
+			}
+			for(int i=0; i<params_line.size()/3; i++) {
+				for(int k=0; k<this->dim_cube[2]; k++) {
+					model[k]+= model_function(k+1, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
+				}
+			}
+
+			for(int k=0; k<this->dim_cube[2]; k++) {
+				cube_line[k]= cube_mean[ind_x][ind_y][k];
+			}
+
+			std::vector<double> x(this->dim_cube[2]);
+			for(int i=0; i<this->dim_cube[2]; ++i) {
+				x.at(i) = i;
+			}
+
+			printf("model[%d] = %f \n",3,model[3]);
+			printf("cube_line[%d] = %f \n",3,cube_line[3]);
+
+			plt::clf();
+			// Set the size of output image = 1200x780 pixels
+			plt::figure_size(1200, 780);
+
+			// Plot line from given x and y data. Color is selected automatically.
+			plt::plot(x, cube_line,"r");
+			plt::plot(x, model,"b");
+
+			// Plot line from given x and y data. Color is selected automatically.
+			plt::named_plot("data", x, cube_line);
+			plt::named_plot("model", x, model);
+
+			plt::xlim(0, this->dim_cube[2]);
+
+			// Add graph title
+			plt::title("Model vs Data Plot");
+			// Enable legend.
+			plt::legend();
+
+		//params[0].size()
+
+			std::string s_dimensions_1 = std::to_string(params[0].size());
+			char const *pchar_dimensions_1 = s_dimensions_1.c_str();
+			std::string s_dimensions_2 = std::to_string(params[0][0].size());
+			char const *pchar_dimensions_2 = s_dimensions_2.c_str();
+			std::string s_x = std::to_string(ind_x);
+			char const *pchar_x = s_x.c_str();
+			std::string s_y = std::to_string(ind_y);
+			char const *pchar_y = s_y.c_str();
+
+			char str[100];//220
+			strcpy (str,"./plot_dim_");
+			strcat (str,pchar_dimensions_1);
+			strcat (str,"_by_");
+			strcat (str,pchar_dimensions_2);
+			strcat (str,"_position_");
+			strcat (str,pchar_x);
+			strcat (str,"_by_");
+			strcat (str,pchar_y);
+			strcat (str,".png");
+			puts (str);
+
+			// save figure
+			std::cout << "Saving result to " << str << std::endl;;
+			plt::save(str);
+			//plt::show();
+		}
+	}
+}
+
+void hypercube::plot_multi_lines(std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<std::vector<double>>> &cube_mean) {
+
+	std::string color[] = {"g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k",};
+	std::cout<<"params.size() ="<<params.size()<<std::endl;
+	std::cout<<"params[0].size() ="<<params[0].size()<<std::endl;
+	std::cout<<"params[0][0].size() ="<<params[0][0].size()<<std::endl;
+	int nb_gaussian = int(floor(double(params.size())/3.));
+
+	std::vector<double> x(this->dim_cube[2]);
+	for(int i=0; i<this->dim_cube[2]; ++i) {
+		x.at(i) = i;
+	}
+			plt::clf();
+			// Set the size of output image = 1200x780 pixels
+			plt::figure_size(1200, 780);
+	for(int ind_x=0; ind_x<params[0].size(); ind_x++) {
+		for(int ind_y=0; ind_y<params[0][0].size(); ind_y++) {
+
+			std::vector<double> cube_line(this->dim_cube[2],0.);
+			std::vector<double> params_line(params.size(),0.);
+			std::vector<double> model(this->dim_cube[2],0.);
+
+			for(int i=0; i<params_line.size(); i++) {
+				params_line[i]=params[i][ind_y][ind_x];
+			}
+
+		for(int n_g=0; n_g<nb_gaussian; n_g++) {
+			std::vector<double> model_g(this->dim_cube[2],0.);
+			for(int k=0; k<this->dim_cube[2]; k++) {
+				model_g[k]+= model_function(k+1, params_line[3*n_g], params_line[1+3*n_g], params_line[2+3*n_g]);
+			}
+
+/*
+			std::string p_str_number = std::to_string(n_g);
+			char const *p_name_model_g = p_str_number.c_str();
+			char str_number[100];//220
+			strcpy (str_number,"gaussian_number_");
+			strcat (str_number,p_name_model_g);
+			puts (str_number);
+			plt::named_plot(str_number, x, model_g);
+//			std::cout<<"str_number = "<<str_number<<std::endl;
+*/
+
+			plt::plot(x, model_g, color[n_g]);
+
+
+		}
+//			std::cout<< dim_cube[2] <<std::endl;
+			for(int i=0; i<nb_gaussian; i++) {
+				for(int k=0; k<this->dim_cube[2]; k++) {
+					model[k]+= model_function(k+1, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
+				}
+			}
+
+
+			for(int k=0; k<this->dim_cube[2]; k++) {
+				cube_line[k]= cube_mean[ind_x][ind_y][k];
+			}
+
+
+
+
+			// Plot line from given x and y data. Color is selected automatically.
+			plt::plot(x, cube_line, "r--");//color[0]);
+			plt::plot(x, model, "b--");//color[0]);
+
+			// Plot line from given x and y data. Color is selected automatically.
+			plt::named_plot("data", x, cube_line);
+			plt::named_plot("model", x, model);
+
+			plt::xlim(0, this->dim_cube[2]);
+
+			// Add graph title
+			plt::title("Model vs Data Plot");
+			// Enable legend.
+			plt::legend();
+
+		//params[0].size()
+
+			std::string s_dimensions_1 = std::to_string(params[0].size());
+			char const *pchar_dimensions_1 = s_dimensions_1.c_str();
+			std::string s_dimensions_2 = std::to_string(params[0][0].size());
+			char const *pchar_dimensions_2 = s_dimensions_2.c_str();
+			std::string s_x = std::to_string(ind_x);
+			char const *pchar_x = s_x.c_str();
+			std::string s_y = std::to_string(ind_y);
+			char const *pchar_y = s_y.c_str();
+
+			char str[100];//220
+			strcpy (str,"./plot_dim_");
+			strcat (str,pchar_dimensions_1);
+			strcat (str,"_by_");
+			strcat (str,pchar_dimensions_2);
+			strcat (str,"_position_");
+			strcat (str,pchar_x);
+			strcat (str,"_by_");
+			strcat (str,pchar_y);
+			strcat (str,".png");
+			puts (str);
+
+			// save figure
+			std::cout << "Saving result to " << str << std::endl;;
+			plt::save(str);
+			plt::clf();
+			//plt::show();
+
+		}
+	}
+}
+
+void hypercube::plot_multi_lines(std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<std::vector<double>>> &cube_mean, std::string some_string) {
+
+	std::string color[] = {"g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k",};
+	std::cout<<"params.size() ="<<params.size()<<std::endl;
+	std::cout<<"params[0].size() ="<<params[0].size()<<std::endl;
+	std::cout<<"params[0][0].size() ="<<params[0][0].size()<<std::endl;
+	int nb_gaussian = int(floor(double(params.size())/3.));
+
+	std::vector<double> x(this->dim_cube[2]);
+	for(int i=0; i<this->dim_cube[2]; ++i) {
+		x.at(i) = i;
+	}
+			plt::clf();
+			// Set the size of output image = 1200x780 pixels
+			plt::figure_size(1200, 780);
+	for(int ind_x=0; ind_x<params[0].size(); ind_x++) {
+		for(int ind_y=0; ind_y<params[0][0].size(); ind_y++) {
+
+			std::vector<double> cube_line(this->dim_cube[2],0.);
+			std::vector<double> params_line(params.size(),0.);
+			std::vector<double> model(this->dim_cube[2],0.);
+
+			for(int i=0; i<params_line.size(); i++) {
+				params_line[i]=params[i][ind_y][ind_x];
+			}
+
+		for(int n_g=0; n_g<nb_gaussian; n_g++) {
+			std::vector<double> model_g(this->dim_cube[2],0.);
+			for(int k=0; k<this->dim_cube[2]; k++) {
+				model_g[k]+= model_function(k+1, params_line[3*n_g], params_line[1+3*n_g], params_line[2+3*n_g]);
+			}
+
+/*
+			std::string p_str_number = std::to_string(n_g);
+			char const *p_name_model_g = p_str_number.c_str();
+			char str_number[100];//220
+			strcpy (str_number,"gaussian_number_");
+			strcat (str_number,p_name_model_g);
+			puts (str_number);
+			plt::named_plot(str_number, x, model_g);
+//			std::cout<<"str_number = "<<str_number<<std::endl;
+*/
+
+			plt::plot(x, model_g, color[n_g]);
+
+
+		}
+//			std::cout<< dim_cube[2] <<std::endl;
+			for(int i=0; i<nb_gaussian; i++) {
+				for(int k=0; k<this->dim_cube[2]; k++) {
+					model[k]+= model_function(k+1, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
+				}
+			}
+
+
+			for(int k=0; k<this->dim_cube[2]; k++) {
+				cube_line[k]= cube_mean[ind_x][ind_y][k];
+			}
+
+
+
+
+			// Plot line from given x and y data. Color is selected automatically.
+			plt::plot(x, cube_line, "r--");//color[0]);
+			plt::plot(x, model, "b--");//color[0]);
+
+			// Plot line from given x and y data. Color is selected automatically.
+			plt::named_plot("data", x, cube_line);
+			plt::named_plot("model", x, model);
+
+			plt::xlim(0, this->dim_cube[2]);
+
+			// Add graph title
+			plt::title("Model vs Data Plot");
+			// Enable legend.
+			plt::legend();
+
+		//params[0].size()
+
+			std::string s_dimensions_1 = std::to_string(params[0].size());
+			char const *pchar_dimensions_1 = s_dimensions_1.c_str();
+			std::string s_dimensions_2 = std::to_string(params[0][0].size());
+			char const *pchar_dimensions_2 = s_dimensions_2.c_str();
+			std::string s_x = std::to_string(ind_x);
+			char const *pchar_x = s_x.c_str();
+			std::string s_y = std::to_string(ind_y);
+			char const *pchar_y = s_y.c_str();
+			char const *p_some_string = some_string.c_str();
+
+			char str[100];//220
+			strcpy (str,"./plot_dim_");
+			strcat (str,pchar_dimensions_1);
+			strcat (str,"_by_");
+			strcat (str,pchar_dimensions_2);
+			strcat (str,"_position_");
+			strcat (str,pchar_x);
+			strcat (str,"_by_");
+			strcat (str,pchar_y);
+			strcat (str,"_note_");
+			strcat (str,p_some_string);
+			strcat (str,".png");
+			puts (str);
+
+			// save figure
+			std::cout << "Saving result to " << str << std::endl;;
+			plt::save(str);
+			plt::clf();
+			//plt::show();
+
+		}
+	}
+}
+
 double hypercube::model_function(int x, double a, double m, double s) {
 
 	return a*exp(-pow((double(x)-m),2.) / (2.*pow(s,2.)));

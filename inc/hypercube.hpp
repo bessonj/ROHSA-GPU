@@ -44,6 +44,9 @@ class hypercube
 	void display_data(int rang);
 	void display(std::vector<std::vector<std::vector<double>>> &tab, int rang);
 	void plot_line(std::vector<std::vector<std::vector<double>>> &params, int ind_x, int ind_y, int n_gauss_i);
+	void plot_lines(std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<std::vector<double>>> &cube_mean);
+	void plot_multi_lines(std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<std::vector<double>>> &cube_mean);
+	void plot_multi_lines(std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<std::vector<double>>> &cube_mean, std::string some_string);
 	void display_result_and_data(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, bool dat_or_not);
 	void display_avec_et_sans_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par, int plot_numero);
 	void display_2_gaussiennes(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, int n1, int n2);

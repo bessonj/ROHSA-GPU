@@ -1,5 +1,5 @@
-#define BLOCK_SIZE_X 32
-#define BLOCK_SIZE_Y 32
+#define BLOCK_SIZE_X 16
+#define BLOCK_SIZE_Y 16
 #define BLOCK_SIZE_Z 1
 
 #define BLOCK_SIZE_X_BIS 8

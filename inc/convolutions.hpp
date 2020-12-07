@@ -23,7 +23,7 @@
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-    void conv2D_GPU(double* h_IMAGE, double* h_KERNEL, double* h_RESULTAT_GPU, long int image_x, long int image_y);
+    void conv2D_GPU(double* h_IMAGE, double* h_KERNEL, double* h_RESULTAT_GPU, long int image_x, long int image_y, float temps_transfert, float temps_mirroirs);
     void conv2D_GPU(float* h_IMAGE, float* h_KERNEL, float* h_RESULTAT_GPU, long int image_x, long int image_y, float temps_transfert, float temps_mirroirs);
     void conv2D_GPU_cpu(float* h_IMAGE, float* h_KERNEL, float* h_RESULTAT_GPU, long int image_x, long int image_y, float temps_transfert, float temps_mirroirs);
     void conv2D_GPU_all(float* h_IMAGE, float* h_KERNEL, float* h_RESULTAT_GPU, long int image_x, long int image_y, int n_gauss, float temps_transfert, float temps_mirroirs);

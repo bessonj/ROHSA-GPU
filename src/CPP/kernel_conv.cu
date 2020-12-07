@@ -17,20 +17,17 @@ __global__ void ConvKernel(T* d_Result, T* d_Data, long int c_image_x, long int 
     T tmp_sum = 0;
     int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
-    int pixel_pos = pixel_y * c_image_y + pixel_x ;
+    int pixel_pos = pixel_y * c_image_x + pixel_x ;
 if(pixel_y < c_image_y && pixel_x < c_image_x) {
 	for (int y = - (c_kernel_radius_y) ; y <= c_kernel_radius_y; y++)
 		{
 		for (int x = - (c_kernel_radius_x) ; x <= c_kernel_radius_x; x++)
 			{
             if ( ( (pixel_x + x) >= 0) && ( (pixel_y + y) >= 0) && ((pixel_x + x) <= c_image_x) && ((pixel_y + y) <= c_image_y) ){
-			    pixel_extrait= d_Data[pixel_x+x + (pixel_y+y)*c_image_y ];
-            }
-            else{
-                pixel_extrait = 0;
+			    pixel_extrait= d_Data[pixel_x+x + (pixel_y+y)*c_image_x];
+				tmp_sum += pixel_extrait * c_Kernel[c_kernel_radius_x+x + (c_kernel_radius_y+y)*c_kernel_y];
             }
 //        	printf("pixel_extrait = %f \n", pixel_extrait);
-			tmp_sum += pixel_extrait * c_Kernel[c_kernel_radius_x+x + (c_kernel_radius_y+y)*c_kernel_y];
 			}
 		}
 	d_Result[pixel_pos] = tmp_sum;
@@ -44,7 +41,7 @@ __global__ void copy_gpu(T* d_out, T* d_in, long int length_x_in, long int lengt
     int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
     if(pixel_x < length_x_in && pixel_y < length_y_in){
-        d_out[pixel_y + (length_y_in)*pixel_x] = d_in[(pixel_y+2) + (length_y_in+4)*(pixel_x+2)];
+        d_out[pixel_x + (length_x_in)*pixel_y] = d_in[(pixel_x+2) + (length_x_in+4)*(pixel_y+2)];
     }
 }
 
@@ -178,6 +175,7 @@ void extension_mirror(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int image_y)
     if(image_x == 0 || image_y == 0){
         return;
     }
+	
 	for(int j(0); j<image_x+4; j++)
 	{
 		for(int i(0); i<image_y+4; i++)

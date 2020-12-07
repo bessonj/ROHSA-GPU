@@ -22,7 +22,7 @@ if(index_x<2 && index_y<2 && index_z<9)
 {
 //printf("threadIdx.x = %d , threadIdx.y = %d , threadIdx.z = %d \n",threadIdx.x,threadIdx.y,threadIdx.z);
 
-printf("index_x = %d , index_y = %d , index_z = %d , A = %d , B = %d\n",index_x,index_y,index_z, A , B);
+//printf("index_x = %d , index_y = %d , index_z = %d , A = %d , B = %d\n",index_x,index_y,index_z, A , B);
 }
 //printf("blockIdx.x = %d , index_y = %d , index_z = %d , A = %d , B = %d\n",blockIdx.x,index_y,index_z, A , B);
 //	printf("OK\n");
@@ -59,7 +59,7 @@ if(index_x<t[2] && index_y<t[1] && index_z<t[0])
 
 if(index_x<t[2] && index_y<t[1] && index_z<t[0])
 {
-	printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
+//	printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
 for(int i=0; i<n_gauss; i++){
 //      double par0 = params[index_y][index_x][3*i+0];
     double par0 = params[index_y*t_p_1*t_p_2+index_x*t_p_2+(3*i+0)];
@@ -350,9 +350,12 @@ __global__ void gradient_kernel_2_beta_with_INDEXING(double* deriv, int* t_d, do
 		//deriv      --> (ng,y,x)    --> (z,y,x)
 		//std_map    --> (y,x)       --> (y,x)
 
-	
+//	printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
+
 	if(index_z<n_gauss && index_x<deriv_SHAPE2 && index_y<deriv_SHAPE1 && INDEXING_2D(std_map,index_y,index_x)>0.)
 	{
+//		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
+
 		double par0 = INDEXING_3D(params,(3*index_z+0),index_y, index_x);
 
 		double par1_a = INDEXING_3D(params, (3*index_z+1), index_y, index_x);
@@ -363,27 +366,29 @@ __global__ void gradient_kernel_2_beta_with_INDEXING(double* deriv, int* t_d, do
 		double buffer_0 = 0.;        //dF_over_dB --> (v,y,x,3g)  --> (i,x,y,z)
 		double buffer_1 = 0.;
 		double buffer_2 = 0.;
-
+		int compteur = 0;
 //		printf("index_z = %d , index_y = %d , index_x = %d\n",index_z,index_y,index_x);
 
 		for(int i=0; i<residual_SHAPE0; i++){
+//			compteur++;
 			double par_res = INDEXING_3D(residual,i,index_y,index_x)* parstd;
 			double par1 = double(i+1) - par1_a;
 
 			buffer_0 += exp( -pow( par1 ,2.)*par2_pow ) * par_res;
 			buffer_1 += par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ) * par_res;
 			buffer_2 += par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow ) * par_res;
+//			printf("compteur = %d\n",compteur);
 		}
 
-//		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
 //		printf(" buffer_0 = %f ,  buffer_1 = %f ,  buffer_2 = %f \n", buffer_0, buffer_1, buffer_2);// = %d , index_z = %d\n",index_x,index_y,index_z);
-		__syncthreads();
+//		__syncthreads();
 		INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)= buffer_0;
 		INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)= buffer_1;
 		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)= buffer_2;
 	}
 
 	__syncthreads();
+//		printf("END\n");
 }
 
 __global__ void gradient_kernel_2_beta_working(double* deriv, int* t_d, double* params, int* t_p, double* residual, int* t_r, double* std_map, int* t_std, int n_gauss)
@@ -562,19 +567,20 @@ __global__ void kernel_norm_map_boucle_v(double* map_norm_dev, double* residual,
 {
 	int index_x = blockIdx.x*BLOCK_SIZE_L2_X +threadIdx.x;
 	int index_y = blockIdx.y*BLOCK_SIZE_L2_Y +threadIdx.y;
-//	int index_z = blockIdx.z*BLOCK_SIZE_L2_Z +threadIdx.z;
 
-  if(index_x<indice_x && index_y<indice_y && std_map[index_y*indice_x + index_x]>0.)
+  if(index_x<indice_x && index_y<indice_y)
   {
-	  for(int index_z = 0; index_z<indice_v ; index_z++) {
-    	map_norm_dev[index_y*indice_x+index_x] += 0.5*pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2)/pow(std_map[index_y*indice_x + index_x],2);
-	  }
-	__syncthreads();
-
+	if(std_map[index_y*indice_x + index_x]>0.){
+		double sum = 0.;
+		for(int index_z = 0; index_z<indice_v ; index_z++){
+			sum += 0.5*pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2);
+		}
+		map_norm_dev[index_y*indice_x+index_x] = sum*1/pow(std_map[index_y*indice_x + index_x],2);
 //  printf("index_x = %d , index_y = %d , index_z = %d \n", index_x, index_y, index_z);
 
 //	map_norm_dev[index_y*indice_x + index_z] = 0.5*map_norm_dev[index_y*indice_x + index_z]/pow(std_map[index_y*indice_x + index_x],2);
 //	printf(" --> %f \n", map_norm_dev[index_y*indice_x + index_z]);
+	}
   }
 }
 
@@ -586,11 +592,11 @@ __global__ void kernel_norm_map_boucle_v(double* map_norm_dev, double* residual,
 
   if(index_x<indice_x && index_y<indice_y && std_map[index_y*indice_x + index_x]>0.)
   {
+	  double sum = 0.;
 	  for(int index_z = 0; index_z<indice_v ; index_z++) {
-    	map_norm_dev[index_y*indice_x+index_x] += 0.5*pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2)/pow(std_map[index_y*indice_x + index_x],2);
+    	sum += 0.5*pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2);
 	  }
-	__syncthreads();
-
+	  map_norm_dev[index_y*indice_x+index_x] = sum/pow(std_map[index_y*indice_x + index_x],2);
 //  printf("index_x = %d , index_y = %d , index_z = %d \n", index_x, index_y, index_z);
 
 //	map_norm_dev[index_y*indice_x + index_z] = 0.5*map_norm_dev[index_y*indice_x + index_z]/pow(std_map[index_y*indice_x + index_x],2);
@@ -677,6 +683,11 @@ __global__ void display_dev(double* array_out){
     printf("?\n");
     printf("array_out[0] = %f\n", array_out[0]);
     printf("?\n");
+}
+__global__ void display_dev_comp(double* array_out, int size){
+	for(int i = 0; i<size; i++){
+	    printf("array_out[%d] = %f\n",i, array_out[i]);
+	}
 }
 
 

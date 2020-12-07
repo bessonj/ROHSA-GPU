@@ -813,16 +813,6 @@ void f_g_cube_parallel(parameters &M, double &f, double* g, int n, std::vector<s
 	double* std_map_ = (double*)malloc(size_std);
 	double* beta_modif = (double*)malloc(size_beta_modif);
 
-	float* conv_amp = (float*)malloc(size_image_conv);
-	float* conv_mu = (float*)malloc(size_image_conv);
-	float* conv_sig = (float*)malloc(size_image_conv);
-	float* conv_conv_amp = (float*)malloc(size_image_conv);
-	float* conv_conv_mu = (float*)malloc(size_image_conv);
-	float* conv_conv_sig = (float*)malloc(size_image_conv);
-	float* image_amp = (float*)malloc(size_image_conv);
-	float* image_mu = (float*)malloc(size_image_conv);
-	float* image_sig = (float*)malloc(size_image_conv);
-
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 	double temps1_tableaux = omp_get_wtime();
 
@@ -854,7 +844,7 @@ void f_g_cube_parallel(parameters &M, double &f, double* g, int n, std::vector<s
 	for(j=0; j<indice_x; j++){
 		for(i=0; i<indice_y; i++){
 			for(p=0; p<3*M.n_gauss; p++){
-				beta_modif[p*indice_x*indice_y+ i*indice_x+j] = beta[j*indice_y*3*M.n_gauss+i*3*M.n_gauss+p];
+				beta_modif[j*indice_y*3*M.n_gauss+i*3*M.n_gauss+p] = beta[j*indice_y*3*M.n_gauss+i*3*M.n_gauss+p];
 			}
 		}
 	}
@@ -917,6 +907,8 @@ void f_g_cube_parallel(parameters &M, double &f, double* g, int n, std::vector<s
 
    double temps1_res_f = omp_get_wtime();
 
+
+
    compute_residual_and_f_parallel(array_f_dev, beta_modif_dev, cube_flattened_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v, M.n_gauss);
 
 //if(indice_x ==4){//indice_x != indice_y){
@@ -940,6 +932,7 @@ temps_res_f += temps2_res_f - temps1_res_f;
 
    gradient_L_2_beta_parallel(deriv_dev, taille_deriv, taille_deriv_dev, beta_modif_dev, taille_beta_modif_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, M.n_gauss);
 
+
 //if(indice_x ==4){//indice_x != indice_y){
 //   printf("indice_x, indice_y = %d, %d\n", indice_x, indice_y);
 //   display_dev_complete_sort<<<1,1>>>(deriv_dev,30);
@@ -955,6 +948,7 @@ temps_res_f += temps2_res_f - temps1_res_f;
 	double temps1_conv = omp_get_wtime();
 
 //    display_dev_sort<<<1,1>>>(deriv_dev);
+
 
     conv2D_GPU_all_sort(M, d_g, n_beta, M.lambda_var_sig, b_params_dev, deriv_dev, beta_modif_dev, array_f_dev, indice_x, indice_y, M.n_gauss, 0,0);//temps_transfert, temps_mirroirs);
 
@@ -1024,7 +1018,7 @@ temps_res_f += temps2_res_f - temps1_res_f;
         {
 	        for(int i(0); i<3*M.n_gauss; i++)
 			{
-	            g[k*indice_y*(3*M.n_gauss)+j*(3*M.n_gauss)+i] = deriv[i*indice_y*indice_x+j*indice_x+k];
+	            g[i*indice_y*indice_x+j*indice_x+k] = deriv[i*indice_y*indice_x+j*indice_x+k];
 	    	}
         }
     }
@@ -1071,18 +1065,6 @@ temps_res_f += temps2_res_f - temps1_res_f;
   free(residual);
   free(std_map_);
   free(beta_modif);
-  free(conv_amp);
-  free(conv_mu);
-  free(conv_sig);
-  free(conv_conv_amp);
-  free(conv_conv_mu);
-  free(conv_conv_sig);
-  free(image_amp);
-  free(image_mu);
-  free(image_sig);
-/*
-
-*/
 
 	temps_conv+= temps2_conv - temps1_conv;
 	temps_deriv+= temps2_deriv - temps1_deriv;

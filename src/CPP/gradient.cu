@@ -119,17 +119,21 @@ void gradient_L_2_beta(double* deriv, int* taille_deriv, int product_taille_deri
     Dg.y = ceil(taille_deriv[1]/double(BLOCK_SIZE_Y));
     Dg.z = n_gauss;
 
+  cudaDeviceSynchronize();
 //  printf("Dg = %d, %d, %d ; Db = %d, %d, %d\n",Dg.x,Dg.y,Dg.z,Db.x,Db.y,Db.z);
 //  gradient_kernel_2_beta<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
   gradient_kernel_2_beta_with_INDEXING<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
-//  printf("DEBUG !!\n");
+
 //  printf("Dg = %d, %d, %d ; Db = %d, %d, %d\n",Dg.x,Dg.y,Dg.z,Db.x,Db.y,Db.z);
 
-//printf("DEBUG !!\n");
+  checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaMemcpy(params, params_dev, product_taille_params*sizeof(double), cudaMemcpyDeviceToHost));
+  cudaDeviceSynchronize();
+//  printf("Avant memcpy !!\n");
 
   checkCudaErrors(cudaMemcpy(deriv, deriv_dev, product_taille_deriv*sizeof(double), cudaMemcpyDeviceToHost));
 
-//printf("DEBUG !!\n");
+//  printf("Après memcpy !!\n");
 
   checkCudaErrors(cudaFree(deriv_dev));
   checkCudaErrors(cudaFree(taille_deriv_dev));
@@ -331,25 +335,21 @@ void gradient_L_2(double* deriv, int* taille_deriv, int product_taille_deriv, do
 
     double* map_norm_dev = NULL;
     checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(double)));
-
+//    checkCudaErrors(cudaDeviceSynchronize());
     kernel_norm_map_boucle_v<<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, taille_residual_dev, std_map_dev, indice_x, indice_y, indice_v);
 
-/*
-//vérification kernel_norm_map_boucle_v
-    double* map_norm_host = NULL;
-    map_norm_host = (double*)malloc(indice_x*indice_y*sizeof(double));
-    checkCudaErrors(cudaMemcpy(map_norm_host, map_norm_dev, indice_x*indice_y*sizeof(double), cudaMemcpyDeviceToHost));
-    for(int p = 0; p<indice_x*indice_y; p++)
-    {
-      f+= map_norm_host[p];
-    }
-    printf("f = %f \n", f);
-exit(0);
-  
+
+
+
+
     printf("indice_x = %d , indice_y = %d , indice_v = %d , BLOCK_SIZE_REDUCTION = %d \n", indice_x, indice_y, indice_v, BLOCK_SIZE_REDUCTION);
     printf("int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION))) = %d \n", int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION))));
     printf("Dg = %d , Db = %d\n",int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION))), BLOCK_SIZE_REDUCTION);
-*/
+
+
+
+
+
 
     int GRID_SIZE_REDUCTION = int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION)));
     double* tab_cpy_cpu = NULL;
@@ -357,6 +357,7 @@ exit(0);
 
     double* tab_test_dev_out=NULL;
     checkCudaErrors(cudaMalloc(&tab_test_dev_out, GRID_SIZE_REDUCTION*sizeof(double)));
+//    checkCudaErrors(cudaDeviceSynchronize());
 
     sum_reduction<<< GRID_SIZE_REDUCTION, BLOCK_SIZE_REDUCTION >>>(map_norm_dev, tab_test_dev_out, indice_x*indice_y);
 
@@ -517,13 +518,11 @@ if (N==1){
 // index_y -> indice_y
 // index_z -> indice_v
 
-//    printf("beta[0] = %f \n", beta[0]);
-
     kernel_residual<<<Dg,Db>>>(beta_dev, cube_dev, residual_dev,indice_x, indice_y, indice_v, n_gauss);
 
+    checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(double), cudaMemcpyDeviceToHost));
+
 //    printf("residual[0] = %f \n",residual[0]);
-
-
 
     dim3 Dg_L2, Db_L2;
     Db_L2.x = BLOCK_SIZE_L2_X;
@@ -536,13 +535,17 @@ if (N==1){
     double* map_norm_dev = NULL;
     checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(double)));
 
+//    checkCudaErrors(cudaDeviceSynchronize());
+
     kernel_norm_map_boucle_v<<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, taille_residual_dev, std_map_dev, indice_x, indice_y, indice_v);
 
+//    checkCudaErrors(cudaDeviceSynchronize());
 
     int GRID_SIZE_REDUCTION = int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION)));
+
+  
     double* tab_cpy_cpu = NULL;
     tab_cpy_cpu = (double*)malloc(GRID_SIZE_REDUCTION*sizeof(double));
-
     double* tab_test_dev_out=NULL;
     checkCudaErrors(cudaMalloc(&tab_test_dev_out, GRID_SIZE_REDUCTION*sizeof(double)));
 
@@ -565,12 +568,14 @@ if (N==1){
 
     double* array_f = (double*)malloc(1*sizeof(double));
     checkCudaErrors(cudaMemcpy(array_f, d_array_f, 1*sizeof(double), cudaMemcpyDeviceToHost));
-
 /*
-    printf("--> array_f[0] = %f\n",array_f[0]);
-    printf("sum = %f\n",sum);
+    if(indice_x!=indice_y){
+        printf("print map_norm disp\n");
+        display_dev_comp<<<1,1>>>(map_norm_dev, 1000),
+        printf("--> array_f[0] = %f\n",array_f[0]);
+        printf("sum = %f\n",sum);
+    }
 */
-
 
 //limite taille à 3300*3300 :/
 /*
