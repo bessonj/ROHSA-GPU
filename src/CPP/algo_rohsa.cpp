@@ -1,5 +1,11 @@
 #include "algo_rohsa.hpp"
 #include <array>
+#include <chrono>
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <iostream>
+#include <cuda_runtime.h>
 #include "gradient.hpp"
 #include "convolutions.hpp"
 #include "f_g_cube_gpu.hpp"
@@ -990,7 +996,8 @@ if(cube_avgd_or_data[0].size() == 35){
 	temps_tableau_update += omp_get_wtime() - temps1_tableau_update;
 
 //	minimize_clean(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
-	minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
+//	minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
+	minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
 
 	double temps2_tableau_update = omp_get_wtime();
 	//x,y,z->x,y,z
@@ -1580,6 +1587,143 @@ double temps1_conv = omp_get_wtime();
 */
 	printf("--> fin-chemin : f = %.16f\n", f);
 	std::cin.ignore();
+	}
+
+
+void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, double** assist_buffer){
+	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<std::vector<std::vector<double>>> residual(indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<double> b_params(M.n_gauss,0.);
+	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+
+	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
+
+
+	for(int i = 0; i<M.n_gauss; i++){
+		b_params[i]=beta[n_beta-M.n_gauss+i];
+	}
+
+	for(int i = 0; i< n_beta; i++){
+		g[i]=0.;
+	}
+	f=0.;
+
+/*	for(int i = 0; i<n_beta; i++){
+		printf("beta[%d] = %f\n",i,beta[i]);
+	}
+*/
+	double temps1_ravel = omp_get_wtime();
+	one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	double temps2_ravel = omp_get_wtime();
+	temps_ravel+=temps2_ravel-temps1_ravel;
+	//unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+
+double temps1_tableaux = omp_get_wtime();
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			std::vector<double> residual_1D(indice_v,0.);
+			std::vector<double> params_flat(params.size(),0.);
+			std::vector<double> cube_flat(cube[0][0].size(),0.);
+
+			for (int p=0; p<3*M.n_gauss; p++){
+				params_flat[p]=params[p][i][j];
+			}
+			for (int p=0; p<indice_v; p++){
+				cube_flat[p]=cube[j][i][p];
+			}
+
+			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+
+			for (int p=0;p<indice_v;p++){
+				residual[p][i][j]=residual_1D[p];
+			}
+
+			if(std_map[i][j]>0.){
+				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+			}
+
+		}
+	}
+double temps2_tableaux = omp_get_wtime();
+
+double temps1_dF_dB = omp_get_wtime();
+double temps2_dF_dB = omp_get_wtime();
+
+double temps1_deriv = omp_get_wtime();
+	int i;
+
+	#pragma omp parallel private(i) shared(params,deriv,std_map,residual,indice_v,indice_y,indice_x)
+	{
+	#pragma omp for
+	for(i=0; i<M.n_gauss; i++){
+		for(int k=0; k<indice_v; k++){
+			for(int j=0; j<indice_y; j++){
+				for(int l=0; l<indice_x; l++){
+					if(std_map[j][l]>0.){
+						double spec = double(k+1);
+						deriv[0+3*i][j][l] += exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
+						deriv[1+3*i][j][l] += params[3*i][j][l]*( spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
+						deriv[2+3*i][j][l] += params[3*i][j][l]*pow( spec - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
+					}
+				}
+			}
+		}
+	}
+	}
+double temps2_deriv = omp_get_wtime();
+double temps1_conv = omp_get_wtime();
+	for(int i=0; i<M.n_gauss; i++){
+		for(int p=0; p<indice_y; p++){
+			for(int q=0; q<indice_x; q++){
+				image_amp[p][q]=params[0+3*i][p][q];
+				image_mu[p][q]=params[1+3*i][p][q];
+				image_sig[p][q]=params[2+3*i][p][q];
+			}
+		}
+
+		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+	
+		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+
+		for(int j=0; j<indice_y; j++){
+			for(int l=0; l<indice_x; l++){
+				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
+				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
+				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
+
+				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
+		
+				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
+				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
+				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
+			}
+		}
+	}
+	double temps2_conv = omp_get_wtime();
+	temps_tableaux += temps2_tableaux - temps1_tableaux;
+	temps_ravel+=temps2_ravel-temps1_ravel;
+	temps1_ravel = omp_get_wtime();
+	three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	temps2_ravel = omp_get_wtime();
+	temps_ravel+=temps2_ravel-temps1_ravel;
+
+	temps_conv+= temps2_conv - temps1_conv;
+	temps_deriv+= temps2_deriv - temps1_deriv;
+
+	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 	}
 
 void algo_rohsa::f_g_cube_fast_without_regul(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
@@ -4932,15 +5076,141 @@ this->temps_transfert_d += temps_transfert_boucle;
 
 void algo_rohsa::minimize_clean_gpu(parameters &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
 
+// we first initialize LBFGSB_CUDA_OPTION and LBFGSB_CUDA_STATE 
+/*
 	LBFGSB_CUDA_OPTION<double> lbfgsb_options;
   	lbfgsbcuda::lbfgsbdefaultoption<double>(lbfgsb_options);
   	lbfgsb_options.mode = LCM_CUDA;
   	lbfgsb_options.eps_f = static_cast<double>(1e-8);
   	lbfgsb_options.eps_g = static_cast<double>(1e-8);
   	lbfgsb_options.eps_x = static_cast<double>(1e-8);
-  	lbfgsb_options.max_iteration = 1000;
+  	lbfgsb_options.max_iteration = M.maxiter;
+
+	LBFGSB_CUDA_STATE<double> state;
+  	memset(&state, 0, sizeof(state));
+  	cublasStatus_t stat = cublasCreate(&(state.m_cublas_handle));
+
+    double minimal_f = std::numeric_limits<double>::max();
+  	state.m_funcgrad_callback = [&assist_buffer_cpu, &minimal_f](
+                                  double* x, double& f, double* g,
+                                  const cudaStream_t& stream,
+                                  const LBFGSB_CUDA_SUMMARY<real>& summary) {
+    dsscfg_cpu<real>(g_nx, g_ny, x, f, g, &assist_buffer_cpu, 'FG', g_lambda);
+    if (summary.num_iteration % 100 == 0) {
+      std::cout << "CPU iteration " << summary.num_iteration << " F: " << f
+                << std::endl;    
+    }
+
+    minimal_f = fmin(minimal_f, f);
+    return 0;
+  };
+*/
 
 	printf("La librairie marche !!!\n");
+	exit(0);
+}
+
+void algo_rohsa::minimize_clean_cpu(parameters &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
+
+// we first initialize LBFGSB_CUDA_OPTION and LBFGSB_CUDA_STATE 
+	LBFGSB_CUDA_OPTION<double> lbfgsb_options;
+
+	lbfgsbcuda::lbfgsbdefaultoption<double>(lbfgsb_options);
+	lbfgsb_options.mode = LCM_NO_ACCELERATION;
+	lbfgsb_options.eps_f = static_cast<double>(1e-8);
+	lbfgsb_options.eps_g = static_cast<double>(1e-8);
+	lbfgsb_options.eps_x = static_cast<double>(1e-8);
+	lbfgsb_options.max_iteration = M.maxiter;
+
+	// initialize LBFGSB state
+	LBFGSB_CUDA_STATE<double> state;
+	memset(&state, 0, sizeof(state));
+	double* assist_buffer_cpu = nullptr;
+
+  	double minimal_f = std::numeric_limits<double>::max();
+  	state.m_funcgrad_callback = [&assist_buffer_cpu, &minimal_f, this, &M, n, &cube,
+&std_map, mean_amp, mean_mu, mean_sig, dim_x, dim_y, dim_v](
+/*parameters &M, long n, std::vector<std::vector<std::vector<double>>> &cube,
+std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, 
+std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v,*/
+                                  double* x, double& f, double* g,
+                                  const cudaStream_t& stream,
+                                  const LBFGSB_CUDA_SUMMARY<double>& summary) -> int {
+
+	f_g_cube_fast_clean_optim_CPU_lib(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, &assist_buffer_cpu);
+//	f_g_cube_fast_clean_optim_CPU(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
+    ////dsscfg_cpu<double>(g_nx, g_ny, x, f, g, &assist_buffer_cpu, 'FG', g_lambda);
+    if (summary.num_iteration % 100 == 0) {
+      std::cout << "CPU iteration " << summary.num_iteration << " F: " << f
+                << std::endl;    
+    }
+
+    minimal_f = fmin(minimal_f, f);
+    return 0;
+	};
+
+	// initialize CPU buffers
+	int N_elements = n;
+	double* x = new double[n];
+	double* g = new double[n];
+
+	double* xl = new double[n];
+	double* xu = new double[n];
+
+	// in this example, we don't have boundaries
+	memset(xl, 0, n * sizeof(xl[0]));
+	memset(xu, 0, n * sizeof(xu[0]));
+	int* nbd = new int[n];
+	memset(nbd, 0, n * sizeof(nbd[0]));
+
+	for(int i = 0; i<n ; i++){
+		x[i]=beta[i];
+		xl[i] = lb[i];
+		xu[i] = ub[i];
+		nbd[i] = 2;		
+	}
+
+
+	// initialize starting point
+	double f_init = std::numeric_limits<double>::max();
+	f_init=0.;
+	//	f_g_cube_fast_clean_optim_CPU(M, f_init, nullptr, n, cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
+////	dsscfg_cpu<double>(g_nx, g_ny, x, f_init, nullptr, &assist_buffer_cpu, 'XS', g_lambda);
+	// initialize number of bounds (0 for this example)
+
+	LBFGSB_CUDA_SUMMARY<double> summary;
+	memset(&summary, 0, sizeof(summary));
+
+
+	// call optimization
+	auto start_time = std::chrono::steady_clock::now();
+//	lbfgsbcuda::lbfgsbminimize<double>(n, state, lbfgsb_options, x, nbd,
+//									xl, xu, summary);
+	lbfgsbcuda::lbfgsbminimize<double>(n, state, lbfgsb_options, beta, nbd,
+									lb, ub, summary);
+	auto end_time = std::chrono::steady_clock::now();
+	std::cout << "Timing: "
+				<< (std::chrono::duration<double, std::milli>(end_time - start_time)
+						.count() /
+					static_cast<double>(summary.num_iteration))
+				<< " ms / iteration" << std::endl;
+
+	// release allocated memory
+	delete[] x;
+	delete[] g;
+	delete[] xl;
+	delete[] xu;
+	delete[] nbd;
+	delete[] assist_buffer_cpu;
+
+
+
+/*
+  printf("minimal_f = %f\n",minimal_f);
+
+	printf("La librairie marche !!!\n");
+	exit(0);
+*/
 }
 
 
