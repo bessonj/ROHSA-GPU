@@ -30,7 +30,7 @@ class parameters
 	public:
 
 	parameters();
-	parameters(std::string str);
+	parameters(std::string str, std::string str2);
 	void write_in_binary();
 
 	std::vector<std::vector<double>> kernel;
@@ -43,6 +43,7 @@ class parameters
 	
 
 //	parameters
+	int select_version; 
 	std::string filename_dat; //!< Name of the DAT file to be used as hypercube input file.
 	std::string filename_fits; //!< Name of the FITS file to be used as hypercube input file.
 	std::string file_type_dat_check;
@@ -82,6 +83,10 @@ class parameters
 	double lb_sig;
 	double ub_sig_init;
 	double lb_sig_init;
+	bool jump_to_last_level;
+	bool save_second_to_last_level;
+	std::string second_to_last_level_grid_name;
+
 
 	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
 

@@ -39,6 +39,7 @@ class hypercube
 	hypercube(parameters &M);
 	hypercube(parameters &M,int indice_debut, int indice_fin); // assuming whole_data_in_cube = false (faster and better provided the dimensions are close)
 	hypercube(parameters &M,int indice_debut, int indice_fin, bool whole_data_in_cube);
+	hypercube(parameters &M,int indice_debut, int indice_fin, bool whole_data_in_cube, bool one_level);
 
 	void display_cube(int rang);
 	void display_data(int rang);
@@ -52,7 +53,7 @@ class hypercube
 	void display_2_gaussiennes(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, int n1, int n2);
 	void display_2_gaussiennes_par_par_par(std::vector<std::vector<std::vector<double>>> &params,int rang, int n_gauss_i, int n1, int n2);
 	void mean_parameters(std::vector<std::vector<std::vector<double>>> &params, int num_gauss);
-
+	void simple_plot_through_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par, int plot_numero);
 
 
 
@@ -72,8 +73,16 @@ class hypercube
 	std::vector<std::vector<std::vector<double>>> use_dat_file(parameters &M);
 	std::vector<std::vector<std::vector<double>>> reshape_up();
 	std::vector<std::vector<std::vector<double>>> reshape_up(int borne_inf, int borne_sup);
+	std::vector<std::vector<std::vector<double>>> reshape_up_for_last_level(int borne_inf, int borne_sup);
 
 	void write_into_binary(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params);
+	void get_from_file(std::vector<std::vector<std::vector<double>>> &file_out, int dim_0, int dim_1, int dim_2);
+	void write_in_file(std::vector<std::vector<std::vector<double>>> &file_in);
+
+	void write_vector_to_file(const std::vector<double>& myVector, std::string filename);
+	std::vector<double> read_vector_from_file(std::string filename);
+
+	template <typename T> void save_result(std::vector<std::vector<std::vector<T>>>&, parameters&);
 
 
 	int indice_debut, indice_fin; //!< Only some spectral ranges of the hypercube are exploitable. We cut the hypercube, this will introduce an offset on the result values.

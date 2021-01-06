@@ -92,7 +92,7 @@ parameters::parameters()
 
 }
 
-parameters::parameters(std::string str)
+parameters::parameters(std::string str, std::string str2)
 {
 	n_gauss_add = 0;
 
@@ -158,6 +158,12 @@ parameters::parameters(std::string str)
 			descent = true;
 		else
 			descent = false;
+		if(str2 == "-cpu" || str2 == "-CPU" || str2 == "-Cpu" || str2 == "-c" || str2 == "-C")
+			select_version = 0;
+		else if (str2 == "-gpu" || str2 == "-GPU" || str2 == "-Gpu" || str2 == "-G" || str2 == "-g")
+			select_version = 1;
+		else 
+			select_version = 2;
 
         fichier.close();
         }
@@ -181,6 +187,17 @@ parameters::parameters(std::string str)
 	kernel[2][1] = -0.25;
 	kernel[2][2] = 0.;
 
+
+	if(false){
+//	if(true){
+		this->jump_to_last_level = true;
+		this->save_second_to_last_level = false;
+		this->second_to_last_level_grid_name = "second_to_last_level_grid_name";
+	}else{
+		this->jump_to_last_level = false;
+		this->save_second_to_last_level = true;
+		this->second_to_last_level_grid_name = "second_to_last_level_grid_name";
+	}
 }
 
 

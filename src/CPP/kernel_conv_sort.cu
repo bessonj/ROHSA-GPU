@@ -6,42 +6,51 @@
 template<typename T>
 __global__ void ConvKernel_sort(T* d_Result, T* d_Data, int c_image_x, int c_image_y)
 	{
-    T c_Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
-    long int c_kernel_x = 3;
-    long int c_kernel_y = 3;
-    long int c_kernel_radius_x = 1;
-    long int c_kernel_radius_y = 1;
-
-    T pixel_extrait = 0;
-    T tmp_sum = 0;
+    T c_Kernel[9] = {0.,-0.25,0.,-0.25,1.,-0.25,0.,-0.25,0.};
+    int c_kernel_radius_x = 1;
+    int c_kernel_radius_y = 1;
+	int c_kernel_x = 3;
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
     int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
-    int pixel_pos = pixel_y * c_image_x + pixel_x ;
-if(pixel_y < c_image_y-4 && pixel_x < c_image_x-4) {
-	for (int y = - (c_kernel_radius_y) ; y <= c_kernel_radius_y; y++)
-		{
-		for (int x = - (c_kernel_radius_x) ; x <= c_kernel_radius_x; x++)
+	if(pixel_y < c_image_y && pixel_x < c_image_x) {
+	    T tmp_sum = 0;
+	    int pixel_pos = pixel_y * c_image_x + pixel_x ;
+		for (int y = - (c_kernel_radius_y) ; y <= c_kernel_radius_y; y++)
 			{
-            if ( ( (pixel_x+x) >= 0) && ((pixel_y+y) >= 0) && ((pixel_x+x) <= c_image_x) && ((pixel_y+y) <= c_image_y) ){
-			    pixel_extrait = d_Data[pixel_x+x + (pixel_y+y)*c_image_x ];
-            }
-//        	printf("pixel_extrait = %f \n", pixel_extrait);
-			tmp_sum += pixel_extrait * c_Kernel[c_kernel_radius_x+x + (c_kernel_radius_y+y)*c_kernel_x];
+			for (int x = - (c_kernel_radius_x) ; x <= c_kernel_radius_x; x++)
+				{
+			    T pixel_extrait = 0.;
+				if ( ( (pixel_x-c_kernel_radius_x) >= 0) && ((pixel_y-c_kernel_radius_y) >= 0) && ((pixel_x+c_kernel_radius_x) < c_image_x) && ((pixel_y+c_kernel_radius_x) < c_image_y) ){
+				    pixel_extrait = d_Data[pixel_x+x + (pixel_y+y)*c_image_x];
+				}
+/*
+				if ( ( (pixel_x+x) >= 0) && ((pixel_y+y) >= 0) && ((pixel_x+x) < c_image_x) && ((pixel_y+y) < c_image_y) ){
+				    pixel_extrait = d_Data[pixel_x+x + (pixel_y+y)*c_image_x];
+				}
+*/
+				tmp_sum += pixel_extrait * c_Kernel[c_kernel_radius_x+x + (c_kernel_radius_y+y)*c_kernel_x];
 			}
 		}
-	d_Result[pixel_pos] = tmp_sum;
-//	printf("d_Result[%d] = %f \n", pixel_pos, d_Result[pixel_pos]);
-    }
+		d_Result[pixel_pos] = tmp_sum;
+	}
 }
 
 template <typename T>
 __global__ void copy_gpu_sort(T* d_out, T* d_in, int length_x_in, int length_y_in)
 {
-    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
     if(pixel_x < length_x_in && pixel_y < length_y_in){
         d_out[length_x_in*pixel_y + pixel_x] = d_in[(length_x_in+4)*(pixel_y+2) + (pixel_x+2)];
-		__syncthreads();
+    }
+}
+
+template <typename T>
+__global__ void fill_gpu_sort(T* d_out, T* d_in, int length_in)
+{
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+    if(pixel_x < length_in){
+        d_out[pixel_x] = d_in[pixel_x];
     }
 }
 
@@ -90,21 +99,18 @@ __global__ void init_extended_array_sort(T* d_IMAGE, T* d_IMAGE_extended, int im
 	int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
 	int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
 	
-/*
-	if(pixel_x ==0 && pixel_y ==0)
-	printf("TEST \n");//,index_z);
-	__syncthreads();
-*/
-	if (pixel_x < image_x_ext && pixel_y<image_y_ext){  
-//		printf("pixel_x = %d , pixel_y = %d \n",pixel_x,pixel_y);//,index_z);
+/*	if(image_x>64){
+	    printf("pixel_x = %d, pixel_y = %d\n", pixel_x, pixel_y);
+	}*/
+
+/*	if (pixel_x < image_x_ext && pixel_y<image_y_ext){  
         d_IMAGE_extended[image_x_ext*pixel_y+pixel_x]=0.;
 	}
 	__syncthreads();
-
+*/
 	if (pixel_x < image_x && pixel_y<image_y){
-		d_IMAGE_extended[image_x_ext*(2+pixel_y)+2+pixel_x]=d_IMAGE[image_x*pixel_y+pixel_x];
+		d_IMAGE_extended[image_x_ext*(pixel_y+2)+pixel_x+2]=d_IMAGE[image_x*pixel_y+pixel_x];
 	}
-
 }
 
 //	int taille_image_conv[] = {indice_y, indice_x};
@@ -164,17 +170,36 @@ __global__ void extension_mirror_gpu_sort(T* h_IMAGE, T* h_IMAGE_extended, int i
 }
 
 template <typename T>
-__global__ void extension_mirror_gpu_sort_save(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int image_y){
-/*
-    if(image_x == 0 || image_y == 0){
-        return;
-    }
-*/
-    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+__global__ void extension_mirror_gpu_sort_bis(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int image_y){
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
 	int image_x_ext = image_x+4;
 	int image_y_ext = image_y+4;
 
+	if(pixel_x < 2 && pixel_y < image_y){
+		h_IMAGE_extended[image_x_ext*(pixel_y+2)+(pixel_x)] = h_IMAGE[image_x*pixel_y+pixel_x];
+	}
+	__syncthreads();
+	if(pixel_x < image_x && pixel_y < 2){
+		h_IMAGE_extended[image_x_ext*(pixel_y)+(2+pixel_x)] = h_IMAGE[image_x*pixel_y+pixel_x];
+	}
+	__syncthreads();
+	if(pixel_x>=image_x && pixel_x < image_x+2 && pixel_y < image_y){
+		h_IMAGE_extended[image_x_ext*(2+pixel_y)+(2+pixel_x)] = h_IMAGE[image_x*pixel_y+(pixel_x-2)];
+	}
+	__syncthreads();
+	if(pixel_x < image_x && pixel_y>=image_y && pixel_y < image_y+2){
+		h_IMAGE_extended[image_x_ext*(2+pixel_y)+(2+pixel_x)] = h_IMAGE[image_x*(pixel_y-2)+pixel_x];
+	}
+}
+
+template <typename T>
+__global__ void extension_mirror_gpu_sort_save(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int image_y){
+
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+	int image_x_ext = image_x+4;
+	int image_y_ext = image_y+4;
 
 	if(pixel_x < image_x && pixel_y < 2){
 		h_IMAGE_extended[image_x_ext*pixel_y+(2+pixel_x)] = h_IMAGE[image_x*pixel_y+pixel_x];
@@ -188,6 +213,7 @@ __global__ void extension_mirror_gpu_sort_save(T* h_IMAGE, T* h_IMAGE_extended, 
 		}
 	}
 */
+	__syncthreads();
 	if(pixel_x < image_y && pixel_y < 2){
 		h_IMAGE_extended[(image_x_ext)*(pixel_x+2)+pixel_y] = h_IMAGE[image_x*pixel_x+pixel_y];
 	}
@@ -200,6 +226,7 @@ __global__ void extension_mirror_gpu_sort_save(T* h_IMAGE, T* h_IMAGE_extended, 
 		}
 	}
 */
+	__syncthreads();
 	if(pixel_x < image_x && pixel_y < 2){
 		h_IMAGE_extended[(image_x_ext)*(pixel_y+image_x+2)+2+pixel_x] = h_IMAGE[image_x*(pixel_y+image_x-2)+pixel_x];
 	}
@@ -213,6 +240,7 @@ __global__ void extension_mirror_gpu_sort_save(T* h_IMAGE, T* h_IMAGE_extended, 
 	}
 
 */
+	__syncthreads();
 	if(pixel_x <image_y && pixel_y < 2){
 		h_IMAGE_extended[(image_x_ext)*(pixel_x+2)+2+image_y+pixel_y] = h_IMAGE[image_x*pixel_x+pixel_y+image_y-2];
 	}
@@ -240,7 +268,6 @@ void extension_mirror_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int ima
             h_IMAGE_extended[i+(image_y+4)*j]=0.;
         }
     }
-
 	for(int j(0); j<image_x; j++)
 	{
 		for(int i(0); i<image_y; i++)
@@ -248,7 +275,6 @@ void extension_mirror_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int ima
 			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i+image_x*j];
 		}
 	}
-
 	for(int j(0); j<2; j++)
 	{
 		for(int i(0); i<image_y; i++)
@@ -256,7 +282,6 @@ void extension_mirror_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int ima
 			h_IMAGE_extended[2+i+(image_x+4)*j] = h_IMAGE[i+image_x*j];
 		}
 	}
-
 	for(int i(0); i<2; i++)
 	{
 		for(int j(0); j<image_x; j++)
@@ -264,7 +289,6 @@ void extension_mirror_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int ima
 			h_IMAGE_extended[i+(image_x+4)*(2+j)] = h_IMAGE[i+image_x*j];
 		}
 	}
-
 	for(int j=image_x; j<image_x+2; j++)
 	{
 		for(int i=0; i<image_y; i++)
@@ -272,7 +296,6 @@ void extension_mirror_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int ima
 			h_IMAGE_extended[2+i+(image_x+4)*(2+j)]=h_IMAGE[i+image_x*(j-2)];
 		}
 	}
-
 	for(int j(0); j<image_x; j++)
 	{
 		for(int i(image_y); i<image_y+2; i++)
@@ -281,3 +304,27 @@ void extension_mirror_sort(T* h_IMAGE, T* h_IMAGE_extended, int image_x, int ima
 		}
 	}
 }
+
+
+template <typename T>
+__global__ void initialize_array(T* array_dev, int size, double value){
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+	if(pixel_x < size){
+		array_dev[pixel_x] = value;
+	}
+}
+
+template <typename T>
+__global__ void initialize_array(T f, T value){
+	f = 0.;
+}
+
+template <typename T>
+__global__ void initialize_b_params(T* b_params_dev, T* beta_dev, int size, int n_beta, int n_gauss){
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if(pixel_x < size){
+		b_params_dev[pixel_x]=beta_dev[n_beta-n_gauss+pixel_x];
+	}
+}
+

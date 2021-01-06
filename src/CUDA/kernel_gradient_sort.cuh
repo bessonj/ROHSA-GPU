@@ -6,29 +6,6 @@
 
 #include <stdio.h>
 
-__global__ void cuda_hello_sort(){
-
-	int index_x = blockIdx.x*BLOCK_SIZE_X_2D_SORT +threadIdx.x;
-	int index_y = blockIdx.y*BLOCK_SIZE_Y_2D_SORT +threadIdx.y;
-	int index_z = blockIdx.z*BLOCK_SIZE_Z_2D_SORT +threadIdx.z;
-	int A = threadIdx.x + (blockDim.y*blockIdx.y);
-	int B = blockDim.y*blockIdx.y;
-
-//printf("threadIdx.x = %d , threadIdx.y = %d , threadIdx.z = %d \n",threadIdx.x,threadIdx.y,threadIdx.z);
-//printf(" blockIdx.x = %d , blockIdx.y = %d , blockIdx.z = %d \n",blockIdx.x,blockIdx.y,blockIdx.z);
-//printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
-
-if(index_x<2 && index_y<2 && index_z<9)
-{
-//printf("threadIdx.x = %d , threadIdx.y = %d , threadIdx.z = %d \n",threadIdx.x,threadIdx.y,threadIdx.z);
-
-printf("index_x = %d , index_y = %d , index_z = %d , A = %d , B = %d\n",index_x,index_y,index_z, A , B);
-}
-//printf("blockIdx.x = %d , index_y = %d , index_z = %d , A = %d , B = %d\n",blockIdx.x,index_y,index_z, A , B);
-//	printf("OK\n");
-	__syncthreads();
-}
-
 __global__ void kernel_conv_g_sort(int n_beta, double* d_g, double* d_IMAGE_sig, double lambda_var_sig, int n_gauss, double* b_params_dev, int k, int image_x, int image_y)
 { 
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
@@ -36,24 +13,19 @@ __global__ void kernel_conv_g_sort(int n_beta, double* d_g, double* d_IMAGE_sig,
 
 	if(index_x<image_x && index_y<image_y)
 	{
-    	d_g[k] += lambda_var_sig * (b_params_dev[k] - d_IMAGE_sig[index_y*image_x+index_x]);
+    	d_g[n_beta-n_gauss+k] += lambda_var_sig * (b_params_dev[k] - d_IMAGE_sig[index_y*image_x+index_x]);
 	}
-//	printf("d_g[%d] = %f\n",n_beta - n_gauss + k,d_g[n_beta - n_gauss + k]);
-/*  	int index_x = blockIdx.x*BLOCK_SIZE_X +threadIdx.x;
-	int index_y = blockIdx.y*BLOCK_SIZE_Y +threadIdx.y;
+}
 
-	if(index_x<indice_x && index_y<indice_y)
-	{
-        d_g[n_beta - n_gauss + k]+= lambda_var_sig * (b_params[k] - result_reduction_sig)
-    }
-*/
+__global__ void kernel_conv_g_reduction_sort(int n_beta, double* d_g, double* result_reduction_sig, double lambda_var_sig, int n_gauss, double* b_params_dev, int k, int image_x, int image_y)
+{ 
+    d_g[n_beta - n_gauss + k] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
 }
 
 __global__ void kernel_update_deriv_conv_conv_sort(double* deriv, double lambda_amp, double lambda_mu, double lambda_sig, double lambda_var_sig, double* conv_conv_amp, double* conv_conv_mu, double* conv_conv_sig, double* image_sig, double* b_params_dev, int indice_y, int indice_x, int k)
 { 
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
 	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
-
 //						ROHSA world			dev world 
 		//deriv      --> (ng,y,x)    --> (z,y,x)
 		//conv_conv_*    --> (y,x)       --> (y,x)
@@ -65,9 +37,8 @@ __global__ void kernel_update_deriv_conv_conv_sort(double* deriv, double lambda_
         deriv[(3*k+1)*indice_x*indice_y+index_y*indice_x+ index_x] += lambda_mu*conv_conv_mu[indice_x*index_y + index_x];
         deriv[(3*k+2)*indice_x*indice_y+index_y*indice_x+ index_x] += lambda_sig*conv_conv_sig[indice_x*index_y + index_x]+ lambda_var_sig*(image_sig[indice_x*index_y + index_x]-b_params_dev[k]);
 	}
-
-	__syncthreads();
 }
+
 
 
 __global__ void gradient_kernel_2_beta_with_INDEXING_sort_edit(double* deriv, int* t_d, double* params, int* t_p, double* residual, int* t_r, double* std_map, int* t_std, int n_gauss)
@@ -123,30 +94,97 @@ __global__ void gradient_kernel_2_beta_with_INDEXING_sort_edit(double* deriv, in
 		double par2_pow = 1/(2*pow(par2,2.));
 		double parstd = 1/pow(INDEXING_2D(std_map, index_y, index_x),2);
 
-		double buffer_0 = 0.;        //dF_over_dB --> (v,y,x,3g)  --> (i,x,y,z)
-		double buffer_1 = 0.;
-		double buffer_2 = 0.;
-
 		for(int i=0; i<residual_SHAPE0; i++){
 			double par_res = INDEXING_3D(residual,i,index_y,index_x)* parstd;
 //			printf("i = %d , index_z = %d , index_y = %d , index_x = %d\n",i,index_z,index_y,index_x);
 			double par1 = double(i+1) - par1_a;
 
-			buffer_0 += exp( -pow( par1 ,2.)*par2_pow ) * par_res;
-			buffer_1 += par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ) * par_res;
-			buffer_2 += par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow ) * par_res;
+			INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)+= exp( -pow( par1 ,2.)*par2_pow ) * par_res;
+			INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)+= par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ) * par_res;
+			INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)+= par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow ) * par_res;
 		}
-
-//		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
-//		printf(" buffer_0 = %f ,  buffer_1 = %f ,  buffer_2 = %f \n", buffer_0, buffer_1, buffer_2);// = %d , index_z = %d\n",index_x,index_y,index_z);
-
-		INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)=buffer_0;
-		INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)=buffer_1;
-		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)=buffer_2;
 	}
-
 }
 
+__global__ void gradient_kernel_2_beta_with_INDEXING_sort(double* deriv, int* t_d, double* params, int* t_p, double* residual, int* t_r, double* std_map, int* t_std, int n_gauss)
+{ 
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
+
+	int dim_g = t_p[0];
+	int dim_y = t_p[1];
+	int dim_x = t_p[2];
+	int dim_v = t_r[0];
+
+	int residual_SHAPE0 = t_r[0];
+	int residual_SHAPE1 = t_r[1];
+	int residual_SHAPE2 = t_r[2];
+	int std_map_SHAPE0 = t_std[0];
+	int std_map_SHAPE1 = t_std[1];
+	int deriv_SHAPE0 = t_d[0];
+	int deriv_SHAPE1 = t_d[1];
+	int deriv_SHAPE2 = t_d[2];
+	int params_SHAPE0 = t_p[0];
+	int params_SHAPE1 = t_p[1];
+	int params_SHAPE2 = t_p[2];
+
+	//taille tableau residual
+	int tr0=t_r[0]; // v --> i
+	int tr1=t_r[1]; // y --> index_y
+    int tr2=t_r[2]; // x --> index_x
+
+	//taille tableau std_map
+	int ts0=t_std[0]; // y --> index_y
+	int ts1=t_std[1]; // x --> index_x
+
+	//taille tableau deriv
+	int td0 = t_d[0]; // 3*ng --> index_z
+	int td1 = t_d[1]; // y --> index_y
+	int td2 = t_d[2]; // x --> index_x
+
+	//taille params_flat
+	int tp0 = t_p[0]; // 3*ng --> index_z
+	int tp1 = t_p[1]; // y --> index_y
+	int tp2 = t_p[2]; // x --> index_x
+
+//						ROHSA world			dev world 
+        //params     --> (ng,y,x)    --> (z,y,x)
+		//residual   --> (z,y,x)     --> (i,y,x)
+		//deriv      --> (ng,y,x)    --> (z,y,x)
+		//std_map    --> (y,x)       --> (y,x)
+
+//	printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
+
+	if(index_z<n_gauss && index_x<dim_x && index_y<dim_y && std_map[index_y*dim_x+index_x]>0.)
+	{
+//		printf("index_x = %d , index_y = %d , index_z = %d\n",index_x,index_y,index_z);
+
+		double par0 = params[(3*index_z+0)*dim_y*dim_x+index_y*dim_x+index_x];
+
+		double par1_a = params[(3*index_z+1)*dim_y*dim_x+index_y*dim_x+index_x];
+		double par2 = params[(3*index_z+2)*dim_y*dim_x+index_y*dim_x+index_x];
+		double par2_pow = 1/(2*pow(par2,2.));
+		double parstd = 1/pow(std_map[index_y*dim_x+index_x],2);
+
+		double buffer_0 = 0.;        //dF_over_dB --> (v,y,x,3g)  --> (i,x,y,z)
+		double buffer_1 = 0.;
+		double buffer_2 = 0.;
+
+		for(int i=0; i<residual_SHAPE0; i++){
+			double par_res = residual[i*dim_y*dim_x+index_y*dim_x+index_x]* parstd;
+			__syncthreads();
+			double par1 = double(i+1) - par1_a;
+			deriv[(3*index_z+0)*dim_y*dim_x+ index_y*dim_x+ index_x]+= exp( -pow( par1 ,2.)*par2_pow ) * par_res;
+			deriv[(3*index_z+1)*dim_y*dim_x+ index_y*dim_x+ index_x]+= par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ) * par_res;
+			deriv[(3*index_z+2)*dim_y*dim_x+ index_y*dim_x+ index_x]+= par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow ) * par_res; 
+		}
+	}
+
+//	__syncthreads();
+//		printf("END\n");
+}
+/*
 __global__ void gradient_kernel_2_beta_with_INDEXING_sort(double* deriv, int* t_d, double* params, int* t_p, double* residual, int* t_r, double* std_map, int* t_std, int n_gauss)
 { 
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
@@ -225,9 +263,9 @@ __global__ void gradient_kernel_2_beta_with_INDEXING_sort(double* deriv, int* t_
 		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)=buffer_2;
 	}
 
-	__syncthreads();
+//	__syncthreads();
 }
-
+*/
 __global__ void gradient_kernel_2_beta_working_sort(double* deriv, int* t_d, double* params, int* t_p, double* residual, int* t_r, double* std_map, int* t_std, int n_gauss)
 { 
 
@@ -377,7 +415,7 @@ __global__ void kernel_norm_map_boucle_v_sort(double* map_norm_dev, double* resi
 //  printf("sum_temp = %f\n", sum_temp);
 //  printf("map_norm_dev[index_y*indice_x + index_x] = %f\n", map_norm_dev[index_y*indice_x + index_x]);
 
-//	__syncthreads();
+	__syncthreads();
 
 	map_norm_dev[index_y*indice_x+index_x] = 0.5*sum_temp/pow(std_map[index_y*indice_x + index_x],2);
 
@@ -431,20 +469,29 @@ __global__ void sum_sort(double* array_in, int size){
 
 
 __global__ void display_dev_sort(double* array_out){
-    printf("?\n");
-    printf("array_out[0] = %f\n", array_out[0]);
-    printf("?\n");
+//    printf("?\n");
+    printf("array_out[0] = %.16f\n", array_out[0]);
+//    printf("?\n");
 }
 
 __global__ void display_dev_complete_sort(double* array_out, int size){
     for(int i = 0; i<size; i++){
-        printf("array_out[%d] = %f\n",i,array_out[i]);
+        printf("array_out[%d] = %.16f\n",i,array_out[i]);
     }    
+}
+__global__ void display_dev_complete_fin_sort(double* array_out, int size, int rang){
+    for(int i = size-rang; i<size; i++){
+        printf("array_out[%d] = %.16f\n",i,array_out[i]);
+    }    
+}
+
+__global__ void display_dev_at_index(double* array_out, int index){
+    printf("array_out[%d] = %.16f\n",index,array_out[index]);
 }
 __global__ void display_dev_complete_2D_sort(double* array_out, int size_x, int size_y){
     for(int i = 0; i<size_x; i++){
         for(int j = 0; j<size_y; j++){
-        printf("array_out[%d][%d] = %f\n",j,i,array_out[j*size_y+i]);
+        printf("array_out[%d][%d] = %.16f\n",j,i,array_out[j*size_y+i]);
         }    
     }    
 }
@@ -478,7 +525,7 @@ __global__ void kernel_norm_map_boucle_v_sort(double* map_norm_dev, double* resi
 {
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
 	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
-//	int index_z = blockIdx.z*BLOCK_SIZE_L2_Z +threadIdx.z;
+//	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
 
   if(index_x<indice_x && index_y<indice_y && std_map[index_y*indice_x + index_x]>0.)
   {
@@ -517,13 +564,48 @@ __global__ void kernel_residual_sort(double* beta, double* cube, double* residua
 			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
 			model_gaussienne += par[0]*exp(-pow((double(index_z+1)-par[1]),2.) / (2.*pow(par[2],2.)));
 		}
+
+	residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]+=model_gaussienne-cube[index_z*indice_y*indice_x+index_y*indice_x+index_x];
+	}
 	__syncthreads();
-	residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]=model_gaussienne-cube[index_z*indice_y*indice_x+index_y*indice_x+index_x];
-	__syncthreads();
+}
+
+__global__ void kernel_residual_simple_difference(double* cube, double* cube_reconstructed, double* residual, int indice_x, int indice_y, int indice_v)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
+
+	if(index_x<indice_x && index_y<indice_y && index_z<indice_v)
+	{
+
+	residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]=cube_reconstructed[index_z*indice_y*indice_x+index_y*indice_x+index_x]-cube[index_z*indice_y*indice_x+index_y*indice_x+index_x];
+
 	}
 }
 
 
+__global__ void kernel_hypercube_reconstructed(double* beta, double* cube_tilde, int indice_x, int indice_y, int indice_v, int n_gauss)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
+
+	if(index_x<indice_x && index_y<indice_y && index_z<indice_v)
+	{
+	  	double model_gaussienne = 0.;
+		for(int g = 0; g<n_gauss; g++)
+		{
+			double par[3];
+			par[0]=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];
+			par[1]=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];
+			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
+			model_gaussienne += par[0]*exp(-pow((double(index_z+1)-par[1]),2.) / (2.*pow(par[2],2.)));
+		}
+		cube_tilde[index_z*indice_y*indice_x+index_y*indice_x+index_x]=model_gaussienne;
+	}
+	__syncthreads();
+}
 
 __global__ void sum_reduction_sort(double* a, double* c, int N)
 {
@@ -694,7 +776,14 @@ __global__ void gradient_kernel_2_beta_sort(double* deriv, int* t_d, double* par
 }
 
 
+__global__ void check_nan(double* array, int size)
+{ 
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
 
+	if(isnan(array[index_x]) && index_x<size){
+		array[index_x] = 0;
+	}
+}
 
 
 

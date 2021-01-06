@@ -2,15 +2,131 @@
 #include <omp.h>
 #include <cmath>
 #include <iostream>
+#include <fstream>
+#include <iterator>
 #include "matplotlibcpp.h"
 
 namespace plt = matplotlibcpp;
 //using namespace std;
-
 using namespace CCfits;
 
+hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole_data_in_cube, bool last_level_power_of_two)
+{
+	this->indice_debut= indice_debut;
+	this->indice_fin = indice_fin;
+	if(M.file_type_fits){
+//		if(last_level_power_of_two){
+		get_array_from_fits(M);
+	//	get_dimensions_from_fits(); //inutile
+//		get_binary_from_fits(); // WARNING 
+//		get_vector_from_binary(this->data);
+		if(whole_data_in_cube){
+			this->nside = dim2nside();
+//			std::cout << "	nside =  " <<this->nside<< std::endl;		
+		}else{
+			this->nside = dim2nside()-1;
+		}
+	}
+	if(M.file_type_dat){
+		this->data = use_dat_file(M);
+		this->nside = dim2nside();
+	}
+	if(last_level_power_of_two){
+		this->nside = dim2nside()-1;
+		std::cout<<"this->nside = "<<this->nside<<std::endl;
+	}
+//	std::cout<<dim_data[2]<<std::endl;
+//	exit(0);
+	
+	dim_cube[0] =pow(2.0,nside);
+	dim_cube[1] =pow(2.0,nside);
+	if(M.file_type_fits){
+		dim_cube[2] = indice_fin-indice_debut+1;
+	}
+	else{
+		dim_cube[2] = dim_data[2];
+	}
 
-// mettre des const à la fin des déclarations si on ne modifie pas l'objet i.e. les attributs
+	std::cout<<"BEFORE SCALING"<<std::endl;
+	std::cout<<"dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
+
+	std::cout<<"dim_cube[0] = "<<dim_cube[0]<<std::endl;
+	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
+	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
+
+	if(M.file_type_fits){
+		if(last_level_power_of_two){
+	std::cout << "	DEBUG " << std::endl;
+			std::vector<std::vector<std::vector<double>>> data_reshaped_local(dim_cube[0], std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2],0.)));
+			data_reshaped_local = reshape_up_for_last_level(indice_debut, indice_fin);
+			this->dim_data[0]=this->dim_cube[0];
+			this->dim_data[1]=this->dim_cube[1];
+			dim_cube[0] =pow(2.0,nside-1);
+			dim_cube[1] =pow(2.0,nside-1);
+			cube = reshape_up_for_last_level(indice_debut, indice_fin);
+	std::cout << "	DEBUG " << std::endl;
+
+/*
+			for(int i=0; i< this->dim_cube[0]/2; i++)
+				{
+					for(int j=0; j< this->dim_cube[1]/2	; j++)
+					{
+						for(int k= indice_debut; k<= indice_fin; k++)
+						{
+							data_reshaped_local[i][j][k-indice_debut]= this->data[i+this->dim_data[0]/4][j+this->dim_data[1]/4][k];
+						}
+					}
+				}
+			std::cout<<"DEBUG"<<std::endl;
+*/
+			this->data = data_reshaped_local;
+		}else{
+			cube = reshape_up(indice_debut, indice_fin);
+			std::vector<std::vector<std::vector<double>>> data_reshaped_local(dim_data[0], std::vector<std::vector<double>>(dim_data[1],std::vector<double>(dim_cube[2],0.)));
+
+			for(int i=0; i< this->dim_data[0]; i++)
+				{
+					for(int j=0; j< this->dim_data[1]; j++)
+					{
+						for(int k= indice_debut; k<= indice_fin; k++)
+						{
+							data_reshaped_local[i][j][k-indice_debut]= this->data[i][j][k];
+						}
+					}
+				}
+			this->data = data_reshaped_local;
+		}
+	}
+	else{
+		cube = data;
+	}
+	std::cout<<"AFTER SCALING"<<std::endl;
+	std::cout<<"dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
+
+	std::cout<<"dim_cube[0] = "<<dim_cube[0]<<std::endl;
+	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
+	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
+
+
+/*
+	for(int k(0); k<dim_cube[0]; k++)
+	{
+		for(int j(0); j<dim_cube[1]; j++)
+		{
+			for(int i(0); i< dim_cube[2]; i++)
+			{
+			std::cout<<"cube["<<k<<"]["<<j<<"]["<<i<<"] = "<<data[k][j][i]<<std::endl;
+			exit(0);
+			}
+		}
+	}
+*/
+}
+
 hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole_data_in_cube)
 {
 	this->indice_debut= indice_debut;
@@ -56,7 +172,6 @@ hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole
 	if(M.file_type_fits){
 		cube = reshape_up(indice_debut, indice_fin);
 		std::vector<std::vector<std::vector<double>>> data_reshaped_local(dim_data[0], std::vector<std::vector<double>>(dim_data[1],std::vector<double>(dim_cube[2],0.)));
-
 		for(int i=0; i< this->dim_data[0]; i++)
 			{
 				for(int j=0; j< this->dim_data[1]; j++)
@@ -68,25 +183,12 @@ hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole
 				}
 			}
 		this->data = data_reshaped_local;
-	}
-	else{
+	} else{
 		cube = data;
 	}
 
-/*
-	for(int k(0); k<dim_cube[0]; k++)
-	{
-		for(int j(0); j<dim_cube[1]; j++)
-		{
-			for(int i(0); i< dim_cube[2]; i++)
-			{
-			std::cout<<"cube["<<k<<"]["<<j<<"]["<<i<<"] = "<<data[k][j][i]<<std::endl;
-			exit(0);
-			}
-		}
-	}
-*/
 }
+
 
 hypercube::hypercube(parameters &M, int indice_debut, int indice_fin)
 {
@@ -242,9 +344,7 @@ int hypercube::dim2nside()
 //assuming the cube has been reshaped before through the python tool
 std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 {
-
 	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2])));
-
 	for(int i(0); i< dim_cube[0]; i++)
 	{
 		for(int j(0); j<dim_cube[1]; j++)
@@ -252,6 +352,28 @@ std::vector<std::vector<std::vector<double>>> hypercube::reshape_up()
 			for(int k(0); k<dim_cube[2]; k++)
 			{
 				cube_[i][j][k]= data[i][j][k];
+			}
+		}
+	}
+
+	return cube_;
+}
+
+std::vector<std::vector<std::vector<double>>> hypercube::reshape_up_for_last_level(int borne_inf, int borne_sup)
+{
+	//compute the offset so that the data file lies in the center of a cube
+	int offset_x = (-dim_cube[0]+dim_data[0])/2;
+	int offset_y = (-dim_cube[1]+dim_data[1])/2;
+
+	std::vector<std::vector<std::vector<double>>> cube_(dim_cube[0],std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2],0.)));
+
+	for(int i=offset_x; i< this->dim_cube[0]+offset_x; i++)
+	{
+		for(int j=offset_y; j<this->dim_cube[1]+offset_y; j++)
+		{
+			for(int k=0; k<this->dim_cube[2]; k++)
+			{
+				cube_[i-offset_x][j-offset_y][k]= this->data[i][j][borne_inf+k];
 			}
 		}
 	}
@@ -350,6 +472,78 @@ int hypercube::get_binary_from_fits(){
 	return n;
 }
 
+void hypercube::write_in_file(std::vector<std::vector<std::vector<double>>> &file_in){
+/*
+	std::ofstream objetfichier;
+ 	objetfichier.open("./right_before_last_level.raw", std::ios::out | std::ofstream::binary ); //on ouvre le fichier en ecriture
+	if (objetfichier.bad()) //permet de tester si le fichier s'est ouvert sans probleme
+		std::cout<<"ERREUR À L'OUVERTURE DU FICHIER RAW AVANT ÉCRITURE"<< std::endl;
+*/
+	int dim_0 = file_in.size();
+	int dim_1 = file_in[0].size();
+	int dim_2 = file_in[0][0].size();
+
+	printf("dim_0 = %d , dim_1 = %d , dim_1 = %d\n",dim_0, dim_1, dim_1);
+
+	std::vector<double> file_in_flat(dim_0*dim_1*dim_2,0.);
+/*
+	double* file_in_flat = NULL;
+	size_t size = dim_0*dim_1*dim_2*sizeof(double);
+	file_in_flat = (double*)malloc(size);
+*/
+
+	for(int k=0; k<dim_0; k++)
+	{
+		for(int j=0; j<dim_1; j++)
+		{
+			for(int i=0; i<dim_2; i++)
+			{
+				file_in_flat[k*dim_2*dim_1+j*dim_2+i] = file_in[k][j][i];
+			}
+		}
+	}
+
+	write_vector_to_file(file_in_flat, "./right_before_last_level.raw");
+}
+
+void hypercube::get_from_file(std::vector<std::vector<std::vector<double>>> &file_out, int dim_0, int dim_1, int dim_2){
+
+   	int n = dim_0*dim_1*dim_2;
+	std::ifstream is("./right_before_last_level.raw", std::ios::in | std::ifstream::binary);
+	std::vector<double> file_out_flat = read_vector_from_file("./right_before_last_level.raw");
+
+	for(int k=0; k<dim_0; k++)
+	{
+		for(int j=0; j<dim_1; j++)
+		{
+			for(int i=0; i<dim_2; i++)
+			{
+//				printf("file_out_flat[%d][%d][%d]=%f\n",k,j,i,file_out_flat[k*dim_2*dim_1+j*dim_2+i]);
+				file_out[k][j][i] = file_out_flat[k*dim_2*dim_1+j*dim_2+i];
+			}
+		}
+	}
+}
+
+
+
+
+void hypercube::write_vector_to_file(const std::vector<double>& myVector, std::string filename)
+{
+    std::ofstream ofs(filename, std::ios::out | std::ofstream::binary);
+    std::ostream_iterator<double> osi{ofs," "};
+    std::copy(myVector.begin(), myVector.end(), osi);
+}
+
+std::vector<double> hypercube::read_vector_from_file(std::string filename)
+{
+    std::vector<double> newVector{};
+    std::ifstream ifs(filename, std::ios::in | std::ifstream::binary);
+    std::istream_iterator<double> iter{ifs};
+    std::istream_iterator<double> end{};
+    std::copy(iter, end, std::back_inserter(newVector));
+    return newVector;
+}
 
 void hypercube::get_array_from_fits(parameters &M){
 	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
@@ -1271,12 +1465,14 @@ void hypercube::mean_parameters(std::vector<std::vector<std::vector<double>>> &p
 
 void hypercube::display_avec_et_sans_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par,int plot_numero)
 {
+	int dim_0 = params[0][0].size();
+	int dim_1 = params[0].size();
 
-	std::vector<float> z_show(this->dim_data[0]*this->dim_data[1],0.);
+	std::vector<float> z_show(dim_0*dim_1,0.);
 
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_show[i*this->dim_data[1]+j] = params[num_par+num_gauss*3][j][i];
+	for(int i=0;i<dim_0;i++){
+		for(int j=0;j<dim_1;j++){
+			z_show[i*dim_1+j] = params[num_par+num_gauss*3][j][i];
 		}
 	}
 
@@ -1295,24 +1491,121 @@ void hypercube::display_avec_et_sans_regu(std::vector<std::vector<std::vector<do
 
 
 	plt::clf();
-//	std::cout<<" DEBUG "<<std::endl;
-//	plt::title();
 
-//	plt::suptitle("Données                      Modèle");
-
-/*
-	plt::subplot(1, 2, 2);
-		plt::imshow(zptr_model, this->dim_cube[0], this->dim_cube[1], colors);
-*/
-//			plt::title("Modèle");
-//	plt::subplot(1, 2, 1);
-	plt::imshow(zptr_cube, this->dim_data[0], this->dim_data[1], colors);
+	plt::imshow(zptr_cube, dim_0, dim_1, colors);
 //			plt::title("Cube hyperspectral");
 	plt::save(str);
 //	plt::show();
 	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
 
 }
+
+void hypercube::simple_plot_through_regu(std::vector<std::vector<std::vector<double>>> &params, int num_gauss, int num_par,int plot_numero)
+{
+	int dim_0 = params[0][0].size();
+	int dim_1 = params[0].size();
+
+	std::vector<float> z_show(dim_0*dim_1,0.);
+
+	for(int i=0;i<dim_0;i++){
+		for(int j=0;j<dim_1;j++){
+			z_show[i*dim_1+j] = params[num_par+num_gauss*3][j][i];
+		}
+	}
+
+	const float* zptr_cube = &(z_show[0]);
+	const int colors = 1;
+
+	std::string s_1 = std::to_string(num_par+num_gauss*3);
+	char const *pchar_1 = s_1.c_str();
+	std::string s_2 = std::to_string(plot_numero);
+	char const *pchar_2 = s_2.c_str();
+
+
+	char str[220];
+	strcpy (str,"plot_param_through_regu_resolution_");
+	strcat (str,pchar_2);
+	strcat (str,"_param_numero_");
+	strcat (str,pchar_1);
+	strcat (str,".png");
+	puts (str);
+
+
+	plt::clf();
+
+	plt::imshow(zptr_cube, dim_0, dim_1, colors);
+//			plt::title("Cube hyperspectral");
+	plt::save(str);
+//	plt::show();
+	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
+
+}
+
+template <typename T> void hypercube::save_result(std::vector<std::vector<std::vector<T>>>& grid_params, parameters& M) {
+
+  std::cout<<"dim_data[0] = "<<dim_data[0]<<std::endl;
+  std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
+  std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
+  
+  std::string space = "          "; 
+
+  std::ofstream myfile;
+  myfile.open(M.fileout);//, std::ofstream::out | std::ofstream::trunc);
+  myfile << "# \n";
+  myfile << "# ______Parameters_____\n";
+  myfile << "# n_gauss = "<< M.n_gauss<<"\n";
+  myfile << "# n_gauss_add = "<< M.n_gauss<<"\n";
+  myfile << "# lambda_amp = "<< M.lambda_amp<<"\n";
+  myfile << "# lambda_mu = "<< M.lambda_mu<<"\n";
+  myfile << "# lambda_sig = "<< M.lambda_sig<<"\n";
+  myfile << "# lambda_var_amp = "<< M.lambda_var_amp<<"\n";
+  myfile << "# lambda_var_mu = "<< M.lambda_var_mu<<"\n";
+  myfile << "# lambda_var_sig = "<< M.lambda_var_sig<<"\n";
+  myfile << "# amp_fact_init = "<< M.amp_fact_init<<"\n";
+  myfile << "# lb_sig_init = "<< M.lb_sig_init<<"\n";
+  myfile << "# ub_sig_init = "<< M.ub_sig_init<<"\n";
+  myfile << "# lb_sig = "<< M.lb_sig<<"\n";
+  myfile << "# ub_sig = "<< M.ub_sig<<"\n";
+  myfile << "# init_option = "<< M.init_option<<"\n";
+  myfile << "# maxiter_itit = "<< M.maxiter_init<<"\n";
+  myfile << "# maxiter = "<< M.maxiter<<"\n";
+  myfile << "# lstd = "<< M.lstd<<"\n";
+  myfile << "# ustd = "<< M.ustd<<"\n";
+  myfile << "# noise = "<< M.noise<<"\n";
+  myfile << "# regul = "<< M.regul<<"\n";
+  myfile << "# descent = "<< M.descent<<"\n";
+  myfile << "# \n";
+  myfile << "# \n";
+  myfile << "# \n";
+
+/*
+    write(12,fmt=*) "# n_gauss_add = ", n_gauss_add
+    write(12,fmt=*) "# lambda_lym_sig = ", lambda_lym_sig
+*/
+  myfile << "# i, j, A, mean, sigma\n";
+
+  std::cout << "grid_params.size() : "<< grid_params.size() << " , " << grid_params[0].size()  << " , " << grid_params[0][0].size() << std::endl;
+
+  for(int i = 0; i<dim_data[1]; i++){
+  	for(int j = 0; j<dim_data[0]; j++){
+  	  for(int k = 0; k<M.n_gauss; k++){
+        myfile << i << space << j << space << grid_params[3*k+0][i][j] << space << grid_params[3*k+1][i][j] << space << grid_params[3*k+2][i][j] <<"\n";
+      }
+  	}
+  }
+
+
+  /*
+
+
+    
+
+	*/
+}
+
+
+
+template void hypercube::save_result<double>(std::vector<std::vector<std::vector<double>>>&, parameters&);
 
 /*	
 void hypercube::print_regulation_on_cube() {

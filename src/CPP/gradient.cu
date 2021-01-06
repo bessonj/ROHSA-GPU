@@ -100,16 +100,6 @@ void gradient_L_2_beta(double* deriv, int* taille_deriv, int product_taille_deri
 
    dim3 Dg, Db;
 
-/*
-    Db.x = BLOCK_SIZE_X; //x
-    Db.y = BLOCK_SIZE_Y; //y
-    Db.z = BLOCK_SIZE_Z; //gaussiennes
-        //deriv      --> (3g,y,x)  --> (z,y,x)
-        //params     --> (3g,y,x)  --> (z,y,x)
-    Dg.x = ceil(taille_deriv[2]/double(BLOCK_SIZE_X));
-    Dg.y = ceil(taille_deriv[1]/double(BLOCK_SIZE_Y));
-    Dg.z = ceil(n_gauss/double(BLOCK_SIZE_Z));
-*/
     Db.x = BLOCK_SIZE_X; //x
     Db.y = BLOCK_SIZE_Y; //y
     Db.z = BLOCK_SIZE_Z; //gaussiennes
@@ -120,20 +110,13 @@ void gradient_L_2_beta(double* deriv, int* taille_deriv, int product_taille_deri
     Dg.z = n_gauss;
 
   cudaDeviceSynchronize();
-//  printf("Dg = %d, %d, %d ; Db = %d, %d, %d\n",Dg.x,Dg.y,Dg.z,Db.x,Db.y,Db.z);
-//  gradient_kernel_2_beta<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
   gradient_kernel_2_beta_with_INDEXING<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
-
-//  printf("Dg = %d, %d, %d ; Db = %d, %d, %d\n",Dg.x,Dg.y,Dg.z,Db.x,Db.y,Db.z);
 
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaMemcpy(params, params_dev, product_taille_params*sizeof(double), cudaMemcpyDeviceToHost));
   cudaDeviceSynchronize();
-//  printf("Avant memcpy !!\n");
 
   checkCudaErrors(cudaMemcpy(deriv, deriv_dev, product_taille_deriv*sizeof(double), cudaMemcpyDeviceToHost));
-
-//  printf("Après memcpy !!\n");
 
   checkCudaErrors(cudaFree(deriv_dev));
   checkCudaErrors(cudaFree(taille_deriv_dev));
@@ -143,8 +126,7 @@ void gradient_L_2_beta(double* deriv, int* taille_deriv, int product_taille_deri
   checkCudaErrors(cudaFree(taille_std_map_dev));
   checkCudaErrors(cudaFree(residual_dev));
   checkCudaErrors(cudaFree(taille_residual_dev));
-// printf("DEBUG !!\n");
-   }
+}
 
 
 void gradient_L_2(double* deriv, int* taille_deriv, int product_taille_deriv, double* params, int* taille_params, int product_taille_params, double* residual, int* taille_residual, int product_residual, double* std_map, int* taille_std_map, int product_std_map, int n_gauss)
@@ -535,15 +517,9 @@ if (N==1){
     double* map_norm_dev = NULL;
     checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(double)));
 
-//    checkCudaErrors(cudaDeviceSynchronize());
-
     kernel_norm_map_boucle_v<<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, taille_residual_dev, std_map_dev, indice_x, indice_y, indice_v);
-
-//    checkCudaErrors(cudaDeviceSynchronize());
-
     int GRID_SIZE_REDUCTION = int(ceil(double(indice_x*indice_y)/double(BLOCK_SIZE_REDUCTION)));
 
-  
     double* tab_cpy_cpu = NULL;
     tab_cpy_cpu = (double*)malloc(GRID_SIZE_REDUCTION*sizeof(double));
     double* tab_test_dev_out=NULL;
@@ -559,7 +535,7 @@ if (N==1){
       sum+=tab_cpy_cpu[o];
     }
     
-//£
+    free(tab_cpy_cpu);
 
     double* d_array_f=NULL;
     checkCudaErrors(cudaMalloc(&d_array_f, 1*sizeof(double))); // ERREUR ICI
@@ -568,59 +544,10 @@ if (N==1){
 
     double* array_f = (double*)malloc(1*sizeof(double));
     checkCudaErrors(cudaMemcpy(array_f, d_array_f, 1*sizeof(double), cudaMemcpyDeviceToHost));
-/*
-    if(indice_x!=indice_y){
-        printf("print map_norm disp\n");
-        display_dev_comp<<<1,1>>>(map_norm_dev, 1000),
-        printf("--> array_f[0] = %f\n",array_f[0]);
-        printf("sum = %f\n",sum);
-    }
-*/
-
-//limite taille à 3300*3300 :/
-/*
-    int N_test = 1.1*1e7;
-    double* test_cpu = (double*)malloc(N_test*sizeof(double));
-    double* test_gpu = (double*)malloc(N_test*sizeof(double));
-    double* f_cpu = (double*)malloc(1*sizeof(double));
-    double* d_array_f_2=NULL;
-    checkCudaErrors(cudaMalloc(&d_array_f_2, 1*sizeof(double))); // ERREUR ICI
-    for(int i = 0; i<N_test; i++){
-       test_cpu[i] = 0.001;
-    }
-    double* d_test=NULL;
-    checkCudaErrors(cudaMalloc(&d_test, N_test*sizeof(double))); // ERREUR ICI
-    checkCudaErrors(cudaMemcpy(d_test, test_cpu, N_test*sizeof(double), cudaMemcpyHostToDevice));
-    double temps_1 = omp_get_wtime();
-    reduction_loop(d_test, d_array_f_2, N_test);
-    double temps_2 = omp_get_wtime();
-    checkCudaErrors(cudaMemcpy(f_cpu, d_array_f_2, 1*sizeof(double), cudaMemcpyDeviceToHost));
-    double sum_test = 0;
-    double temps_3 = omp_get_wtime();
-    for(int i = 0; i<N_test; i++){
-       sum_test += test_cpu[i];
-    }
-    double temps_4 = omp_get_wtime();
-    printf("temps cpu =     %f\n",temps_4-temps_3);
-    printf("temps gpu =     %f\n",temps_2-temps_1);
-    printf("sum_test =     %f\n",sum_test);
-    printf("d_array_f[0] = %f\n",f_cpu[0]);
-*/
-
     checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(double), cudaMemcpyDeviceToHost));
-
-/*
-    printf("beta[0] = %f \n",beta[0]);
-    printf("residual[0] = %f \n",residual[0]);
-    printf("residual[1] = %f \n",residual[1]);
-    printf("residual[2] = %f \n",residual[2]);
-    printf("residual[3] = %f \n",residual[3]);
-*/
-
     free(array_f);
 
     checkCudaErrors(cudaFree(tab_test_dev_out));
-
     checkCudaErrors(cudaFree(d_array_f));
     checkCudaErrors(cudaFree(map_norm_dev));
     checkCudaErrors(cudaFree(beta_dev));

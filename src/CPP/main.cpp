@@ -103,14 +103,20 @@ int main(int argc, char * argv[])
 
 	double temps1 = omp_get_wtime();
 	double temps1_lecture = omp_get_wtime();
-
-	parameters user_parametres(argv[1]);
+/*
+	for(int i = 0; i<argc; i++){
+		std::cout<<"argv["<<i<<"] = "<<argv[i]<<std::endl;
+	}
+	exit(0);
+*/
+	parameters user_parametres(argv[1], argv[2]);
 
 
 	if(user_parametres.file_type_fits){
 
 		//Pour un FITS :
-        hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube); 
+        hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube, false); //true for reshaping, false for whole data
+//        hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube); 
 
 //		Hypercube_file.display_cube(0);
 //
@@ -226,7 +232,8 @@ exit(0);
 	if(user_parametres.file_type_dat){
 
 	//Pour un DAT :
-        hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube); 
+    hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube); 
+
 //	        hypercube Hypercube_file(user_parametres); 
 	//utilise le fichier dat sans couper les données
 //set dimensions of the cube
@@ -253,6 +260,18 @@ exit(0);
 		int i_max = 4;
 		int j_max = 5;
 
+		Hypercube_file.save_result<double>(algo.grid_params, user_parametres);
+
+	for(int num_gauss = 0; num_gauss < user_parametres.n_gauss; num_gauss ++){
+		for (int num_par = 0; num_par < 3; num_par++)
+		{
+			Hypercube_file.display_avec_et_sans_regu(algo.grid_params, num_gauss, num_par , num_par+num_gauss*3);
+		}
+	}
+
+
+
+	exit(0);
 		for(int i=0;i<i_max;i++){
 			for(int j=0;j<j_max;j++){
 				Hypercube_file.plot_line(algo.grid_params, i, j, user_parametres.n_gauss);

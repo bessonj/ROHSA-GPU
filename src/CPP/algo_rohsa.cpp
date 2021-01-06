@@ -10,7 +10,7 @@
 #include "convolutions.hpp"
 #include "f_g_cube_gpu.hpp"
 #include "culbfgsb.h"
-
+#include "callback_cpu.h"
 
 algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 {
@@ -71,7 +71,7 @@ algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 	if(M.descent)
 	{
 		std::cout<<"DÉBUT DE DESCENTE"<<std::endl;
-		descente(M, grid_params, fit_params);
+		descente<double>(M, grid_params, fit_params);
 	}
 
 	std::cout << "params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
@@ -90,9 +90,10 @@ algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 
 }
 
-void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
-	
-	std::vector<double> b_params(M.n_gauss,0.);
+//void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){	
+template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){	
+	std::vector<T> b_params(M.n_gauss,0.);
+	temps_global = 0.; 
 	temps_f_g_cube = 0.; 
 	temps_conv = 0.;
 	temps_deriv = 0.;
@@ -104,6 +105,7 @@ void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<dou
 	temps_tableau_update = 0.;
 	temps_mirroirs = 0.;
 	this->temps_transfert_d = 0.;
+	this->temps_copy = 0.;
 	for(int i=0;i<M.n_gauss; i++){
 		fit_params[0+3*i][0][0] = 0.;
 		fit_params[1+3*i][0][0] = 1.;
@@ -113,9 +115,10 @@ void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<dou
 
 	std::cout << "grid_params.size() : "<< grid_params.size() << " , " << grid_params[0].size()  << " , " << grid_params[0][0].size() << std::endl;
 
+	double temps2_before_nside;
 	double temps1_descente = omp_get_wtime();
 
-	std::vector<double> fit_params_flat(fit_params.size(),0.); //used below
+	std::vector<T> fit_params_flat(fit_params.size(),0.); //used below
 
 	double temps_multiresol=0.;
 
@@ -136,454 +139,398 @@ void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<dou
 //		#pragma omp for
 	double temps1_before_nside = omp_get_wtime();
 
-	for(n=0; n<file.nside; n++)
-	{
-		double temps1_init_spectrum = omp_get_wtime();
+	if(!(M.jump_to_last_level)){
+		for(n=0; n<file.nside; n++)
+		{
+			double temps1_init_spectrum = omp_get_wtime();
 
-		int power(pow(2,n));
+			int power(pow(2,n));
 
-		std::cout << " power = " << power << std::endl;
+			std::cout << " power = " << power << std::endl;
 
-		std::vector<std::vector<std::vector<double>>> cube_mean(power, std::vector<std::vector<double>>(power,std::vector<double>(dim_v,1.)));
+			std::vector<std::vector<std::vector<T>>> cube_mean(power, std::vector<std::vector<T>>(power,std::vector<T>(dim_v,1.)));
 
-		mean_array(power, cube_mean);
+			mean_array(power, cube_mean);
 
-		std::vector<double> cube_mean_flat(cube_mean[0][0].size());
+			std::vector<T> cube_mean_flat(cube_mean[0][0].size());
 
-		if (n==0) {
-			for(int e(0); e<cube_mean[0][0].size(); e++) {
-				cube_mean_flat[e] = cube_mean[0][0][e]; //cache ok
-				}
+			if (n==0) {
+				for(int e(0); e<cube_mean[0][0].size(); e++) {
+					cube_mean_flat[e] = cube_mean[0][0][e]; //cache ok
+					}
 
-			for(int e(0); e<fit_params_flat.size(); e++) {
-				fit_params_flat[e] = fit_params[e][0][0]; //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
-				}
-
-
-
-			//assume option "mean"
-			std::cout<<"Init mean spectrum"<<std::endl;
-			
-			init_spectrum(M, cube_mean_flat, fit_params_flat);
-
-//				init_spectrum(M, cube_mean_flat, std_spect); //option spectre
-//				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
-//				init_spectrum(M, cube_mean_flat, max_spect_norm); //option norme spectre
+				for(int e(0); e<fit_params_flat.size(); e++) {
+					fit_params_flat[e] = fit_params[e][0][0]; //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
+					}
 
 
-			for(int i(0); i<M.n_gauss; i++) {
-					b_params[i]= fit_params_flat[2+3*i];
-//					std::cout<<"b_params["<<i<<"] = "<<b_params[i]<<std::endl;
-				}
 
-			//we recover fit_params from its 1D version since we can't do fit_params[.][1][1] in C/C++
-			for(int e(0); e<fit_params_flat.size(); e++) {
-				fit_params[e][0][0] = fit_params_flat[e]; //cache
-				}
-			}
-		//	exit(0);
-		
-		double temps2_init_spectrum = omp_get_wtime();
-		temps_init_spectrum+= temps2_init_spectrum - temps1_init_spectrum;
-		double temps1_upgrade = omp_get_wtime();
-			if(M.regul==false) {
-				double temps1_upgrade = omp_get_wtime();
-				for(int e(0); e<fit_params.size(); e++) {
-					fit_params[e][0][0]=fit_params_flat[e];
-					grid_params[e][0][0] = fit_params[e][0][0];
-				}
-				upgrade(M ,cube_mean, fit_params, power);
-				double temps2_upgrade = omp_get_wtime();
-				temps_upgrade+=temps2_upgrade-temps1_upgrade;
-
-			} else if(M.regul) {
-				if (n==0){
+				//assume option "mean"
+				std::cout<<"Init mean spectrum"<<std::endl;
 				
-/*
- fit_params[0 ][0][0] =   0.13185348884157008;     
- fit_params[1 ][0][0] =    178.95353508217806 ;    
- fit_params[2 ][0][0] =    12.000000000000000  ;   
- fit_params[3 ][0][0] =   0.96676130671180927   ;  
- fit_params[4 ][0][0] =    252.29151164983648    ; 
- fit_params[5 ][0][0] =    12.000000000000000     ;
- fit_params[6 ][0][0] =    1.2482400557413060     ;
- fit_params[7 ][0][0] =    227.08690275336727     ;
- fit_params[8 ][0][0] =    12.000000000000000     ;
- fit_params[9 ][0][0] =    2.8679933281280871e-2;
- fit_params[10 ][0][0] =    145.07479624121265   ;  
- fit_params[11 ][0][0] =    12.000000000000000    ; 
- fit_params[12 ][0][0] =    2.6693233621404948     ;
- fit_params[13 ][0][0] =    203.73549043007307     ;
- fit_params[14 ][0][0] =    11.756541084302166     ;
- fit_params[15 ][0][0] =   0.15589552187914471     ;
- fit_params[16 ][0][0] =    271.55290701809031     ;
- fit_params[17 ][0][0] =    11.892606675545769     ;
- fit_params[18 ][0][0] =   0.60460258556684865     ;
- fit_params[19 ][0][0] =    197.26271048623960     ;
- fit_params[20 ][0][0] =    3.8724543060279322     ;
- fit_params[21 ][0][0] =   0.38513975147328383     ;
- fit_params[22 ][0][0] =    203.40116986850313     ;
- fit_params[23 ][0][0] =    2.7406645675468209     ;
- fit_params[24 ][0][0] =   0.26368863739424819     ;
- fit_params[25 ][0][0] =    200.14527630853959     ;
- fit_params[26 ][0][0] =    11.523657275718318     ;
- fit_params[27 ][0][0] =    5.6833861518948897e-2;
- fit_params[28 ][0][0] =    298.65859380871774    ; 
- fit_params[29 ][0][0] =    10.349266870430457     ;
- fit_params[30 ][0][0] =    5.7582926873106927e-2;
- fit_params[31 ][0][0] =    257.84841218773198    ; 
- fit_params[32 ][0][0] =    3.1369301998655779     ;
- fit_params[33 ][0][0] =    3.1605293939367583e-2;
- fit_params[34 ][0][0] =    214.84152180269470    ; 
- fit_params[35 ][0][0] =    1.8009704780789586;
-*/
+				init_spectrum(M, cube_mean_flat, fit_params_flat);
+
+	//				init_spectrum(M, cube_mean_flat, std_spect); //option spectre
+	//				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
+	//				init_spectrum(M, cube_mean_flat, max_spect_norm); //option norme spectre
 
 
-//	(this->file).plot_multi_lines(fit_params, cube_mean);
+				for(int i(0); i<M.n_gauss; i++) {
+						b_params[i]= fit_params_flat[2+3*i];
+	//					std::cout<<"b_params["<<i<<"] = "<<b_params[i]<<std::endl;
+					}
 
-/*
-    for(int i(0); i<3*M.n_gauss; i++) {
-		for(int j(0); j<power; j++) {
-			for(int k(0); k<power; k++) {
-				printf("fit_params[%d][%d][%d]=%f\n", i,j,k, fit_params[i][j][k]);
-			}
-		}
-	}
-//exit(0);
-*/
+				//we recover fit_params from its 1D version since we can't do fit_params[.][1][1] in C/C++
+				for(int e(0); e<fit_params_flat.size(); e++) {
+					fit_params[e][0][0] = fit_params_flat[e]; //cache
+					}
+				}
+			//	exit(0);
+			
+			double temps2_init_spectrum = omp_get_wtime();
+			temps_init_spectrum+= temps2_init_spectrum - temps1_init_spectrum;
+			double temps1_upgrade = omp_get_wtime();
+				if(M.regul==false) {
 					double temps1_upgrade = omp_get_wtime();
+					for(int e(0); e<fit_params.size(); e++) {
+						fit_params[e][0][0]=fit_params_flat[e];
+						grid_params[e][0][0] = fit_params[e][0][0];
+					}
 					upgrade(M ,cube_mean, fit_params, power);
 					double temps2_upgrade = omp_get_wtime();
 					temps_upgrade+=temps2_upgrade-temps1_upgrade;
 
-//	(this->file).plot_multi_lines(fit_params, cube_mean, "second_plot");
-
-/*
-    for(int i(0); i<3*M.n_gauss; i++) {
-		for(int j(0); j<power; j++) {
-			for(int k(0); k<power; k++) {
-				printf("fit_params[%d][%d][%d]=%f\n", i,j,k, fit_params[i][j][k]);
-			}
-		}
-	}
-exit(0);
-*/
-				}
-				if (n>0 and n<file.nside){
-
-					if (power ==2){
-
- fit_params[           0 ][           0 ][           0 ] =   0.12800975412547183      ;
- fit_params[           0 ][           0 ][           1 ] =   0.12800975412547183      ;
- fit_params[           0 ][           1 ][           0 ] =   0.12800975412547183      ;
- fit_params[           0 ][           1 ][           1 ] =   0.12800975412547183      ;
- fit_params[           1 ][           0 ][           0 ] =    180.05482716213552      ;
- fit_params[           1 ][           0 ][           1 ] =    180.05482716213552      ;
- fit_params[           1 ][           1 ][           0 ] =    180.05482716213552      ;
- fit_params[           1 ][           1 ][           1 ] =    180.05482716213552      ;
- fit_params[           2 ][           0 ][           0 ] =    12.106686744104559      ;
- fit_params[           2 ][           0 ][           1 ] =    12.106686744104559      ;
- fit_params[           2 ][           1 ][           0 ] =    12.106686744104559      ;
- fit_params[           2 ][           1 ][           1 ] =    12.106686744104559      ;
- fit_params[           3 ][           0 ][           0 ] =    1.0600407207659746      ;
- fit_params[           3 ][           0 ][           1 ] =    1.0600407207659746      ;
- fit_params[           3 ][           1 ][           0 ] =    1.0600407207659746      ;
- fit_params[           3 ][           1 ][           1 ] =    1.0600407207659746      ;
- fit_params[           4 ][           0 ][           0 ] =    250.52298969665108      ;
- fit_params[           4 ][           0 ][           1 ] =    250.52298969665108      ;
- fit_params[           4 ][           1 ][           0 ] =    250.52298969665108      ;
- fit_params[           4 ][           1 ][           1 ] =    250.52298969665108      ;
- fit_params[           5 ][           0 ][           0 ] =    14.238167675192740      ;
- fit_params[           5 ][           0 ][           1 ] =    14.238167675192740      ;
- fit_params[           5 ][           1 ][           0 ] =    14.238167675192740      ;
- fit_params[           5 ][           1 ][           1 ] =    14.238167675192740      ;
- fit_params[           6 ][           0 ][           0 ] =    1.2084617713378702      ;
- fit_params[           6 ][           0 ][           1 ] =    1.2084617713378702      ;
- fit_params[           6 ][           1 ][           0 ] =    1.2084617713378702      ;
- fit_params[           6 ][           1 ][           1 ] =    1.2084617713378702      ;
- fit_params[           7 ][           0 ][           0 ] =    224.48625973277666      ;
- fit_params[           7 ][           0 ][           1 ] =    224.48625973277666      ;
- fit_params[           7 ][           1 ][           0 ] =    224.48625973277666      ;
- fit_params[           7 ][           1 ][           1 ] =    224.48625973277666      ;
- fit_params[           8 ][           0 ][           0 ] =    11.357933194038875      ;
- fit_params[           8 ][           0 ][           1 ] =    11.357933194038875      ;
- fit_params[           8 ][           1 ][           0 ] =    11.357933194038875      ;
- fit_params[           8 ][           1 ][           1 ] =    11.357933194038875      ;
- fit_params[           9 ][           0 ][           0 ] =    2.3550818551629462e-2 ;
- fit_params[           9 ][           0 ][           1 ] =    2.3550818551629462e-2 ;
- fit_params[           9 ][           1 ][           0 ] =    2.3550818551629462e-2 ;
- fit_params[           9 ][           1 ][           1 ] =    2.3550818551629462e-2 ;
- fit_params[          10 ][           0 ][           0 ] =    142.67171188631278      ;
- fit_params[          10 ][           0 ][           1 ] =    142.67171188631278      ;
- fit_params[          10 ][           1 ][           0 ] =    142.67171188631278      ;
- fit_params[          10 ][           1 ][           1 ] =    142.67171188631278      ;
- fit_params[          11 ][           0 ][           0 ] =    24.303045603972546      ;
- fit_params[          11 ][           0 ][           1 ] =    24.303045603972546      ;
- fit_params[          11 ][           1 ][           0 ] =    24.303045603972546      ;
- fit_params[          11 ][           1 ][           1 ] =    24.303045603972546      ;
- fit_params[          12 ][           0 ][           0 ] =    2.4168148793963518      ;
- fit_params[          12 ][           0 ][           1 ] =    2.4168148793963518      ;
- fit_params[          12 ][           1 ][           0 ] =    2.4168148793963518      ;
- fit_params[          12 ][           1 ][           1 ] =    2.4168148793963518      ;
- fit_params[          13 ][           0 ][           0 ] =    203.40124971351946      ;
- fit_params[          13 ][           0 ][           1 ] =    203.40124971351946      ;
- fit_params[          13 ][           1 ][           0 ] =    203.40124971351946      ;
- fit_params[          13 ][           1 ][           1 ] =    203.40124971351946      ;
- fit_params[          14 ][           0 ][           0 ] =    11.067689564722622      ;
- fit_params[          14 ][           0 ][           1 ] =    11.067689564722622      ;
- fit_params[          14 ][           1 ][           0 ] =    11.067689564722622      ;
- fit_params[          14 ][           1 ][           1 ] =    11.067689564722622      ;
- fit_params[          15 ][           0 ][           0 ] =    6.5103157015035176e-2 ;
- fit_params[          15 ][           0 ][           1 ] =    6.5103157015035176e-2 ;
- fit_params[          15 ][           1 ][           0 ] =    6.5103157015035176e-2 ;
- fit_params[          15 ][           1 ][           1 ] =    6.5103157015035176e-2;
- fit_params[          16 ][           0 ][           0 ] =    272.23544007289087      ;
- fit_params[          16 ][           0 ][           1 ] =    272.23544007289087      ;
- fit_params[          16 ][           1 ][           0 ] =    272.23544007289087      ;
- fit_params[          16 ][           1 ][           1 ] =    272.23544007289087      ;
- fit_params[          17 ][           0 ][           0 ] =    14.676429309765949      ;
- fit_params[          17 ][           0 ][           1 ] =    14.676429309765949      ;
- fit_params[          17 ][           1 ][           0 ] =    14.676429309765949      ;
- fit_params[          17 ][           1 ][           1 ] =    14.676429309765949      ;
- fit_params[          18 ][           0 ][           0 ] =   0.55919737225271182      ;
- fit_params[          18 ][           0 ][           1 ] =   0.55919737225271182      ;
- fit_params[          18 ][           1 ][           0 ] =   0.55919737225271182      ;
- fit_params[          18 ][           1 ][           1 ] =   0.55919737225271182      ;
- fit_params[          19 ][           0 ][           0 ] =    197.19727306460263      ;
- fit_params[          19 ][           0 ][           1 ] =    197.19727306460263      ;
- fit_params[          19 ][           1 ][           0 ] =    197.19727306460263      ;
- fit_params[          19 ][           1 ][           1 ] =    197.19727306460263      ;
- fit_params[          20 ][           0 ][           0 ] =    3.7498051053837402      ;
- fit_params[          20 ][           0 ][           1 ] =    3.7498051053837402      ;
- fit_params[          20 ][           1 ][           0 ] =    3.7498051053837402      ;
- fit_params[          20 ][           1 ][           1 ] =    3.7498051053837402      ;
- fit_params[          21 ][           0 ][           0 ] =   0.37501802803217477      ;
- fit_params[          21 ][           0 ][           1 ] =   0.37501802803217477      ;
- fit_params[          21 ][           1 ][           0 ] =   0.37501802803217477      ;
- fit_params[          21 ][           1 ][           1 ] =   0.37501802803217477      ;
- fit_params[          22 ][           0 ][           0 ] =    203.32039391313074      ;
- fit_params[          22 ][           0 ][           1 ] =    203.32039391313074      ;
- fit_params[          22 ][           1 ][           0 ] =    203.32039391313074      ;
- fit_params[          22 ][           1 ][           1 ] =    203.32039391313074      ;
- fit_params[          23 ][           0 ][           0 ] =    2.7070692040635058      ;
- fit_params[          23 ][           0 ][           1 ] =    2.7070692040635058      ;
- fit_params[          23 ][           1 ][           0 ] =    2.7070692040635058      ;
- fit_params[          23 ][           1 ][           1 ] =    2.7070692040635058      ;
- fit_params[          24 ][           0 ][           0 ] =   0.51704192683721151      ;
- fit_params[          24 ][           0 ][           1 ] =   0.51704192683721151      ;
- fit_params[          24 ][           1 ][           0 ] =   0.51704192683721151      ;
- fit_params[          24 ][           1 ][           1 ] =   0.51704192683721151      ;
- fit_params[          25 ][           0 ][           0 ] =    200.07319126869734      ;
- fit_params[          25 ][           0 ][           1 ] =    200.07319126869734      ;
- fit_params[          25 ][           1 ][           0 ] =    200.07319126869734      ;
- fit_params[          25 ][           1 ][           1 ] =    200.07319126869734      ;
- fit_params[          26 ][           0 ][           0 ] =    12.457897408187174      ;
- fit_params[          26 ][           0 ][           1 ] =    12.457897408187174      ;
- fit_params[          26 ][           1 ][           0 ] =    12.457897408187174      ;
- fit_params[          26 ][           1 ][           1 ] =    12.457897408187174      ;
- fit_params[          27 ][           0 ][           0 ] =    5.0955018710702592e-2 ;
- fit_params[          27 ][           0 ][           1 ] =    5.0955018710702592e-2;
- fit_params[          27 ][           1 ][           0 ] =    5.0955018710702592e-2;
- fit_params[          27 ][           1 ][           1 ] =    5.0955018710702592e-2 ;
- fit_params[          28 ][           0 ][           0 ] =    297.76970529211712      ;
- fit_params[          28 ][           0 ][           1 ] =    297.76970529211712      ;
- fit_params[          28 ][           1 ][           0 ] =    297.76970529211712      ;
- fit_params[          28 ][           1 ][           1 ] =    297.76970529211712      ;
- fit_params[          29 ][           0 ][           0 ] =    12.161470649157568      ;
- fit_params[          29 ][           0 ][           1 ] =    12.161470649157568      ;
- fit_params[          29 ][           1 ][           0 ] =    12.161470649157568      ;
- fit_params[          29 ][           1 ][           1 ] =    12.161470649157568      ;
- fit_params[          30 ][           0 ][           0 ] =    6.8536627841306402e-2 ;
- fit_params[          30 ][           0 ][           1 ] =    6.8536627841306402e-2 ;
- fit_params[          30 ][           1 ][           0 ] =    6.8536627841306402e-2 ;
- fit_params[          30 ][           1 ][           1 ] =    6.8536627841306402e-2 ;
- fit_params[          31 ][           0 ][           0 ] =    257.58792869697089      ;
- fit_params[          31 ][           0 ][           1 ] =    257.58792869697089      ;
- fit_params[          31 ][           1 ][           0 ] =    257.58792869697089      ;
- fit_params[          31 ][           1 ][           1 ] =    257.58792869697089      ;
- fit_params[          32 ][           0 ][           0 ] =    3.2948315664618648      ;
- fit_params[          32 ][           0 ][           1 ] =    3.2948315664618648      ;
- fit_params[          32 ][           1 ][           0 ] =    3.2948315664618648      ;
- fit_params[          32 ][           1 ][           1 ] =    3.2948315664618648      ;
- fit_params[          33 ][           0 ][           0 ] =    4.2440241626722545e-2 ;
- fit_params[          33 ][           0 ][           1 ] =    4.2440241626722545e-2 ;
- fit_params[          33 ][           1 ][           0 ] =    4.2440241626722545e-2 ;
- fit_params[          33 ][           1 ][           1 ] =    4.2440241626722545e-2 ;
- fit_params[          34 ][           0 ][           0 ] =    214.96764833274480      ;
- fit_params[          34 ][           0 ][           1 ] =    214.96764833274480      ;
- fit_params[          34 ][           1 ][           0 ] =    214.96764833274480      ;
- fit_params[          34 ][           1 ][           1 ] =    214.96764833274480      ;
- fit_params[          35 ][           0 ][           0 ] =    2.2912606146642367      ;
- fit_params[          35 ][           0 ][           1 ] =    2.2912606146642367      ;
- fit_params[          35 ][           1 ][           0 ] =    2.2912606146642367      ;
- fit_params[          35 ][           1 ][           1 ] =    2.2912606146642367      ;
- b_params[           0 ] =    12.000000000000000      ;
- b_params[           1 ] =    12.000000000000000      ;
- b_params[           2 ] =    12.000000000000000      ;
- b_params[           3 ] =    12.000000000000000      ;
- b_params[           4 ] =    11.756541084302166      ;
- b_params[           5 ] =    11.892606675545769      ;
- b_params[           6 ] =    3.8724543060279322      ;
- b_params[           7 ] =    2.7406645675468209      ;
- b_params[           8 ] =    11.523657275718318      ;
- b_params[           9 ] =    10.349266870430457      ;
- b_params[          10 ] =    3.1369301998655779      ;
- b_params[          11 ] =    1.8009704780789586      ;
-
-
-					}
-					std::vector<std::vector<double>> std_map(power, std::vector<double>(power,0.));
-					double temps_std_map1=omp_get_wtime();
-					if (M.noise){
-						//reshape_noise_up(indice_debut, indice_fin);
-						//mean_map()	
-					}
-					
-					else if (M.noise==false){
-						set_stdmap_transpose(std_map, cube_mean, M.lstd, M.ustd);
-
-//						set_stdmap(std_map, cube_mean, M.lstd, M.ustd); //?
-					}
-					double temps_std_map2=omp_get_wtime();
-					temps_std_map_pp+=temps_std_map2-temps_std_map1;
-
-					double temps1_update_pp=omp_get_wtime();
-
-					update_clean(M, cube_mean, fit_params, std_map, power, power, dim_v, b_params);
-
-//					(this->file).plot_multi_lines(fit_params, cube_mean, std::to_string(power));
-
-/*
-	printf("fit_params[0][0][0] = %f \n",fit_params[0][0][0] );
-	exit(0);
-*/
-/*
-for(int i = 0; i<(3*M.n_gauss*indice_x*indice_y); i++){
-	printf("fit_[%d] = %f \n",i,g[i] );
-}
-*/
-
-					double temps2_update_pp=omp_get_wtime();
-					temps_update_pp += temps2_update_pp-temps1_update_pp;
-
-					if (M.n_gauss_add != 0){
-						//Add new Gaussian if one reduced chi square > 1  
-					}
-					mean_parameters(fit_params);
-				}
-			}
-
+				} else if(M.regul) {
+					if (n==0){
 	
-			if (M.save_grid){
-				//save grid in file
-			}
+	//	(this->file).plot_multi_lines(fit_params, cube_mean);
 
-	double temps_go_up_level1=omp_get_wtime();
-			go_up_level(fit_params);
-			this->fit_params = fit_params; //updating the model class
-	double temps_go_up_level2=omp_get_wtime();
-	temps_go_up_level=temps_go_up_level2-temps_go_up_level1;
-
-	}
-
-/*
-	this->grid_params = fit_params;
-	return;
-*/
-
-/*
-	std::cout<<"AFFICHAGE POUR LA RECHERCHE D'ERREUR"<<std::endl;
-
-		for(int j(0); j<fit_params[0].size(); j++) {
-			for(int k(0); k<fit_params[0][0].size(); k++) {
-				std::cout<<"-> fit_params["<<0<<"]["<<j<<"]["<<k<<"] = "<<fit_params[0][j][k]<<std::endl;
+	/*
+		for(int i(0); i<3*M.n_gauss; i++) {
+			for(int j(0); j<power; j++) {
+				for(int k(0); k<power; k++) {
+					printf("fit_params[%d][%d][%d]=%f\n", i,j,k, fit_params[i][j][k]);
+				}
 			}
 		}
-		exit(0);	
+	//exit(0);
 	*/
-	double temps2_before_nside = omp_get_wtime();
+						double temps1_upgrade = omp_get_wtime();
+						upgrade(M ,cube_mean, fit_params, power);
+						double temps2_upgrade = omp_get_wtime();
+						temps_upgrade+=temps2_upgrade-temps1_upgrade;
+
+	//	(this->file).plot_multi_lines(fit_params, cube_mean, "second_plot");
+
+	/*
+		for(int i(0); i<3*M.n_gauss; i++) {
+			for(int j(0); j<power; j++) {
+				for(int k(0); k<power; k++) {
+					printf("fit_params[%d][%d][%d]=%f\n", i,j,k, fit_params[i][j][k]);
+				}
+			}
+		}
+	exit(0);
+	*/
+					}
+					if (n>0 and n<file.nside){
+
+						if (power ==2){
+/*
+			fit_params[           0 ][           0 ][           0 ] =   0.12800975412547183      ;
+			fit_params[           0 ][           0 ][           1 ] =   0.12800975412547183      ;
+			fit_params[           0 ][           1 ][           0 ] =   0.12800975412547183      ;
+			fit_params[           0 ][           1 ][           1 ] =   0.12800975412547183      ;
+			fit_params[           1 ][           0 ][           0 ] =    180.05482716213552      ;
+			fit_params[           1 ][           0 ][           1 ] =    180.05482716213552      ;
+			fit_params[           1 ][           1 ][           0 ] =    180.05482716213552      ;
+			fit_params[           1 ][           1 ][           1 ] =    180.05482716213552      ;
+			fit_params[           2 ][           0 ][           0 ] =    12.106686744104559      ;
+			fit_params[           2 ][           0 ][           1 ] =    12.106686744104559      ;
+			fit_params[           2 ][           1 ][           0 ] =    12.106686744104559      ;
+			fit_params[           2 ][           1 ][           1 ] =    12.106686744104559      ;
+			fit_params[           3 ][           0 ][           0 ] =    1.0600407207659746      ;
+			fit_params[           3 ][           0 ][           1 ] =    1.0600407207659746      ;
+			fit_params[           3 ][           1 ][           0 ] =    1.0600407207659746      ;
+			fit_params[           3 ][           1 ][           1 ] =    1.0600407207659746      ;
+			fit_params[           4 ][           0 ][           0 ] =    250.52298969665108      ;
+			fit_params[           4 ][           0 ][           1 ] =    250.52298969665108      ;
+			fit_params[           4 ][           1 ][           0 ] =    250.52298969665108      ;
+			fit_params[           4 ][           1 ][           1 ] =    250.52298969665108      ;
+			fit_params[           5 ][           0 ][           0 ] =    14.238167675192740      ;
+			fit_params[           5 ][           0 ][           1 ] =    14.238167675192740      ;
+			fit_params[           5 ][           1 ][           0 ] =    14.238167675192740      ;
+			fit_params[           5 ][           1 ][           1 ] =    14.238167675192740      ;
+			fit_params[           6 ][           0 ][           0 ] =    1.2084617713378702      ;
+			fit_params[           6 ][           0 ][           1 ] =    1.2084617713378702      ;
+			fit_params[           6 ][           1 ][           0 ] =    1.2084617713378702      ;
+			fit_params[           6 ][           1 ][           1 ] =    1.2084617713378702      ;
+			fit_params[           7 ][           0 ][           0 ] =    224.48625973277666      ;
+			fit_params[           7 ][           0 ][           1 ] =    224.48625973277666      ;
+			fit_params[           7 ][           1 ][           0 ] =    224.48625973277666      ;
+			fit_params[           7 ][           1 ][           1 ] =    224.48625973277666      ;
+			fit_params[           8 ][           0 ][           0 ] =    11.357933194038875      ;
+			fit_params[           8 ][           0 ][           1 ] =    11.357933194038875      ;
+			fit_params[           8 ][           1 ][           0 ] =    11.357933194038875      ;
+			fit_params[           8 ][           1 ][           1 ] =    11.357933194038875      ;
+			fit_params[           9 ][           0 ][           0 ] =    2.3550818551629462e-2 ;
+			fit_params[           9 ][           0 ][           1 ] =    2.3550818551629462e-2 ;
+			fit_params[           9 ][           1 ][           0 ] =    2.3550818551629462e-2 ;
+			fit_params[           9 ][           1 ][           1 ] =    2.3550818551629462e-2 ;
+			fit_params[          10 ][           0 ][           0 ] =    142.67171188631278      ;
+			fit_params[          10 ][           0 ][           1 ] =    142.67171188631278      ;
+			fit_params[          10 ][           1 ][           0 ] =    142.67171188631278      ;
+			fit_params[          10 ][           1 ][           1 ] =    142.67171188631278      ;
+			fit_params[          11 ][           0 ][           0 ] =    24.303045603972546      ;
+			fit_params[          11 ][           0 ][           1 ] =    24.303045603972546      ;
+			fit_params[          11 ][           1 ][           0 ] =    24.303045603972546      ;
+			fit_params[          11 ][           1 ][           1 ] =    24.303045603972546      ;
+			fit_params[          12 ][           0 ][           0 ] =    2.4168148793963518      ;
+			fit_params[          12 ][           0 ][           1 ] =    2.4168148793963518      ;
+			fit_params[          12 ][           1 ][           0 ] =    2.4168148793963518      ;
+			fit_params[          12 ][           1 ][           1 ] =    2.4168148793963518      ;
+			fit_params[          13 ][           0 ][           0 ] =    203.40124971351946      ;
+			fit_params[          13 ][           0 ][           1 ] =    203.40124971351946      ;
+			fit_params[          13 ][           1 ][           0 ] =    203.40124971351946      ;
+			fit_params[          13 ][           1 ][           1 ] =    203.40124971351946      ;
+			fit_params[          14 ][           0 ][           0 ] =    11.067689564722622      ;
+			fit_params[          14 ][           0 ][           1 ] =    11.067689564722622      ;
+			fit_params[          14 ][           1 ][           0 ] =    11.067689564722622      ;
+			fit_params[          14 ][           1 ][           1 ] =    11.067689564722622      ;
+			fit_params[          15 ][           0 ][           0 ] =    6.5103157015035176e-2 ;
+			fit_params[          15 ][           0 ][           1 ] =    6.5103157015035176e-2 ;
+			fit_params[          15 ][           1 ][           0 ] =    6.5103157015035176e-2 ;
+			fit_params[          15 ][           1 ][           1 ] =    6.5103157015035176e-2;
+			fit_params[          16 ][           0 ][           0 ] =    272.23544007289087      ;
+			fit_params[          16 ][           0 ][           1 ] =    272.23544007289087      ;
+			fit_params[          16 ][           1 ][           0 ] =    272.23544007289087      ;
+			fit_params[          16 ][           1 ][           1 ] =    272.23544007289087      ;
+			fit_params[          17 ][           0 ][           0 ] =    14.676429309765949      ;
+			fit_params[          17 ][           0 ][           1 ] =    14.676429309765949      ;
+			fit_params[          17 ][           1 ][           0 ] =    14.676429309765949      ;
+			fit_params[          17 ][           1 ][           1 ] =    14.676429309765949      ;
+			fit_params[          18 ][           0 ][           0 ] =   0.55919737225271182      ;
+			fit_params[          18 ][           0 ][           1 ] =   0.55919737225271182      ;
+			fit_params[          18 ][           1 ][           0 ] =   0.55919737225271182      ;
+			fit_params[          18 ][           1 ][           1 ] =   0.55919737225271182      ;
+			fit_params[          19 ][           0 ][           0 ] =    197.19727306460263      ;
+			fit_params[          19 ][           0 ][           1 ] =    197.19727306460263      ;
+			fit_params[          19 ][           1 ][           0 ] =    197.19727306460263      ;
+			fit_params[          19 ][           1 ][           1 ] =    197.19727306460263      ;
+			fit_params[          20 ][           0 ][           0 ] =    3.7498051053837402      ;
+			fit_params[          20 ][           0 ][           1 ] =    3.7498051053837402      ;
+			fit_params[          20 ][           1 ][           0 ] =    3.7498051053837402      ;
+			fit_params[          20 ][           1 ][           1 ] =    3.7498051053837402      ;
+			fit_params[          21 ][           0 ][           0 ] =   0.37501802803217477      ;
+			fit_params[          21 ][           0 ][           1 ] =   0.37501802803217477      ;
+			fit_params[          21 ][           1 ][           0 ] =   0.37501802803217477      ;
+			fit_params[          21 ][           1 ][           1 ] =   0.37501802803217477      ;
+			fit_params[          22 ][           0 ][           0 ] =    203.32039391313074      ;
+			fit_params[          22 ][           0 ][           1 ] =    203.32039391313074      ;
+			fit_params[          22 ][           1 ][           0 ] =    203.32039391313074      ;
+			fit_params[          22 ][           1 ][           1 ] =    203.32039391313074      ;
+			fit_params[          23 ][           0 ][           0 ] =    2.7070692040635058      ;
+			fit_params[          23 ][           0 ][           1 ] =    2.7070692040635058      ;
+			fit_params[          23 ][           1 ][           0 ] =    2.7070692040635058      ;
+			fit_params[          23 ][           1 ][           1 ] =    2.7070692040635058      ;
+			fit_params[          24 ][           0 ][           0 ] =   0.51704192683721151      ;
+			fit_params[          24 ][           0 ][           1 ] =   0.51704192683721151      ;
+			fit_params[          24 ][           1 ][           0 ] =   0.51704192683721151      ;
+			fit_params[          24 ][           1 ][           1 ] =   0.51704192683721151      ;
+			fit_params[          25 ][           0 ][           0 ] =    200.07319126869734      ;
+			fit_params[          25 ][           0 ][           1 ] =    200.07319126869734      ;
+			fit_params[          25 ][           1 ][           0 ] =    200.07319126869734      ;
+			fit_params[          25 ][           1 ][           1 ] =    200.07319126869734      ;
+			fit_params[          26 ][           0 ][           0 ] =    12.457897408187174      ;
+			fit_params[          26 ][           0 ][           1 ] =    12.457897408187174      ;
+			fit_params[          26 ][           1 ][           0 ] =    12.457897408187174      ;
+			fit_params[          26 ][           1 ][           1 ] =    12.457897408187174      ;
+			fit_params[          27 ][           0 ][           0 ] =    5.0955018710702592e-2 ;
+			fit_params[          27 ][           0 ][           1 ] =    5.0955018710702592e-2;
+			fit_params[          27 ][           1 ][           0 ] =    5.0955018710702592e-2;
+			fit_params[          27 ][           1 ][           1 ] =    5.0955018710702592e-2 ;
+			fit_params[          28 ][           0 ][           0 ] =    297.76970529211712      ;
+			fit_params[          28 ][           0 ][           1 ] =    297.76970529211712      ;
+			fit_params[          28 ][           1 ][           0 ] =    297.76970529211712      ;
+			fit_params[          28 ][           1 ][           1 ] =    297.76970529211712      ;
+			fit_params[          29 ][           0 ][           0 ] =    12.161470649157568      ;
+			fit_params[          29 ][           0 ][           1 ] =    12.161470649157568      ;
+			fit_params[          29 ][           1 ][           0 ] =    12.161470649157568      ;
+			fit_params[          29 ][           1 ][           1 ] =    12.161470649157568      ;
+			fit_params[          30 ][           0 ][           0 ] =    6.8536627841306402e-2 ;
+			fit_params[          30 ][           0 ][           1 ] =    6.8536627841306402e-2 ;
+			fit_params[          30 ][           1 ][           0 ] =    6.8536627841306402e-2 ;
+			fit_params[          30 ][           1 ][           1 ] =    6.8536627841306402e-2 ;
+			fit_params[          31 ][           0 ][           0 ] =    257.58792869697089      ;
+			fit_params[          31 ][           0 ][           1 ] =    257.58792869697089      ;
+			fit_params[          31 ][           1 ][           0 ] =    257.58792869697089      ;
+			fit_params[          31 ][           1 ][           1 ] =    257.58792869697089      ;
+			fit_params[          32 ][           0 ][           0 ] =    3.2948315664618648      ;
+			fit_params[          32 ][           0 ][           1 ] =    3.2948315664618648      ;
+			fit_params[          32 ][           1 ][           0 ] =    3.2948315664618648      ;
+			fit_params[          32 ][           1 ][           1 ] =    3.2948315664618648      ;
+			fit_params[          33 ][           0 ][           0 ] =    4.2440241626722545e-2 ;
+			fit_params[          33 ][           0 ][           1 ] =    4.2440241626722545e-2 ;
+			fit_params[          33 ][           1 ][           0 ] =    4.2440241626722545e-2 ;
+			fit_params[          33 ][           1 ][           1 ] =    4.2440241626722545e-2 ;
+			fit_params[          34 ][           0 ][           0 ] =    214.96764833274480      ;
+			fit_params[          34 ][           0 ][           1 ] =    214.96764833274480      ;
+			fit_params[          34 ][           1 ][           0 ] =    214.96764833274480      ;
+			fit_params[          34 ][           1 ][           1 ] =    214.96764833274480      ;
+			fit_params[          35 ][           0 ][           0 ] =    2.2912606146642367      ;
+			fit_params[          35 ][           0 ][           1 ] =    2.2912606146642367      ;
+			fit_params[          35 ][           1 ][           0 ] =    2.2912606146642367      ;
+			fit_params[          35 ][           1 ][           1 ] =    2.2912606146642367      ;
+			b_params[           0 ] =    12.000000000000000      ;
+			b_params[           1 ] =    12.000000000000000      ;
+			b_params[           2 ] =    12.000000000000000      ;
+			b_params[           3 ] =    12.000000000000000      ;
+			b_params[           4 ] =    11.756541084302166      ;
+			b_params[           5 ] =    11.892606675545769      ;
+			b_params[           6 ] =    3.8724543060279322      ;
+			b_params[           7 ] =    2.7406645675468209      ;
+			b_params[           8 ] =    11.523657275718318      ;
+			b_params[           9 ] =    10.349266870430457      ;
+			b_params[          10 ] =    3.1369301998655779      ;
+			b_params[          11 ] =    1.8009704780789586      ;
+*/
+
+						}
+						std::vector<std::vector<T>> std_map(power, std::vector<T>(power,0.));
+						double temps_std_map1=omp_get_wtime();
+						if (M.noise){
+							//reshape_noise_up(indice_debut, indice_fin);
+							//mean_map()	
+						}
+						
+						else if (M.noise==false){
+							set_stdmap_transpose<T>(std_map, cube_mean, M.lstd, M.ustd);
+
+	//						set_stdmap(std_map, cube_mean, M.lstd, M.ustd); //?
+						}
+						double temps_std_map2=omp_get_wtime();
+						temps_std_map_pp+=temps_std_map2-temps_std_map1;
+
+						double temps1_update_pp=omp_get_wtime();
+
+						update_clean<T>(M, cube_mean, fit_params, std_map, power, power, dim_v, b_params);
+
+	//					(this->file).plot_multi_lines(fit_params, cube_mean, std::to_string(power));
+
+	/*
+		printf("fit_params[0][0][0] = %f \n",fit_params[0][0][0] );
+		exit(0);
+	*/
+	/*
+	for(int i = 0; i<(3*M.n_gauss*indice_x*indice_y); i++){
+		printf("fit_[%d] = %f \n",i,g[i] );
+	}
+	*/
+
+						double temps2_update_pp=omp_get_wtime();
+						temps_update_pp += temps2_update_pp-temps1_update_pp;
+
+						if (M.n_gauss_add != 0){
+							//Add new Gaussian if one reduced chi square > 1  
+						}
+						mean_parameters(fit_params);
+					}
+				}
+
+		
+				if (M.save_grid){
+					//save grid in file
+				}
+
+		double temps_go_up_level1=omp_get_wtime();
+		go_up_level(fit_params);
+		this->fit_params = fit_params; //updating the model class
+		double temps_go_up_level2=omp_get_wtime();
+		temps_go_up_level=temps_go_up_level2-temps_go_up_level1;
+
+		}
+
+
+	/*
+		this->grid_params = fit_params;
+		return;
+	*/
+
+	/*
+		std::cout<<"AFFICHAGE POUR LA RECHERCHE D'ERREUR"<<std::endl;
+
+			for(int j(0); j<fit_params[0].size(); j++) {
+				for(int k(0); k<fit_params[0][0].size(); k++) {
+					std::cout<<"-> fit_params["<<0<<"]["<<j<<"]["<<k<<"] = "<<fit_params[0][j][k]<<std::endl;
+				}
+			}
+			exit(0);	
+		*/
+		temps2_before_nside = omp_get_wtime();
+
+		std::cout<<"            Milieu descente             "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"Temps écoulé jusque ici dans la descente : "<<omp_get_wtime() - temps1_descente <<std::endl;
+		std::cout<<"	-> Temps de calcul init_spectrum : "<< temps_init_spectrum <<std::endl;
+		std::cout<<"	-> Temps de calcul upgrade (update 1D) : "<< temps_upgrade <<std::endl;
+		std::cout<<"	-> Temps de calcul std_map : "<< temps_std_map_pp <<std::endl;
+		std::cout<<"	-> Temps de calcul update (update 1->n-1) : "<< temps_update_pp <<std::endl;
+		std::cout<<"	-> Temps de calcul go_up_level (grille k->k+1) : "<<temps_go_up_level <<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"            début détails             "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<< "	-> Temps de transfert : " << this->temps_transfert_d <<std::endl;
+		std::cout<< "temps d'exécution dF/dB : "<<temps_f_g_cube<<std::endl;
+		std::cout<< "Temps d'exécution convolution : " << temps_conv <<std::endl;
+		std::cout<< "Temps d'exécution deriv : " << temps_deriv  <<std::endl;
+		std::cout<< "Temps d'exécution ravel_3D : " << temps_ravel <<std::endl;
+		std::cout<< "Temps d'exécution tableaux : " << temps_tableaux <<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"           fin détails             "<<std::endl;
+		std::cout<<"                                "<<std::endl;
 
 
 
-	std::cout<<"            Milieu descente             "<<std::endl;
-	std::cout<<"                                "<<std::endl;
-	std::cout<<"Temps écoulé jusque ici dans la descente : "<<omp_get_wtime() - temps1_descente <<std::endl;
-	std::cout<<"	-> Temps de calcul init_spectrum : "<< temps_init_spectrum <<std::endl;
-	std::cout<<"	-> Temps de calcul upgrade (update 1D) : "<< temps_upgrade <<std::endl;
-	std::cout<<"	-> Temps de calcul std_map : "<< temps_std_map_pp <<std::endl;
-	std::cout<<"	-> Temps de calcul update (update 1->n-1) : "<< temps_update_pp <<std::endl;
-	std::cout<<"	-> Temps de calcul go_up_level (grille k->k+1) : "<<temps_go_up_level <<std::endl;
-	std::cout<<"                                "<<std::endl;
-	std::cout<<"                                "<<std::endl;
-	std::cout<<"                                "<<std::endl;
-	std::cout<<"                                "<<std::endl;
-	std::cout<<"            début détails             "<<std::endl;
-	std::cout<<"                                "<<std::endl;
-	std::cout<< "	-> Temps de transfert : " << this->temps_transfert_d <<std::endl;
-	std::cout<< "temps d'exécution dF/dB : "<<temps_f_g_cube<<std::endl;
-	std::cout<< "Temps d'exécution convolution : " << temps_conv <<std::endl;
-	std::cout<< "Temps d'exécution deriv : " << temps_deriv  <<std::endl;
-	std::cout<< "Temps d'exécution ravel_3D : " << temps_ravel <<std::endl;
-	std::cout<< "Temps d'exécution tableaux : " << temps_tableaux <<std::endl;
-	std::cout<<"                                "<<std::endl;
-	std::cout<<"           fin détails             "<<std::endl;
-	std::cout<<"                                "<<std::endl;
 
+		//nouvelle place de reshape_down
+		int offset_w = (this->dim_cube[0]-this->dim_data[0])/2;
+		int offset_h = (this->dim_cube[1]-this->dim_data[1])/2;
 
-	std::vector<std::vector<double>> std_map(this->dim_data[1], std::vector<double>(this->dim_data[0],0.));
+		std::cout<<"Taille fit_params : "<<fit_params.size()<<" , "<<fit_params[0].size()<<" , "<<fit_params[0][0].size()<<std::endl;
+		std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].size()<<" , "<<grid_params[0][0].size()<<std::endl;
 
+		//ancienne place de reshape_down	
+		double temps_reshape_down2 = omp_get_wtime();
+		reshape_down<T>(fit_params, grid_params);
+		double temps_reshape_down1 = omp_get_wtime();
+		temps_reshape_down2 += temps_reshape_down2-temps_reshape_down1;
+
+		std::cout<<"Après reshape_down"<<std::endl;
+		if(M.save_second_to_last_level){
+			this->file.write_in_file(grid_params);
+		}
+
+	}else{
+		this->file.get_from_file(grid_params, 3*M.n_gauss, this->dim_data[1], this->dim_data[0]);
+	}
+
+	this->grid_params = grid_params;
+	std::vector<std::vector<T>> std_map(this->dim_data[1], std::vector<T>(this->dim_data[0],0.));
 	double temps_dernier_niveau1 = omp_get_wtime();
 
-	//nouvelle place de reshape_down
-	int offset_w = (this->dim_cube[0]-this->dim_data[0])/2;
-	int offset_h = (this->dim_cube[1]-this->dim_data[1])/2;
-
-std::cout<<"Taille fit_params : "<<fit_params.size()<<" , "<<fit_params[0].size()<<" , "<<fit_params[0][0].size()<<std::endl;
-std::cout<<"Taille grid_params : "<<grid_params.size()<<" , "<<grid_params[0].size()<<" , "<<grid_params[0][0].size()<<std::endl;
-
-//ancienne place de reshape_down	
-	double temps_reshape_down2 = omp_get_wtime();
-	reshape_down(fit_params, grid_params);
-	double temps_reshape_down1 = omp_get_wtime();
-	temps_reshape_down2 += temps_reshape_down2-temps_reshape_down1;
-
-std::cout<<"Après reshape_down"<<std::endl;
-	this->grid_params = grid_params;
-
-
-//std::cout<<"Taille fit_params : "<<fit_params.size()<<" , "<<fit_params[0].size()<<" , "<<fit_params[0][0].size()<<std::endl;
-
-////PRINT GRID
-/*
-	for(int j(0); j<8; j++) {
-		for(int k(0); k<8; k++) {
-			std::cout<<"--> grid_params["<<0<<"]["<<j<<"]["<<k<<"] = "<<grid_params[0][j][k]<<std::endl;
-		}
-	}
-*/
-
-/*
-std::cout<<"this->file.data = "<<this->file.data[0][0][0]<<std::endl;
-std::cout<<"this->dim_data[0] = "<<this->dim_data[0]<<std::endl;
-std::cout<<"this->dim_data[1] = "<<this->dim_data[1]<<std::endl;
-std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
-*/
-//exit(0);
 	double temps_std_map1=omp_get_wtime();
 	if(M.noise){
 		//std_map=std_data;
 	} else {
 
-		set_stdmap(std_map, this->file.data, M.lstd, M.ustd);
+		set_stdmap<T>(std_map, this->file.data, M.lstd, M.ustd);
 	}
 	double temps_std_map2=omp_get_wtime();
 	temps_std_map_dp+=temps_std_map2-temps_std_map1;
 
-/*
-		std::cout<<"--> std_map[0][0] = "<<std_map[0][0]<<std::endl;
-		std::cout<<"--> std_map[1][0] = "<<std_map[1][0]<<std::endl;
-		std::cout<<"--> std_map[0][1] = "<<std_map[0][1]<<std::endl;
-*/
 	double temps_update_dp1 = omp_get_wtime();
 
 	if(M.regul){
@@ -636,7 +583,7 @@ std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
 	std::cout<<"                                "<<std::endl;
 	std::cout<<"            début détails             "<<std::endl;
 	std::cout<<"                                "<<std::endl;
-	std::cout<<"temps d'exécution résidu et f : "<<temps_f_g_cube<<std::endl;
+/*	std::cout<<"temps d'exécution résidu et f : "<<temps_f_g_cube<<std::endl;
 	std::cout<<"temps d'exécution setulb : "<<temps_setulb<<std::endl;
 	std::cout<< "Temps d'exécution convolution : " << temps_conv <<std::endl;
 	std::cout<< "	-> Temps d'exécution routine mirroir : " << temps_mirroirs <<std::endl;
@@ -645,12 +592,29 @@ std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
 	std::cout<< "Temps d'exécution ravel_3D : " << temps_ravel <<std::endl;
 	std::cout<< "Temps d'exécution tableaux avant gradient : " << temps_tableaux <<std::endl;
 	std::cout<< "Temps d'exécution tableaux dans update : " << temps_tableau_update <<std::endl;
+*/
+	std::cout<<"Temps d'exécution setulb : "<<temps_setulb<<std::endl;
+	std::cout<<"Temps d'exécution f_g_cube : "<<this->temps_f_g_cube<<std::endl;
+	std::cout<< "	-> Temps d'exécution transfert données : " << this->temps_copy  <<std::endl;
+	std::cout<< "	-> Temps d'exécution attache aux données : " << this->temps_tableaux <<std::endl;
+	std::cout<< "	-> Temps d'exécution deriv : " << this->temps_deriv  <<std::endl;
+	std::cout<< "	-> Temps d'exécution régularisation : " << this->temps_conv <<std::endl;
 	std::cout<<"                                "<<std::endl;
 	std::cout<<"           fin détails             "<<std::endl;
 	std::cout<<"                                "<<std::endl;
 }
 
-void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<double>>> &tab1, std::vector<std::vector<std::vector<double>>>&tab2)
+/*
+	printf("this->temps_copy = %f\n", this->temps_copy/1000);
+	printf("this->temps_tableaux = %f\n", this->temps_tableaux/1000);
+	printf("this->temps_deriv = %f\n", this->temps_deriv/1000);
+	printf("this->temps_conv = %f\n", this->temps_conv/1000);
+	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube/1000);
+
+*/
+
+
+template <typename T> void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<T>>> &tab1, std::vector<std::vector<std::vector<T>>>&tab2)
 {
 	int dim_tab1[3], dim_tab2[3];
 	dim_tab1[0]=tab1.size();
@@ -662,8 +626,6 @@ void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<double>>> &tab
 
 	int offset_w = (dim_tab1[1]-dim_tab2[1])/2;
 	int offset_h = (dim_tab1[2]-dim_tab2[2])/2;
-
-
 
 	for(int i(0); i< dim_tab1[0]; i++)
 	{
@@ -679,199 +641,8 @@ void algo_rohsa::reshape_down(std::vector<std::vector<std::vector<double>>> &tab
 
 }
 
-void algo_rohsa::update(parameters &M, std::vector<std::vector<std::vector<double>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<double> &b_params) {
 
-//printf("b_params[0] = %f \n",b_params[0] );
-//printf("beta \n");
-
-	//cube flattened for array operations in f_g_cube_cuda
-	//WARNING : free(cube_flattened) at the end of the function
-	double* cube_flattened = NULL;
-	size_t size_cube = indice_x*indice_y*indice_v*sizeof(double); 
-	cube_flattened = (double*)malloc(size_cube);
-
-	for(int i=0; i<indice_x; i++) {
-		for(int j=0; j<indice_y; j++) {
-			for(int k=0; k<indice_v; k++) {
-				cube_flattened[k*indice_x*indice_y+j*indice_x+i] = cube_avgd_or_data[i][j][k];
-			}
-		}
-	}
-
-//	this->cube_or_dat_flattened = cube_flattened; 
-
-std::cout<<"Taille params : "<<params.size()<<" , "<<params[0].size()<<" , "<<params[0][0].size()<<std::endl;
-std::cout<<"Taille std_map : "<<std_map.size()<<" , "<<std_map[0].size()<<std::endl;
-
-//EXTRAIT 
-/*
-		for(int j(0); j<int(std::min(8,int(params[0].size()))); j++) {
-			for(int k(0); k<int(std::min(8,int(params[0][0].size()))); k++) {
-					std::cout<<"---> params["<<0<<"]["<<j<<"]["<<k<<"] = "<<params[0][j][k]<<std::endl;
-			}
-		}
-*/
-
-std::cout<<"this->file.data = "<<this->file.data[0][0][0]<<std::endl;
-std::cout<<"this->dim_data[0] = "<<this->dim_data[0]<<std::endl;
-std::cout<<"this->dim_data[1] = "<<this->dim_data[1]<<std::endl;
-std::cout<<"this->dim_data[2] = "<<this->dim_data[2]<<std::endl;
-
-	std::cout<<"DÉBUT DE UPDATE"<<std::endl;
-	int n_beta = (3*M.n_gauss * indice_y * indice_x) +M.n_gauss;
-
-std::cout<<"indice_x = "<<indice_x<<std::endl;
-std::cout<<"indice_y = "<<indice_y<<std::endl;
-std::cout<<"n_gauss = "<<M.n_gauss<<std::endl;
-
-	double* lb = NULL;
-	double* ub = NULL;
-	double* beta = NULL;
-	size_t size_n_beta = n_beta*sizeof(double); 
-	lb = (double*)malloc(size_n_beta);
-	ub = (double*)malloc(size_n_beta);
-	beta = (double*)malloc(size_n_beta);
-	initialize_array(lb, n_beta, 0.);
-	initialize_array(ub, n_beta, 0.);
-	initialize_array(beta, n_beta, 0.);
-
-	std::vector<std::vector<std::vector<double>>> lb_3D(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
-
-
-
-	std::vector<std::vector<double>> image_amp(indice_y, std::vector<double>(indice_x,0.));
-	std::vector<std::vector<double>> image_mu(indice_y, std::vector<double>(indice_x,0.));
-	std::vector<std::vector<double>> image_sig(indice_y, std::vector<double>(indice_x,0.));
-
-	std::vector<double> mean_amp(M.n_gauss,0.);
-	std::vector<double> mean_mu(M.n_gauss,0.);
-	std::vector<double> mean_sig(M.n_gauss,0.);
-
-	std::vector<double> ravel_amp(indice_y*indice_x,0.);
-	std::vector<double> ravel_mu(indice_y*indice_x,0.);
-	std::vector<double> ravel_sig(indice_y*indice_x,0.);
-
-	std::vector<double> cube_flat(cube_avgd_or_data[0][0].size(),0.);
-	std::vector<double> lb_3D_flat(lb_3D.size(),0.);
-
-	std::vector<std::vector<std::vector<double>>> ub_3D(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//	std::vector<std::vector<std::vector<double>>> ub_3D;//(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//	ub_3D = lb_3D; //otherwise we get an error : "corrupted double-linked list"
-std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " , " << ub_3D[0][0].size() <<  std::endl;
-
-	std::vector<double> ub_3D_flat(ub_3D.size(),0.);
-
-	double temps1_tableau_update = omp_get_wtime();
-//	std::cout<<"ERREUR 0"<<std::endl;
-	std::cout << "indice_x = " << indice_x <<std::endl;
-	std::cout << "indice_y = " << indice_y <<std::endl;
-	std::cout << "cube.size() : " << cube_avgd_or_data.size() << " , " << cube_avgd_or_data[0].size() << " , " << cube_avgd_or_data[0][0].size() <<  std::endl;
-/*
-if(cube_avgd_or_data[0].size() == 35){
-	exit(0);
-}
-*/
-	for(int j=0; j<indice_x; j++) {
-		for(int i=0; i<indice_y; i++) {
-			for(int p=0; p<cube_flat.size(); p++){
-				cube_flat[p]=cube_avgd_or_data[j][i][p];
-			}
-
-//	std::cout<<"ERREUR 1"<<std::endl;
-			for(int p=0; p<3*M.n_gauss; p++){
-				lb_3D_flat[p]=lb_3D[p][i][j];
-				ub_3D_flat[p]=ub_3D[p][i][j];
-			}
-//	std::cout<<"ERREUR 2"<<std::endravel_3D(l;
-			init_bounds(M, cube_flat, M.n_gauss, lb_3D_flat, ub_3D_flat, false); //bool _init = false 
-//	std::cout<<"ERREUR 3"<<std::endl;
-			for(int p=0; p<3*M.n_gauss; p++){
-				lb_3D[p][i][j]=lb_3D_flat[p]; // the indices have been inverted
-				ub_3D[p][i][j]=ub_3D_flat[p]; //
-			}
-		}
-	}
-
-	//three_D_to_one_D(threeD, oneD, x,y,z) transforms a 3D array of dimensions z,y,x into a 1D array of dimensions x,y,z
-	//lb 1difié est du format x, y, 3*ng
-	three_D_to_one_D(lb_3D, lb, indice_x, indice_y, 3*M.n_gauss);
-	//ravel_3D(lb_3D, lb, 3*M.n_gauss, indice_y, indice_x);//ancien
-	three_D_to_one_D(ub_3D, ub, indice_x, indice_y, 3*M.n_gauss);
-	//ravel_3D(ub_3D, ub, 3*M.n_gauss, indice_y, indice_x); //ancien
-	three_D_to_one_D(params, beta, indice_x, indice_y, 3*M.n_gauss);
-
-//printf("b_params[0] = %f \n",b_params[0] );
-//printf("beta \n");
-
-	for(int i=0; i<M.n_gauss; i++){
-		lb[n_beta-M.n_gauss+i] = M.lb_sig;
-		ub[n_beta-M.n_gauss+i] = M.ub_sig;
-		beta[n_beta-M.n_gauss+i] = b_params[i];
-	}
-
-//printf("beta[0] = %f \n",beta[0] );
-//printf("beta \n");
-
-//	std::cout<<"FIN DE BETA"<<std::endl;
-
-	temps_tableau_update += omp_get_wtime() - temps1_tableau_update;
-//	std::cout<< "AVANT MINIMIZE" <<std::endl;
-
-/*
-	for(int i=0; i<M.n_gauss; i++){
-		std::cout<< "b_params["<<i<<"] = "<<b_params[i] <<std::endl;
-	}
-	exit(0);
-*/
-
-/*
-	for(int p(0); p<3*M.n_gauss; p++) {
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				std::cout<<"params["<<p<<"]["<<i<<"]["<<j<<"] = "<<params[p][i][j]<<std::endl;
-			}
-		}
-	}
-	exit(0);
-*/
-	std::cout<<"AVANT MINIMIZE"<<std::endl;
-	//erreur ici
-	minimize(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
-
-	std::cout<< "--> beta[0] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! = "<<beta[0] <<std::endl;
-
-	double temps2_tableau_update = omp_get_wtime();
-	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-/*
-	std::cout<< "params[0][0][0] = "<<params[0][0][0] <<std::endl;
-	std::cout<< "params[1][0][0] = "<<params[1][0][0] <<std::endl;
-	std::cout<< "params[0][1][0] = "<<params[0][1][0] <<std::endl;
-	std::cout<< "params[0][0][1] = "<<params[0][0][1] <<std::endl;
-//exit(0);
-*/
-	for(int i=0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
-	}
-
-/*
-	std::cout<< "APRÈS MINIMIZE" <<std::endl;
-	for(int i=0; i<M.n_gauss; i++){
-		std::cout<< "b_params["<<i<<"] = "<<b_params[i] <<std::endl;
-	}
-*/
-//exit(0);
-
-	temps_tableau_update += omp_get_wtime() - temps2_tableau_update;
-
-	free(lb);
-	free(ub);
-	free(beta);
-	free(cube_flattened);
-}
-
-void algo_rohsa::update_clean(parameters &M, std::vector<std::vector<std::vector<double>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<double>>> &params, std::vector<std::vector<double>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<double> &b_params) {
+template <typename T> void algo_rohsa::update_clean(parameters &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<T> &b_params) {
 
 	std::cout << "params.size() : " << params.size() << " , " << params[0].size() << " , " << params[0][0].size() <<  std::endl;
 
@@ -881,9 +652,9 @@ void algo_rohsa::update_clean(parameters &M, std::vector<std::vector<std::vector
 
 	//cube flattened for array operations in f_g_cube_cuda
 	//WARNING : free(cube_flattened) at the end of the function
-	double* cube_flattened = NULL;
-	size_t size_cube = indice_x*indice_y*indice_v*sizeof(double); 
-	cube_flattened = (double*)malloc(size_cube);
+	T* cube_flattened = NULL;
+	size_t size_cube = indice_x*indice_y*indice_v*sizeof(T); 
+	cube_flattened = (T*)malloc(size_cube);
 
 	for(int i=0; i<indice_x; i++) {
 		for(int j=0; j<indice_y; j++) {
@@ -909,41 +680,39 @@ std::cout<<"Taille std_map : "<<std_map.size()<<" , "<<std_map[0].size()<<std::e
 
 	int n_beta = (3*M.n_gauss * indice_y * indice_x) +M.n_gauss;
 
-	double* lb = NULL;
-	double* ub = NULL;
-	double* beta = NULL;
-	size_t size_n_beta = n_beta*sizeof(double); 
-	lb = (double*)malloc(size_n_beta);
-	ub = (double*)malloc(size_n_beta);
-	beta = (double*)malloc(size_n_beta);
+	T* lb = NULL;
+	T* ub = NULL;
+	T* beta = NULL;
+	size_t size_n_beta = n_beta*sizeof(T); 
+	lb = (T*)malloc(size_n_beta);
+	ub = (T*)malloc(size_n_beta);
+	beta = (T*)malloc(size_n_beta);
 	initialize_array(lb, n_beta, 0.);
 	initialize_array(ub, n_beta, 0.);
 	initialize_array(beta, n_beta, 0.);
 
-	std::vector<std::vector<std::vector<double>>> lb_3D(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> lb_3D(3*M.n_gauss, std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
 
+	std::vector<std::vector<T>> image_amp(indice_y, std::vector<T>(indice_x,0.));
+	std::vector<std::vector<T>> image_mu(indice_y, std::vector<T>(indice_x,0.));
+	std::vector<std::vector<T>> image_sig(indice_y, std::vector<T>(indice_x,0.));
 
+	std::vector<T> mean_amp(M.n_gauss,0.);
+	std::vector<T> mean_mu(M.n_gauss,0.);
+	std::vector<T> mean_sig(M.n_gauss,0.);
 
-	std::vector<std::vector<double>> image_amp(indice_y, std::vector<double>(indice_x,0.));
-	std::vector<std::vector<double>> image_mu(indice_y, std::vector<double>(indice_x,0.));
-	std::vector<std::vector<double>> image_sig(indice_y, std::vector<double>(indice_x,0.));
+	std::vector<T> ravel_amp(indice_y*indice_x,0.);
+	std::vector<T> ravel_mu(indice_y*indice_x,0.);
+	std::vector<T> ravel_sig(indice_y*indice_x,0.);
 
-	std::vector<double> mean_amp(M.n_gauss,0.);
-	std::vector<double> mean_mu(M.n_gauss,0.);
-	std::vector<double> mean_sig(M.n_gauss,0.);
-
-	std::vector<double> ravel_amp(indice_y*indice_x,0.);
-	std::vector<double> ravel_mu(indice_y*indice_x,0.);
-	std::vector<double> ravel_sig(indice_y*indice_x,0.);
-
-	std::vector<double> cube_flat(cube_avgd_or_data[0][0].size(),0.);
-	std::vector<double> lb_3D_flat(lb_3D.size(),0.);
+	std::vector<T> cube_flat(cube_avgd_or_data[0][0].size(),0.);
+	std::vector<T> lb_3D_flat(lb_3D.size(),0.);
 
 	std::vector<std::vector<std::vector<double>>> ub_3D(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 //	std::vector<std::vector<std::vector<double>>> ub_3D;//(3*M.n_gauss, std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
 //	ub_3D = lb_3D; //otherwise we get an error : "corrupted double-linked list"
-std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " , " << ub_3D[0][0].size() <<  std::endl;
+	std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " , " << ub_3D[0][0].size() <<  std::endl;
 
 	std::vector<double> ub_3D_flat(ub_3D.size(),0.);
 
@@ -954,7 +723,7 @@ std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " 
 	std::cout << "cube.size() : " << cube_avgd_or_data.size() << " , " << cube_avgd_or_data[0].size() << " , " << cube_avgd_or_data[0][0].size() <<  std::endl;
 /*
 if(cube_avgd_or_data[0].size() == 35){
-	exit(0);
+	exit(0);cube_flat
 }
 */
 	for(int j=0; j<indice_x; j++) {
@@ -995,14 +764,31 @@ if(cube_avgd_or_data[0].size() == 35){
 
 	temps_tableau_update += omp_get_wtime() - temps1_tableau_update;
 
-//	minimize_clean(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
-//	minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
-	minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, mean_amp, mean_mu, mean_sig, indice_x, indice_y, indice_v, cube_flattened); 
+
+//	minimize_clean_gpu<T>(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+
+	minimize_clean<T>(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+
+//	minimize_clean_cpu<T>(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+
+/*
+	if(indice_x<=64){
+		minimize_clean<T>(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+	//	minimize_clean_cpu<T>(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+	} else{
+		minimize_clean_gpu<T>(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+	}
+*/
 
 	double temps2_tableau_update = omp_get_wtime();
 	//x,y,z->x,y,z
 	one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
 //	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+
+	int number_plot_2D = ceil(log(indice_x)/log(2));
+	this->file.simple_plot_through_regu(params, 0,0,number_plot_2D);
+	this->file.simple_plot_through_regu(params, 0,1,number_plot_2D);
+	this->file.simple_plot_through_regu(params, 0,2,number_plot_2D);
 
 	for(int i=0; i<M.n_gauss; i++){
 		b_params[i]=beta[n_beta-M.n_gauss+i];
@@ -1015,8 +801,9 @@ if(cube_avgd_or_data[0].size() == 35){
 	free(beta);
 	free(cube_flattened);
 }
-void algo_rohsa::set_stdmap(std::vector<std::vector<double>> &std_map, std::vector<std::vector<std::vector<double>>> &cube_or_data, int lb, int ub){
-	std::vector<double> line(ub-lb+1,0.);
+
+template <typename T> void algo_rohsa::set_stdmap(std::vector<std::vector<T>> &std_map, std::vector<std::vector<std::vector<T>>> &cube_or_data, int lb, int ub){
+	std::vector<T> line(ub-lb+1,0.);
 	int dim[3];
 	dim[2]=cube_or_data[0][0].size();
 	dim[1]=cube_or_data[0].size();
@@ -1032,29 +819,12 @@ void algo_rohsa::set_stdmap(std::vector<std::vector<double>> &std_map, std::vect
 }
 
 //Je n'ai pas modifié le nom, mais ce n'est pas transposé !!!! [i][j] ==> normal [j][i] ==> transposé
-void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<double>> &std_map, std::vector<std::vector<std::vector<double>>> &cube, int lb, int ub){
-	std::vector<double> line(ub-lb+1,0.);
+template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<T>> &std_map, std::vector<std::vector<std::vector<T>>> &cube, int lb, int ub){
+	std::vector<T> line(ub-lb+1,0.);
 	int dim[3];
 	dim[2]=cube[0][0].size();
 	dim[1]=cube[0].size();
 	dim[0]=cube.size();
-
-/*
-	printf("taille line = %d \n", ub-lb);
-	std::cout<<"line.size() = "<<line.size()<<std::endl;
-	std::cout<<"ub = "<<ub<<std::endl;
-	std::cout<<"lb = "<<lb<<std::endl;
-	std::cout<<"cube[0][0][0] = "<<cube[0][0][0]<<std::endl;
-	std::cout<<"cube[0][0][1] = "<<cube[0][0][1]<<std::endl;
-	std::cout<<"cube[0][0][2] = "<<cube[0][0][2]<<std::endl;
-	std::cout<<"cube[0][0][3] = "<<cube[0][0][3]<<std::endl;
-	std::cout<<"cube[0][0][4] = "<<cube[0][0][4]<<std::endl;
-	std::cout<<"cube[0][0][5] = "<<cube[0][0][5]<<std::endl;
-	std::cout<<"cube[0][0][6] = "<<cube[0][0][6]<<std::endl;
-*/
-//	std::cout<<"dim_0 = "<<dim[0]<<std::endl;
-//	std::cout<<"dim_1 = "<<dim[1]<<std::endl;
-//	exit(0);
 	for(int j=0; j<dim[1]; j++){
 		for(int i=0; i<dim[0]; i++){
 			for(int p=0; p<= ub-lb; p++){
@@ -1064,38 +834,24 @@ void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<double>> &std_map,
 //		printf("Std(line) = %f \n",Std(line));
 		}
 	}
-
-/*
-	for(int o = 0; o<ub-lb+1; o++){
-		printf("line[%d] = %f \n",o, line[o]);
-	}
-	for(int j=0; j<dim[1]; j++){
-		for(int i=0; i<dim[0]; i++){
-			printf("std_map[%d][%d] = %f \n",j,i, std_map[j][i]);
-		}
-	}
-	exit(0);
-*/
 }
 
-void algo_rohsa::f_g_cube_fast(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
-	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+template <typename T> void algo_rohsa::f_g_cube_fast(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
+	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
+	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<T> b_params(M.n_gauss,0.);
 
-	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
-
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
@@ -1112,9 +868,9 @@ void algo_rohsa::f_g_cube_fast(parameters &M, double &f, double g[], int n, std:
 
 	for(int j=0; j<indice_x; j++){
 		for(int i=0; i<indice_y; i++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
+			std::vector<T> residual_1D(indice_v,0.);
+			std::vector<T> params_flat(params.size(),0.);
+			std::vector<T> cube_flat(cube[0][0].size(),0.);
 
 			for (int p=0;p<params_flat.size();p++){
 				params_flat[p]=params[p][i][j];
@@ -1189,7 +945,7 @@ void algo_rohsa::f_g_cube_fast(parameters &M, double &f, double g[], int n, std:
 				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
 			
 		int k;
-		double v_1=0.,v_2=0.,v_3=0.;
+		T v_1=0.,v_2=0.,v_3=0.;
 
 //		std::cout<< "AVANT GRADIENT BIDOUILLÉ" <<std::endl;
 
@@ -1245,20 +1001,20 @@ void algo_rohsa::f_g_cube_fast(parameters &M, double &f, double g[], int n, std:
 	}
 
 
-void algo_rohsa::f_g_cube_fast_clean(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
-	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
+	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
+	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<T> b_params(M.n_gauss,0.);
+	std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
@@ -1280,9 +1036,9 @@ void algo_rohsa::f_g_cube_fast_clean(parameters &M, double &f, double g[], int n
 	double temps1_tableaux = omp_get_wtime();
 	for(int j=0; j<indice_x; j++){
 		for(int i=0; i<indice_y; i++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
+			std::vector<T> residual_1D(indice_v,0.);
+			std::vector<T> params_flat(params.size(),0.);
+			std::vector<T> cube_flat(cube[0][0].size(),0.);
 
 			for (int p=0; p<3*M.n_gauss; p++){
 				params_flat[p]=params[p][i][j];
@@ -1342,7 +1098,7 @@ void algo_rohsa::f_g_cube_fast_clean(parameters &M, double &f, double g[], int n
 				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
 				for(int k=0; k<indice_v; k++){
 					if(std_map[l][j]>0.){
-						double spec = double(k+1);
+						T spec = T(k+1);
 						deriv[0+3*i][j][l] += exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
 						deriv[1+3*i][j][l] += params[3*i][j][l]*( spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
 						deriv[2+3*i][j][l] += params[3*i][j][l]*pow( spec - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
@@ -1366,42 +1122,26 @@ void algo_rohsa::f_g_cube_fast_clean(parameters &M, double &f, double g[], int n
 	three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
-
-
-	//ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
-/*
-	for(int i=0; i<3*M.n_gauss; i++){
-		for(int j=0; j<indice_y; j++){
-			for(int l=0; l<indice_x; l++){
-				printf("deriv[%d][%d][%d] = %f\n",i,j,l, deriv[i][j][l]);//deriv[0+3*i][j][l]
-			}
-		}
-	}
-	for(int j=0; j<n_beta; j++){
-		printf("g[%d] = %f\n",j, g[j]);
-	}
-	exit(0);
-*/
-//	printf("--> fin fonction : f = %f\n", f);
-//	exit(0);
 	}
 
 
 
-void algo_rohsa::f_g_cube_fast_clean_optim_CPU(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
-	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> residual(indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
+	bool print = false;
+
+	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> residual(indice_v,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<T> b_params(M.n_gauss,0.);
+	std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
@@ -1424,9 +1164,9 @@ void algo_rohsa::f_g_cube_fast_clean_optim_CPU(parameters &M, double &f, double 
 double temps1_tableaux = omp_get_wtime();
 	for(int i=0; i<indice_y; i++){
 		for(int j=0; j<indice_x; j++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
+			std::vector<T> residual_1D(indice_v,0.);
+			std::vector<T> params_flat(params.size(),0.);
+			std::vector<T> cube_flat(cube[0][0].size(),0.);
 
 			for (int p=0; p<3*M.n_gauss; p++){
 				params_flat[p]=params[p][i][j];
@@ -1463,11 +1203,9 @@ double temps2_tableaux = omp_get_wtime();
 		}
 	}
 */
-
-
-
+if(print){
 printf("--> mi-chemin : f = %.16f\n", f);
-
+	}
 
 double temps1_dF_dB = omp_get_wtime();
 double temps2_dF_dB = omp_get_wtime();
@@ -1483,7 +1221,7 @@ double temps1_deriv = omp_get_wtime();
 			for(int j=0; j<indice_y; j++){
 				for(int l=0; l<indice_x; l++){
 					if(std_map[j][l]>0.){
-						double spec = double(k+1);
+						T spec = T(k+1);
 						deriv[0+3*i][j][l] += exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
 						deriv[1+3*i][j][l] += params[3*i][j][l]*( spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
 						deriv[2+3*i][j][l] += params[3*i][j][l]*pow( spec - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
@@ -1493,8 +1231,8 @@ double temps1_deriv = omp_get_wtime();
 		}
 	}
 	}
-double temps2_deriv = omp_get_wtime();
-
+	double temps2_deriv = omp_get_wtime();
+if(print){
 	for(int i=0; i<indice_v; i++){
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -1502,7 +1240,6 @@ double temps2_deriv = omp_get_wtime();
 			}
 		}
 	}
-
 	for(int k=0; k<3*M.n_gauss; k++){
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -1512,19 +1249,18 @@ double temps2_deriv = omp_get_wtime();
 			}
 		}
 	}
-
 	for(int j=0; j<indice_y; j++){
 		for(int l=0; l<indice_x; l++){
 	printf("std_map[%d][%d] = %.16f\n",j,l, std_map[j][l]);
 		}
 	}
-	
+}
 /*
 	printf("deriv[0][0][0] = %f\n", deriv[0][0][0]);
 	printf("deriv[0][0][1] = %f\n", deriv[0][0][1]);
 	printf("deriv[0][0][2] = %f\n", deriv[0][0][2]);
 */
-double temps1_conv = omp_get_wtime();
+	double temps1_conv = omp_get_wtime();
 	for(int i=0; i<M.n_gauss; i++){
 		for(int p=0; p<indice_y; p++){
 			for(int q=0; q<indice_x; q++){
@@ -1585,28 +1321,29 @@ double temps1_conv = omp_get_wtime();
 	}
 	exit(0);
 */
+if(print){
 	printf("--> fin-chemin : f = %.16f\n", f);
 	std::cin.ignore();
 	}
+}
 
 
-void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, double** assist_buffer){
-	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> residual(indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T** assist_buffer){
+	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> residual(indice_v,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<T> b_params(M.n_gauss,0.);
+	std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
-	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-
+	int n_beta = n;//(3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
 	for(int i = 0; i<M.n_gauss; i++){
 		b_params[i]=beta[n_beta-M.n_gauss+i];
@@ -1617,12 +1354,12 @@ void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters &M, double &f, dou
 	}
 	f=0.;
 
-/*	for(int i = 0; i<n_beta; i++){
+	for(int i = 0; i<n_beta; i++){
 		printf("beta[%d] = %f\n",i,beta[i]);
 	}
-*/
+
 	double temps1_ravel = omp_get_wtime();
-	one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	this->one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
 	double temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
 	//unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
@@ -1630,9 +1367,9 @@ void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters &M, double &f, dou
 double temps1_tableaux = omp_get_wtime();
 	for(int i=0; i<indice_y; i++){
 		for(int j=0; j<indice_x; j++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
+			std::vector<T> residual_1D(indice_v,0.);
+			std::vector<T> params_flat(params.size(),0.);
+			std::vector<T> cube_flat(cube[0][0].size(),0.);
 
 			for (int p=0; p<3*M.n_gauss; p++){
 				params_flat[p]=params[p][i][j];
@@ -1641,14 +1378,14 @@ double temps1_tableaux = omp_get_wtime();
 				cube_flat[p]=cube[j][i][p];
 			}
 
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+			this->myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
 
 			for (int p=0;p<indice_v;p++){
 				residual[p][i][j]=residual_1D[p];
 			}
 
 			if(std_map[i][j]>0.){
-				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+				f += this->myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
 			}
 
 		}
@@ -1669,7 +1406,7 @@ double temps1_deriv = omp_get_wtime();
 			for(int j=0; j<indice_y; j++){
 				for(int l=0; l<indice_x; l++){
 					if(std_map[j][l]>0.){
-						double spec = double(k+1);
+						T spec = T(k+1);
 						deriv[0+3*i][j][l] += exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
 						deriv[1+3*i][j][l] += params[3*i][j][l]*( spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
 						deriv[2+3*i][j][l] += params[3*i][j][l]*pow( spec - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
@@ -1679,8 +1416,9 @@ double temps1_deriv = omp_get_wtime();
 		}
 	}
 	}
-double temps2_deriv = omp_get_wtime();
-double temps1_conv = omp_get_wtime();
+	double temps2_deriv = omp_get_wtime();
+	double temps1_conv = omp_get_wtime();
+
 	for(int i=0; i<M.n_gauss; i++){
 		for(int p=0; p<indice_y; p++){
 			for(int q=0; q<indice_x; q++){
@@ -1690,13 +1428,15 @@ double temps1_conv = omp_get_wtime();
 			}
 		}
 
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+		this->convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
+		this->convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
+		this->convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
 	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+		this->convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		this->convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		this->convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+
+//		printf("M.n_gauss = %d , M.lambda_amp = %f, M.lambda_mu = %f , M.lambda_sig = %f\n", M.n_gauss, M.lambda_amp, M.lambda_mu, M.lambda_sig);
 
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -1715,9 +1455,11 @@ double temps1_conv = omp_get_wtime();
 	double temps2_conv = omp_get_wtime();
 	temps_tableaux += temps2_tableaux - temps1_tableaux;
 	temps_ravel+=temps2_ravel-temps1_ravel;
+
 	temps1_ravel = omp_get_wtime();
-	three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	this->three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	temps2_ravel = omp_get_wtime();
+
 	temps_ravel+=temps2_ravel-temps1_ravel;
 
 	temps_conv+= temps2_conv - temps1_conv;
@@ -1726,25 +1468,25 @@ double temps1_conv = omp_get_wtime();
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 	}
 
-void algo_rohsa::f_g_cube_fast_without_regul(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
+template <typename T> void algo_rohsa::f_g_cube_fast_without_regul(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
 
-	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 
-	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
+	std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
 
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
+	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<T> b_params(M.n_gauss,0.);
 
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
+	std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;//+M.n_gauss;
 
@@ -1761,9 +1503,9 @@ void algo_rohsa::f_g_cube_fast_without_regul(parameters &M, double &f, double g[
 
 	for(int j=0; j<indice_x; j++){
 		for(int i=0; i<indice_y; i++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
+			std::vector<T> residual_1D(indice_v,0.);
+			std::vector<T> params_flat(params.size(),0.);
+			std::vector<T> cube_flat(cube[0][0].size(),0.);
 			for (int p=0;p<params_flat.size();p++){
 				params_flat[p]=params[p][i][j];
 			}
@@ -1797,18 +1539,18 @@ int k,i,l,j;
 	for(i=0; i<M.n_gauss; i++){
 		for(l=0; l<indice_x; l++){
 			for(j=0; j<indice_y; j++){
-				double v_1=0.,v_2=0.,v_3=0.;
+				T v_1=0.,v_2=0.,v_3=0.;
 
 			if(std_map[j][l]>0.){
 	//	    #pragma omp parallel shared(M, params, residual, std_map, indice_v,i,j,l)
 	//	    {
 	//        #pragma omp for private(k)
 			for(k=0; k<indice_v; k++){
-				v_1 += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+				v_1 += exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
 	//printf("--->curseur = %e\n", std_map[j][l] );//residual[l][j][k]  );
-				v_2 +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+				v_2 +=  params[3*i][j][l]*( T(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
 		
-				v_3 += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+				v_3 += params[3*i][j][l]*pow( T(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
 						}
 		}
 		deriv[0+3*i][j][l]+=v_1;
@@ -1837,33 +1579,33 @@ int k,i,l,j;
 
 
 //OpenMP for f_g_cube
-void algo_rohsa::f_g_cube_vector(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
+template <typename T> void algo_rohsa::f_g_cube_vector(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
 
 //std::cout<<"Début f_g_cube"<<std::endl;
 
 
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<T>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 
 //décommenter en bas
 
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB(3*M.n_gauss,std::vector<std::vector<std::vector<double>>>( indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.))));
-std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<std::vector<T>>>> dF_over_dB(3*M.n_gauss,std::vector<std::vector<std::vector<T>>>( indice_v,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.))));
+std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 
-std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
+std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
 
-std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<double> b_params(M.n_gauss,0.);
+std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+std::vector<T> b_params(M.n_gauss,0.);
 
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
 int i,k,j,l,p;
 
@@ -1881,9 +1623,9 @@ for(int i = 0; i<M.n_gauss; i++){
 
 for(int j=0; j<indice_x; j++){
 	for(int i=0; i<indice_y; i++){
-		std::vector<double> residual_1D(indice_v,0.);
-		std::vector<double> params_flat(params.size(),0.);
-		std::vector<double> cube_flat(cube[0][0].size(),0.);
+		std::vector<T> residual_1D(indice_v,0.);
+		std::vector<T> params_flat(params.size(),0.);
+		std::vector<T> cube_flat(cube[0][0].size(),0.);
 		for (int p=0;p<params_flat.size();p++){
 			params_flat[p]=params[p][i][j];
 		}
@@ -1904,57 +1646,6 @@ double temps2_tableaux = omp_get_wtime();
 
 double temps1_dF_dB = omp_get_wtime();
 
-/*
-//ANCIEN CODE (à tester) sans optim cache
-for(int i=0; i<M.n_gauss; i++){
-	for(int k=0; k<indice_v; k++){
-		for(int j=0; j<indice_y; j++){
-			for(int l=0; l<indice_x; l++){
-				dF_over_dB[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB[2+3*i][k][j][l] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-			}
-		}
-	}
-}
-*/
-// // // CALCUL DU GRADIENT
-
-//transfert ->
-
-//appel kernel 
-//gradient_kernel<<<,>>>(
-
-//transfert <-
-
-
-//OMP
-/*
-#pragma omp parallel private(i,k,j) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x)
-{
-#pragma omp for
-for(int i=0; i<M.n_gauss; i++){
-	for(k=0; k<indice_v; k++){
-		for(int j=0; j<indice_y; j++){
-			for(int l=0; l<indice_x; l++){
-				dF_over_dB[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * 
-									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB[2+3*i][k][j][l] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * 
-									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-			}
-		}
-	}
-}
-}
-
-*/
-//repère1
-
 #pragma omp parallel private(i,k) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x) //num_threads(1) //
 {
 #pragma omp for
@@ -1963,13 +1654,13 @@ for(int i=0; i<M.n_gauss; i++){
                 for(int j=0; j<indice_y; j++){
                         for(int l=0; l<indice_x; l++){
 
-				dF_over_dB[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+				dF_over_dB[0+3*i][k][j][l] += exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
 
-				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * 
-									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( T(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * 
+									exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
 
-				dF_over_dB[2+3*i][k][j][l] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * 
-									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
+				dF_over_dB[2+3*i][k][j][l] += params[3*i][j][l]*pow( T(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * 
+									exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
 
                         }
                 }
@@ -2056,501 +1747,18 @@ for(int k=0; k<M.n_gauss; k++){
 
 }
 
-void algo_rohsa::f_g_cube_old_archive(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
-
-
-	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-
-	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
-
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;//+M.n_gauss;
-
-	for(int i = 0; i< n; i++){
-		g[i]=0.;
-	}
-	f=0.;
-
-	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-	for(int i = 0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
-	}
-
-	for(int j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
-			for (int p=0;p<params_flat.size();p++){
-				params_flat[p]=params[p][i][j];
-			}
-			for (int p=0;p<cube_flat.size();p++){
-				cube_flat[p]=cube[i][j][p];
-			}
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-			for (int p=0;p<residual_1D.size();p++){
-				residual[j][i][p]=residual_1D[p];
-			}
-			if(std_map[i][j]>0.){
-				f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
-			}
-		}
-	}
-	
-	for(int i=0; i<M.n_gauss; i++){
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				image_amp[p][q]=params[0+3*i][p][q];
-				image_mu[p][q]=params[1+3*i][p][q];
-				image_sig[p][q]=params[2+3*i][p][q];
-			}
-		}
-	
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-		
-		for(int l=0; l<indice_x; l++){
-			for(int j=0; j<indice_y; j++){
-				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
-				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
-				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
-	
-				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
-	
-				for(int k=0; k<indice_v; k++){
-					if(std_map[j][l]>0.){
-					deriv[0+3*i][j][l] += exp(-pow( double(k)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-	
-					deriv[1+3*i][j][l] +=  params[3*i][j][l]*( double(k) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-	
-					deriv[2+3*i][j][l] += params[3*i][j][l]*pow( double(k) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-					}
-				}
-				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
-				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
-				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
-			}
-		}
-	}
-	
-	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
-}
-
-//test optims OpenMP for f_g_cube
-void algo_rohsa::f_g_cube_test(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
-
-//std::cout<<"Début f_g_cube_test"<<std::endl;
-
-std::vector<std::vector<std::vector<double>>> dR_over_dB(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
-//std::vector<std::vector<std::vector<double>>> dR_over_dB_ok(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//°
-//décommenter en bas
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB(indice_v,std::vector<std::vector<std::vector<double>>>( indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.))));
-//std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_ok(3*M.n_gauss,std::vector<std::vector<std::vector<double>>>( indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.))));
-std::vector<std::vector<std::vector<double>>> deriv(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
-//std::vector<std::vector<std::vector<double>>> deriv_ok(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> g_3D(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
-//std::vector<std::vector<std::vector<double>>> g_3D_ok(3*M.n_gauss,std::vector<std::vector<double>>(indice_y,std::vector<double>(indice_x,0.)));
-//deriv x y g
-std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-std::vector<std::vector<std::vector<double>>> residual_T(indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-
-std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> params_T(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
-std::vector<double> b_params(M.n_gauss,0.);
-
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
-
-int i,k,j,l,p;
-
-for(int i = 0; i< n; i++){
-	g[i]=0.;
-}
-f=0.;
-
-double temps1_ravel = omp_get_wtime();
-
-//extracting one params_T for the gradient and another for calculations below
-
-unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-// returns params[g][y][x]
-/*
-for(int k=0; k<3*M.n_gauss; k++) {
- for(int j=0; j<indice_y; j++) {
-  for(int i=0; i<indice_x; i++) {
-   params_T[k][j][i]=beta[k*indice_y*indice_x+j*indice_x+i];
-   //deriv x y g
-   }
-  }
- }
-*/
-
-unravel_3D_T(beta, params_T, 3*M.n_gauss, indice_y, indice_x);
-//unravel_3D_with_formula_transpose_xy(beta, params_T, indice_y, indice_x, 3*M.n_gauss);
-
-double temps2_ravel = omp_get_wtime();
-temps_ravel+=temps2_ravel-temps1_ravel;
-
-/*for(int i = 0; i<M.n_gauss; i++){
-	b_params[i]=beta[n_beta-M.n_gauss+i];
-}*/
-//cout.precision(dbl::max_digits10);
-
-
-//#pragma omp parallel private(j,i) shared(cube,params,std_map,residual,indice_x,indice_y,indice_v,M,f)
-//{
-//#pragma omp for
-double temps1_tableaux = omp_get_wtime();
-for(j=0; j<indice_x; j++){
-	for(i=0; i<indice_y; i++){
-		std::vector<double> residual_1D(indice_v,0.);
-		std::vector<double> params_flat(params.size(),0.);
-		std::vector<double> cube_flat(cube[0][0].size(),0.);
-		for (p=0;p<params_flat.size();p++){
-			params_flat[p]=params[p][i][j];
-		}
-		for (p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[i][j][p];
-		}
-		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (p=0;p<residual_1D.size();p++){
-			residual_T[p][i][j]=residual_1D[p];
-		}
-		if(std_map[i][j]>0.){
-			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
-		}
-	}
-}
-/*
-for(j=0; j<indice_x; j++){
-	for(i=0; i<indice_y; i++){
-		std::vector<double> residual_1D(indice_v,0.);
-		std::vector<double> params_flat(params.size(),0.);
-		std::vector<double> cube_flat(cube[0][0].size(),0.);
-		for (p=0;p<params_flat.size();p++){
-			params_flat[p]=params[p][i][j];
-		}
-		for (p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[i][j][p];
-		}
-		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (p=0;p<residual_1D.size();p++){
-			residual[j][i][p]=residual_1D[p];
-		}
-		if(std_map[i][j]>0.){
-			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
-		}
-	}
-}
-*/
-
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-/*
-double par0 = 0.;
-double par1 = 0.;
-double par1_k = 0.;
-double par2 = 0.;
-double par2_pow = 0.;
-*/
-// v y x 3*i+.
-//std::cout<<"DEBUG 1"<<std::endl;
-#pragma omp parallel private(k,l,j,i) shared(dF_over_dB,params_T,M,indice_v,indice_y,indice_x)
-{
-#pragma omp for
-for(int k=0; k<indice_v; k++){
-	for(int l=0; l<indice_y; l++){
-		for(int j=0; j<indice_x; j++){
-			for(int i=0; i<M.n_gauss; i++){
-				//ojqpsfdijpsqojdfpoidspoidfpojqspodij sdjfpjqspodfijiopqs jdpofijojfoiq sdoipf oqisdhfophjqsopidf opis dofi poqs dfop qspoidf jopiqjsdopif jopqisd fop Âsopid fpoij qsdf
-				double par0 = params_T[l][j][3*i+0];
-				double par1 = params_T[l][j][3*i+1];
-				double par2 = params_T[l][j][3*i+2];
-
-				double par1_k = par1 = double(k+1) - par1;
-				double par2_pow = 1/(2*pow(par2,2.));
-				//dF_over_dB v y x g
-
-				dF_over_dB[k][l][j][3*i+0] += exp( -pow( par1_k ,2.)*par2_pow );
-				dF_over_dB[k][l][j][3*i+1] += par0*par1_k*par2_pow*2 * exp(-pow( par1_k,2.)*par2_pow );
-				dF_over_dB[k][l][j][3*i+2] += par0*pow( par1_k, 2.)/(pow(par2,3.)) * exp(-pow( par1_k,2.)*par2_pow );
-
-/*
-				dF_over_dB[k][l][j][3*i+0] += exp(-pow( double(k+1)-params_T[j][l][1+3*i],2.)/(2*pow(params_T[j][l][2+3*i],2.)) );
-				dF_over_dB[k][l][j][3*i+1] += params_T[j][l][3*i]*( double(k+1) - params_T[j][l][1+3*i])/pow(params_T[j][l][2+3*i],2.) * 
-							exp(-pow( double(k+1)-params_T[j][l][1+3*i],2.)/(2*pow(params_T[j][l][2+3*i],2.)) );
-				dF_over_dB[k][l][j][3*i+2] += params_T[j][l][3*i]*pow( double(k+1) - params_T[j][l][1+3*i], 2.)/(pow(params_T[j][l][2+3*i],3.)) * 
-							exp(-pow( double(k+1)-params_T[j][l][1+3*i],2.)/(2*pow(params_T[j][l][2+3*i],2.)) );
-*/
-		 
-			//dF_over_dB_ok g v y x
-
-			}
-		}
-	}
-}
-}
-
-double temps2_dF_dB = omp_get_wtime();
-
-double temps1_deriv = omp_get_wtime();
-
-for(k=0; k<indice_v; k++){
-	for(j=0; j<indice_x; j++){
-      	for(i=0; i<indice_y; i++){
-	        if(std_map[i][j]>0.){
-         	for(l=0; l<3*M.n_gauss; l++){
-				deriv[j][i][l]+=  dF_over_dB[k][i][j][l]*residual_T[k][i][j]/pow(std_map[i][j],2);
-					//deriv x y g
-
-				}
-			}
-		}
-	}
-}
-//}
-
-
-double temps2_deriv = omp_get_wtime();
-
-int q;
-
-double temps1_conv = omp_get_wtime();
-
-for(int k=0; k<M.n_gauss; k++){
-
-	for(p=0; p<indice_y; p++){
-		for(q=0; q<indice_x; q++){
-			image_amp[p][q]=params[0+3*k][p][q];
-			image_mu[p][q]=params[1+3*k][p][q];
-			image_sig[p][q]=params[2+3*k][p][q];
-		}
-	}
-
-	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-
-	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-
-
-	for(int j=0; i<indice_y; j++){
-		for(int i=0; j<indice_x; i++){
-			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2) + 0.5*M.lambda_var_amp*pow(image_amp[i][j]-mean_amp[k],2);
-			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2) + 0.5*M.lambda_var_mu*pow(image_mu[i][j]-mean_mu[k],2);
-			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-mean_sig[k],2);
-
-/*
-			dR_over_dB_ok[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j]+M.lambda_var_amp*(image_amp[i][j]-mean_amp[k]);
-			dR_over_dB_ok[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j]+M.lambda_var_mu*(image_mu[i][j]-mean_mu[k]);
-			dR_over_dB_ok[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-mean_sig[k]);
-*/
-			dR_over_dB[j][i][0+3*k] = M.lambda_amp*conv_conv_amp[i][j]+M.lambda_var_amp*(image_amp[i][j]-mean_amp[k]);
-			dR_over_dB[j][i][1+3*k] = M.lambda_mu*conv_conv_mu[i][j]+M.lambda_var_mu*(image_mu[i][j]-mean_mu[k]);
-			dR_over_dB[j][i][2+3*k] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-mean_sig[k]);
-		}
-	}
-
-} 
-/*
-#pragma omp parallel private(i,j) shared(g_3D,deriv,dR_over_dB,M,indice_y,indice_x)
-{
-#pragma omp for
-*/
-for(int j=0; j<indice_x; j++){
-	for(int i=0; i<indice_y; i++){
-		for(int l=0; l<3*M.n_gauss; l++){
-//				g_3D_ok[l][i][j] = deriv_ok[l][i][j] + dR_over_dB_ok[l][i][j];
-//				g_3D[j][i][l] = deriv[j][i][l] + dR_over_dB[j][i][l];
-				g[l+i*3*M.n_gauss+j*indice_y*3*M.n_gauss] = deriv[j][i][l] + dR_over_dB[j][i][l];
-			}
-		}
-	}
-//}
-
-//	ravel_3D(g_3D_ok, g, 3*M.n_gauss, indice_y, indice_x);
-//	ravel_3D(g_3D, g_test, 3*M.n_gauss, indice_y, indice_x);
-//	ravel_3D(g_3D, g_test, indice_x, indice_y, 3*M.n_gauss);
-/*
-#pragma omp parallel private(i,j,k) shared(g,g_3D,indice_x,indice_y,M)
-{
-#pragma omp for
-for(int i=0; i<indice_x; i++) {
- for(int j=0; j<indice_y; j++) {
-  for(int k=0; k<3*M.n_gauss; k++) {
-   g[k+j*3*M.n_gauss+i*indice_y*3*M.n_gauss] = g_3D[i][j][k];
-   //deriv x y g
-   }
-  }
- }
-}
-*/
-
-
-	double temps2_conv = omp_get_wtime();
-
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-}
 
 
 //test optims OpenMP for f_g_cube
-void algo_rohsa::f_g_cube_sep(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig) 
-{
-	std::vector<std::vector<std::vector<double>>> deriv(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
-	
-	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
-
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;//+M.n_gauss;
-
-	for(int i = 0; i< n; i++){
-		g[i]=0.;
-	}
-	f=0.;
-
-	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-	for(int i = 0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
-	}
-
-	for(int j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
-			for (int p=0;p<params_flat.size();p++){
-				params_flat[p]=params[p][i][j];
-			}
-			for (int p=0;p<cube_flat.size();p++){
-				cube_flat[p]=cube[i][j][p];
-			}
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-			for (int p=0;p<residual_1D.size();p++){
-				residual[j][i][p]=residual_1D[p];
-			}
-			if(std_map[i][j]>0.){
-				f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
-			}
-		}
-	}
-	int p, q;
-	for(int i=0; i<M.n_gauss; i++){
-		for(p=0; p<indice_y; p++){
-			for(q=0; q<indice_x; q++){
-				image_amp[p][q]=params[0+3*i][p][q];
-				image_mu[p][q]=params[1+3*i][p][q];
-				image_sig[p][q]=params[2+3*i][p][q];
-			}
-		}
-	
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-        int l,j;
-	    #pragma omp parallel shared(M, params, residual, std_map, indice_x, indice_y,i,f,deriv, image_sig, b_params,conv_conv_amp, conv_conv_mu, conv_conv_sig)
-	    {
-        #pragma omp for private(l,j)
-		for(l=0; l<indice_x; l++){
-			for(j=0; j<indice_y; j++){
-				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
-				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
-				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
-	
-				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
-			
-		int k;
-		if(std_map[j][l]>0.){
-//	    #pragma omp parallel shared(M, params, residual, std_map, indice_v,i,j,l)
-//	    {
-//        #pragma omp for private(k)
-		for(k=0; k<indice_v; k++){
-					deriv[l][j][0+3*i] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-	
-					deriv[l][j][1+3*i] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-	
-					deriv[l][j][2+3*i] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-					}
-		}
-//		}
-				deriv[l][j][0+3*i] += M.lambda_amp*conv_conv_amp[j][l];
-				deriv[l][j][1+3*i] += M.lambda_mu*conv_conv_mu[j][l];
-				deriv[l][j][2+3*i] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
-			}
-		}
-	}
-
-	}
-	ravel_3D_bis(deriv, g, 3*M.n_gauss, indice_y,indice_x);
-}
-
-
-
-
-//test optims OpenMP for f_g_cube
-void algo_rohsa::f_g_cube_cuda_L(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened) 
+template <typename T> void algo_rohsa::f_g_cube_cuda_L(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
 {
 
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<T>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 //décommenter en bas
 
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 
-std::vector<double> b_params(M.n_gauss,0.);
+std::vector<T> b_params(M.n_gauss,0.);
 
 int i,k,j,l,p;
 
@@ -2572,26 +1780,26 @@ int i,k,j,l,p;
 	int product_beta_modif = taille_beta[0]*taille_beta[1]*taille_beta[2];
 	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
 
-	size_t size_deriv = product_deriv * sizeof(double);
-	size_t size_res = product_residual * sizeof(double);
-	size_t size_std = product_std_map_ * sizeof(double);
-	size_t size_beta_modif = product_beta_modif * sizeof(double);
-	size_t size_image_conv = product_image_conv * sizeof(double);
+	size_t size_deriv = product_deriv * sizeof(T);
+	size_t size_res = product_residual * sizeof(T);
+	size_t size_std = product_std_map_ * sizeof(T);
+	size_t size_beta_modif = product_beta_modif * sizeof(T);
+	size_t size_image_conv = product_image_conv * sizeof(T);
 
-	double* deriv = (double*)malloc(size_deriv);
-	double* residual = (double*)malloc(size_res);
-	double* std_map_ = (double*)malloc(size_std);
-	double* beta_modif = (double*)malloc(size_beta_modif);
+	T* deriv = (T*)malloc(size_deriv);
+	T* residual = (T*)malloc(size_res);
+	T* std_map_ = (T*)malloc(size_std);
+	T* beta_modif = (T*)malloc(size_beta_modif);
 
-	float* conv_amp = (float*)malloc(size_image_conv);
-	float* conv_mu = (float*)malloc(size_image_conv);
-	float* conv_sig = (float*)malloc(size_image_conv);
-	float* conv_conv_amp = (float*)malloc(size_image_conv);
-	float* conv_conv_mu = (float*)malloc(size_image_conv);
-	float* conv_conv_sig = (float*)malloc(size_image_conv);
-	float* image_amp = (float*)malloc(size_image_conv);
-	float* image_mu = (float*)malloc(size_image_conv);
-	float* image_sig = (float*)malloc(size_image_conv);
+	T* conv_amp = (T*)malloc(size_image_conv);
+	T* conv_mu = (T*)malloc(size_image_conv);
+	T* conv_sig = (T*)malloc(size_image_conv);
+	T* conv_conv_amp = (T*)malloc(size_image_conv);
+	T* conv_conv_mu = (T*)malloc(size_image_conv);
+	T* conv_conv_sig = (T*)malloc(size_image_conv);
+	T* image_amp = (T*)malloc(size_image_conv);
+	T* image_mu = (T*)malloc(size_image_conv);
+	T* image_sig = (T*)malloc(size_image_conv);
 
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
@@ -2638,30 +1846,11 @@ double temps2_tableaux = omp_get_wtime();
 
 double temps1_dF_dB = omp_get_wtime();
 
-
-
 f =  compute_residual_and_f(beta_modif, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
 
 double temps2_dF_dB = omp_get_wtime();
-/*
-	for(int i = 0; i<3; i++){
-		printf("residual[%d]= %f \n",i, residual[i]);
-	}
-
-	for(int i = 0; i<10; i++){
-		printf("beta_modif[%d]= %f \n",i, beta_modif[i]);
-	}
-	for(int i = 0; i<10; i++){
-		printf("std_map_[%d]= %f \n",i, std_map_[i]);
-	}
-	for(int i = 0; i<10; i++){
-		printf("deriv[%d]= %f \n",i, deriv[i]);
-	}
-*/
-//std::cout<<"ENTRE BETA_MODIF ET LE GPU"	<<std::endl;
 
 	double temps1_deriv = omp_get_wtime();
-
 
 	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta_modif, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
 /*
@@ -2672,99 +1861,7 @@ double temps2_dF_dB = omp_get_wtime();
 //printf("deriv[0] = %f", deriv[0]);
 //exit(0);
 
-    float Kernel_f[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
-    double Kernel_d[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
-
-
-//if(indice_x ==4){//indice_x != indice_y){
-/*
-	printf("après gradient_L_2_beta\n");
-	printf("indice_x, indice_y = %d, %d\n", indice_x, indice_y);
-
-	for(int i=0; i<30; i++){
-		printf("deriv[%d] = %f \n",i,deriv[i]);
-	}
-//	std::cin.ignore();
-//}
-
-	printf("f = %f \n",f);
-//}
-*/
-
-/*
-	float h_IMAGE[1225];
-
-	for(j=0; j<indice_x; j++){
-		for(i=0; i<indice_y; i++){
-//			for(p=0; p<3*M.n_gauss; p++){
-			h_IMAGE[i*indice_x+j] = (float)(beta_modif[0*indice_x*indice_y+ i*indice_x+j]);
-//			}
-		}
-	}
-	int N = 4;
-	float IMAGE_TEST[16];
-	double IMAGE_TEST_double[16];
-	double IMAGE_TEST_double_cpu[16];
-
-	for(j=0; j<N; j++){
-		for(i=0; i<N; i++){
-			IMAGE_TEST[j+N*i] = j+2*i;
-			IMAGE_TEST_double_cpu[j+N*i] = j+2*i;
-			IMAGE_TEST_double[j+N*i] = j+2*i;
-		}
-	}
-	float RESULTAT_TEST_GPU_f[16];
-
-	size_t size_RESULTAT_TEST_double = N*N * sizeof(double);
-
-	double* RESULTAT_TEST_double_cpu = (double*)malloc(size_RESULTAT_TEST_double);
-//	double* RESULTAT_TEST_GPU_double = (double*)malloc(size_RESULTAT_TEST_double);
-	double RESULTAT_TEST_GPU_double[16];
-
-
-
-	std::cout<< " "<<std::endl; 
-	std::cout<< " "<<std::endl; 
-	std::cout<< "conv2D_GPU"<<std::endl; 
-	std::cout<< " "<<std::endl; 
-	std::cout<< " "<<std::endl; 
-
-	convolution_2D_mirror_flat(M, IMAGE_TEST_double_cpu, RESULTAT_TEST_double_cpu, N, N, 3);
-	conv2D_GPU_all(IMAGE_TEST, Kernel_f, RESULTAT_TEST_GPU_f, N, N, 3, 0, 0);
-	conv2D_GPU_all(beta_modif, IMAGE_TEST_double, Kernel_d, RESULTAT_TEST_GPU_double, N, N, 3, 0, 0);
-//	conv2D_GPU_cpu(IMAGE_TEST, Kernel_f, RESULTAT_TEST_GPU, N, N, 0, 0);
-
-	for(i=0; i<N; i++){
-		for(j=0; j<N; j++){
-			std::cout<< "IMAGE_TEST["<<i*N+j << "] = "<< IMAGE_TEST[i*N+j]<<std::endl; 
-		}
-	}
-	for(i=0; i<N; i++){
-		for(j=0; j<N; j++){
-			std::cout<< "IMAGE_TEST_double["<<i*N+j << "] = "<< IMAGE_TEST_double[i*N+j]<<std::endl; 
-		}
-	}
-
-	for(i=0; i<N; i++){
-		for(j=0; j<N; j++){
-			std::cout<< "RESULTAT_TEST_double_cpu["<<i*N+j << "] = "<< RESULTAT_TEST_double_cpu[i*N+j]<<std::endl; 
-		}
-	}
-
-	for(i=0; i<N; i++){
-		for(j=0; j<N; j++){
-			std::cout<< "RESULTAT_TEST_GPU_f["<<i*N+j << "] = "<< RESULTAT_TEST_GPU_f[i*N+j]<<std::endl; 
-		}
-	}
-
-	for(i=0; i<N; i++){
-		for(j=0; j<N; j++){
-			std::cout<< "RESULTAT_TEST_GPU_double["<<i*N+j << "] = "<< RESULTAT_TEST_GPU_double[i*N+j]<<std::endl; 
-		}
-	}
-exit(0);
-*/
-
+    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
 
 //	printf("deriv[0] = %f \n",deriv[0]);
 
@@ -2774,91 +1871,21 @@ exit(0);
 	for(int k=0; k<M.n_gauss; k++){
 		for(int p=0; p<indice_y; p++){
 			for(int q=0; q<indice_x; q++){
-				image_amp[p+indice_x*q]= (float)(beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (0+3*k)]);
-				image_mu[p+indice_x*q]=(float)(beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (1+3*k)]);
-				image_sig[p+indice_x*q]=(float)(beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (2+3*k)]);
+				image_amp[p+indice_x*q]= beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (0+3*k)];
+				image_mu[p+indice_x*q]=beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (1+3*k)];
+				image_sig[p+indice_x*q]=beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (2+3*k)];
 			}
 		}
 
 if(false){//indice_x>=128 || indice_y>=128){
-	conv2D_GPU(image_amp, Kernel_f, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(image_mu, Kernel_f, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(image_sig, Kernel_f, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 
-	conv2D_GPU(conv_amp, Kernel_f, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(conv_mu, Kernel_f, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(conv_sig, Kernel_f, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+	conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 
-/*
-printf("-> image_amp[0] = %f \n",image_amp[0]);
-printf("-> image_amp[1] = %f \n",image_amp[1]);
-
-printf("image_amp[0] = %f \n",image_amp[0]);
-printf("image_amp[1] = %f \n",image_amp[1]);
-printf("conv_amp[0] = %f \n",conv_amp[0]);
-printf("conv_amp[1] = %f \n",conv_amp[1]);
-*/
-/*
-    printf("\n IMAGE \n");
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("image_amp[%d][%d] = %f \n",i,j,image_amp[i+indice_x*j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("image_mu[%d][%d] = %f \n",i,j,image_mu[i+indice_x*j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("image_sig[%d][%d] = %f \n",i,j,image_sig[i+indice_x*j]);
-		}
-	}
-
-	
-
-
-    printf("\n CONV \n");
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_amp[%d][%d] = %f \n",i,j,conv_amp[i+indice_x*j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_mu[%d][%d] = %f \n",i,j,conv_mu[i+indice_x*j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_sig[%d][%d] = %f \n",i,j,conv_sig[i+indice_x*j]);
-		}
-	}
-
-    printf("\n CONV_CONV \n");
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_conv_amp[%d][%d] = %f \n",i,j,conv_conv_amp[i+indice_x*j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_conv_mu[%d][%d] = %f \n",i,j,conv_conv_mu[i+indice_x*j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_conv_sig[%d][%d] = %f \n",i,j,conv_conv_sig[i+indice_x*j]);
-		}
-	}
-*/
-//	std::cin.ignore();
-
-//exit(0);
 } else{
 	convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 	convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
@@ -2867,49 +1894,19 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 	convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 	convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 	convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-
-//if(k <= 1 && indice_x!=indice_y)
-//{
-//if(indice_x ==4){//indice_x != indice_y){
-
-/*
-    printf("\n IMAGE cuda_L\n");
-	for(int i=0; i<indice_x; i++){
-		for(int j=0; j<indice_y; j++){
-			printf("image_amp[%d][%d] = %f \n",i,j,image_amp[i+indice_x*j]);
-		}
-	}
-    printf("\n CONV cuda_L\n");
-	for(int i=0; i<indice_x; i++){
-		for(int j=0; j<indice_y; j++){
-			printf("conv_amp[%d][%d] = %f \n",i,j,conv_amp[i+indice_x*j]);
-		}
-	}
-*/
-
-//}
-//	std::cin.ignore();
-
-//	exit(0);
-//}
 }
 
 	for(int i=0; i<indice_y; i++){
 		for(int j=0; j<indice_x; j++){
-			f+= 0.5*M.lambda_amp*pow((double)(conv_amp[i+indice_x*j]),2);
-			f+= 0.5*M.lambda_mu*pow((double)(conv_mu[i+indice_x*j]),2);
-			f+= 0.5*M.lambda_sig*pow((double)(conv_sig[i+indice_x*j]),2) + 0.5*M.lambda_var_sig*pow((double)(image_sig[i+indice_x*j])-b_params[k],2);
+			f+= 0.5*M.lambda_amp*pow(conv_amp[i+indice_x*j],2);
+			f+= 0.5*M.lambda_mu*pow(conv_mu[i+indice_x*j],2);
+			f+= 0.5*M.lambda_sig*pow(conv_sig[i+indice_x*j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i+indice_x*j]-b_params[k],2);
 
-			deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*(double)(conv_conv_amp[i+indice_x*j]);
-			deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*(double)(conv_conv_mu[i+indice_x*j]);
+			deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*conv_conv_amp[i+indice_x*j];
+			deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*conv_conv_mu[i+indice_x*j];
 
-			deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*(double)(conv_conv_sig[i+indice_x*j])+M.lambda_var_sig*((double)(image_sig[i+indice_x*j])-b_params[k]);
-/*
-			dR_over_dB[0+3*k][i][j] = M.lambda_amp*(double)(conv_conv_amp[i+indice_x*j]);
-			dR_over_dB[1+3*k][i][j] = M.lambda_mu*(double)(conv_conv_mu[i+indice_x*j]);
-			dR_over_dB[2+3*k][i][j] = M.lambda_sig*(double)(conv_conv_sig[i+indice_x*j])+M.lambda_var_sig*((double)(image_sig[i+indice_x*j])-b_params[k]);
-*/
-			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-(double)(image_sig[i+indice_x*j]));
+			deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*conv_conv_sig[i+indice_x*j]+M.lambda_var_sig*(image_sig[i+indice_x*j]-b_params[k]);
+			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[i+indice_x*j]);
 		}
 	}
 
@@ -2930,35 +1927,6 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 		}
 	}
 	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-
-/*
-//if(indice_x ==4){//indice_x != indice_y){
-	printf("après conv \n");
-	for(int i = 0; i<20; i++){
-		printf("b_params[%d] = %f\n", i, b_params[i]);
-	}
-
-	for(int i=0; i<indice_x*indice_y*3*M.n_gauss; i++){
-		printf("g[%d] = %f \n",i,g[i]);
-	}
-	printf("f = %f \n",f);
-	std::cin.ignore();
-//}
-*/
-
-/*
-	for(int i = 0; i<product_deriv; i++){
-		g[i] = deriv[i];
-	}
-*/
-//	g = deriv;//À TESTER
-
-/*
-	printf("g[0] = %f \n",g[0]);
-	printf("g[1] = %f \n",g[1]);
-	printf("g[2] = %f \n",g[2]);
-	std::cin.ignore();
-*/
 
 	double temps2_conv = omp_get_wtime();
 
@@ -2991,20 +1959,26 @@ printf("conv_amp[1] = %f \n",conv_amp[1]);
 
 
 
-
-
-
-void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened) 
+template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f, T* g, int n, std::vector<std::vector<std::vector<T>>> &cube, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
 {
-
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//décommenter en bas
-
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-
-std::vector<double> b_params(M.n_gauss,0.);
-
-int i,k,j,l,p;
+	bool print = false;	
+	int lim = 100;
+/*
+    if(indice_x>=256){
+        print = true;
+    }
+*/
+	if(print){
+		printf("Début :\n");
+		for(int i=0; i<lim; i++){
+			printf("beta[%d] = %.16f\n",i, beta[i]);
+		}
+		printf("f = %.16f\n",f);
+		std::cin.ignore();
+	}
+    
+	std::vector<T> b_params(M.n_gauss,0.);
+	int i,k,j,l,p;
 
 	int taille_params_flat[] = {3*M.n_gauss, indice_y, indice_x};
 	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
@@ -3024,39 +1998,28 @@ int i,k,j,l,p;
 	int product_beta_modif = taille_beta[0]*taille_beta[1]*taille_beta[2];
 	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
 
-	size_t size_deriv = product_deriv * sizeof(double);
-	size_t size_res = product_residual * sizeof(double);
-	size_t size_std = product_std_map_ * sizeof(double);
-	size_t size_beta_modif = product_beta_modif * sizeof(double);
-	size_t size_image_conv = product_image_conv * sizeof(double);
+	size_t size_deriv = product_deriv * sizeof(T);
+	size_t size_res = product_residual * sizeof(T);
+	size_t size_std = product_std_map_ * sizeof(T);
+	size_t size_beta_modif = product_beta_modif * sizeof(T);
+	size_t size_image_conv = product_image_conv * sizeof(T);
 
-	double* deriv = (double*)malloc(size_deriv);
-	double* residual = (double*)malloc(size_res);
-	double* std_map_ = (double*)malloc(size_std);
+	T* deriv = (T*)malloc(size_deriv);
+	T* residual = (T*)malloc(size_res);
+	T* std_map_ = (T*)malloc(size_std);
 
-	double* conv_amp = (double*)malloc(size_image_conv);
-	double* conv_mu = (double*)malloc(size_image_conv);
-	double* conv_sig = (double*)malloc(size_image_conv);
-	double* conv_conv_amp = (double*)malloc(size_image_conv);
-	double* conv_conv_mu = (double*)malloc(size_image_conv);
-	double* conv_conv_sig = (double*)malloc(size_image_conv);
-	double* image_amp = (double*)malloc(size_image_conv);
-	double* image_mu = (double*)malloc(size_image_conv);
-	double* image_sig = (double*)malloc(size_image_conv);
+	T* conv_amp = (T*)malloc(size_image_conv);
+	T* conv_mu = (T*)malloc(size_image_conv);
+	T* conv_sig = (T*)malloc(size_image_conv);
+	T* conv_conv_amp = (T*)malloc(size_image_conv);
+	T* conv_conv_mu = (T*)malloc(size_image_conv);
+	T* conv_conv_sig = (T*)malloc(size_image_conv);
+	T* image_amp = (T*)malloc(size_image_conv);
+	T* image_mu = (T*)malloc(size_image_conv);
+	T* image_sig = (T*)malloc(size_image_conv);
 
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-
-	/*
-		for(j=0; j<indice_x; j++){
-			for(i=0; i<indice_y; i++){
-				for(p=0; p<3*M.n_gauss; p++){
-					beta_modif[p*indice_x*indice_y+ i*indice_x+j] = beta[j*indice_y*3*M.n_gauss+i*3*M.n_gauss+p];
-				}
-			}
-		}
-	*/
-
 
 	double temps1_ravel = omp_get_wtime();
 	for(int i = 0; i<product_deriv; i++){
@@ -3090,14 +2053,6 @@ int i,k,j,l,p;
 
 	double temps_modification_beta2 = omp_get_wtime();
 
-/*
-	if (indice_x != indice_y)
-	{
-		for(int i=0; i<n_beta-M.n_gauss; i++){
-			printf("beta[%d] = %f\n",i, beta[i]);
-		}
-	}
-*/
 	double temps1_dF_dB = omp_get_wtime();
 	double temps2_dF_dB = omp_get_wtime();
 
@@ -3105,72 +2060,20 @@ int i,k,j,l,p;
 	f =  compute_residual_and_f(beta, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
 	double temps2_tableaux = omp_get_wtime();
 
-/*
-	for(int i=0; i<n_beta-M.n_gauss; i++){
-		printf("beta[%d] = %f\n",i, beta[i]);
-	}
-
-	for(int i=0; i<indice_x*indice_y*indice_v; i++){
-		printf("residual[%d] = %f\n", i, residual[i]);
-	}
-
-	for(j=0; j<indice_y; j++){
-		for(i=0; i<indice_x; i++){
-		printf("std_map_[%d] = %f\n", j*indice_x+i, std_map_[j*indice_x+i]);
-		}
-	}
-	printf("--> mi-chemin : f = %f\n", f);
-	if (indice_x != indice_y)
-	{
-		for(int i=0; i<1000; i++){
-			printf("beta[%d] = %f\n",i, beta[i]);
-		}
-
-		for(int i=0; i<1000; i++){
-			printf("residual[%d] = %f\n", i, residual[i]);
-		}
-		printf("f = %f\n", f);
-	}
-*/
-	printf("--> mi-chemin : f = %.16f\n", f);
-
-	for(int i=0; i<indice_x*indice_y*indice_v; i++){
-	printf("residual[%d] = %.16f\n",i, residual[i]);
-	}
-
 	double temps1_deriv = omp_get_wtime();
 	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
 	double temps2_deriv = omp_get_wtime();
 
-	for(int k=0; k<3*M.n_gauss*indice_x*indice_y; k++){
-		printf("deriv[%d] = %.16f\n",k, deriv[k]);
-	}
-
-	for(int j=0; j<indice_y*indice_x; j++){
-		printf("std_map_[%d] = %.16f\n",j, std_map_[j]);
-	}
-	
-/*
-	if (indice_x != indice_y)
-	{
-
-		for(int i=0; i<1000; i++){
-			printf("deriv[%d] = %f\n",i, deriv[i]);
+	if(print){
+		printf("Milieu :\n");
+		for(int i=0; i<lim; i++){
+			printf("deriv[%d] = %.16f\n",i, deriv[i]);
 		}
-
-
-
-/*
-		for(int i=0; i<200; i++){
-			printf("residual[%d] = %f\n",i, residual[i]);
-		}
-		exit(0);
+		printf("-> f = %.16f\n", f);
+		std::cin.ignore();
 	}
-*/
-//	printf("residual[0] = %f\n", residual[0]);
 
-    float Kernel_f[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
-    double Kernel_d[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
+    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
 
 	double temps1_conv = omp_get_wtime();
 
@@ -3183,22 +2086,20 @@ int i,k,j,l,p;
 			}
 		}
 /*
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				printf("image_sig[%d] = %f\n",indice_x*p+q, image_sig[indice_x*p+q]);
+		if(print){
+			for(int p=0; p<4; p++){
+				printf("image_sig[%d] = %.16f\n", p, image_sig[p]);
 			}
 		}
 */
-		//false){//
+		if(false){//indice_x>=128 || indice_y>=128){//true){//
+			conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 
-		if(indice_x>=128 || indice_y>=128){//true){//
-			conv2D_GPU(image_amp, Kernel_d, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(image_mu, Kernel_d, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(image_sig, Kernel_d, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
-
-			conv2D_GPU(conv_amp, Kernel_d, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(conv_mu, Kernel_d, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(conv_sig, Kernel_d, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 		} else{
 			convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 			convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
@@ -3207,6 +2108,223 @@ int i,k,j,l,p;
 			convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 			convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 			convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+		}
+		T f_1 = 0.;
+		T f_2 = 0.;
+		T f_3 = 0.;
+		for(int i=0; i<indice_y; i++){
+			for(int j=0; j<indice_x; j++){
+				f_1+= 0.5*M.lambda_amp*pow(conv_amp[indice_x*i+j],2);
+				f_2+= 0.5*M.lambda_mu*pow(conv_mu[indice_x*i+j],2);
+				f_3+= 0.5*M.lambda_sig*pow(conv_sig[indice_x*i+j],2) + 0.5*M.lambda_var_sig*pow(image_sig[indice_x*i+j]-b_params[k],2);
+
+				deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*conv_conv_amp[indice_x*i+j];
+				deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*conv_conv_mu[indice_x*i+j];
+				deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*conv_conv_sig[indice_x*i+j]+M.lambda_var_sig*(image_sig[indice_x*i+j]-b_params[k]);
+				g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[indice_x*i+j]);
+			}
+		}
+
+	if(print){
+/*		for(int p=0; p<300; p++){
+			printf("image_amp[%d] = %.16f\n", p, image_amp[p]);
+		}
+		for(int p=0; p<300; p++){
+			printf("image_mu[%d] = %.16f\n", p, image_mu[p]);
+		}
+		for(int p=0; p<300; p++){
+			printf("image_sig[%d] = %.16f\n", p, image_sig[p]);
+		}
+		for(int p=0; p<300; p++){
+			printf("conv_mu[%d] = %.16f\n", p, conv_mu[p]);
+		}
+		for(int p=0; p<300; p++){
+			printf("conv_sig[%d] = %.16f\n", p, conv_sig[p]);
+		}
+		*/
+		for(int p=0; p<300; p++){
+			printf("conv_amp[%d] = %.16f\n", p, conv_amp[p]);
+		}
+	    printf("Début print f_1 : %.16f\n", f_1);
+		for(int p=0; p<15; p++){
+			printf("conv_amp[%d] = %.16f\n", p, conv_amp[p]);
+		}
+	    printf("Début print f_2 : %.16f\n", f_2);
+		for(int p=0; p<15; p++){
+			printf("conv_mu[%d] = %.16f\n", p, conv_mu[p]);
+		}
+	    printf("Début print f_3 : %.16f\n", f_3);
+		for(int p=0; p<15; p++){
+			printf("conv_sig[%d] = %.16f\n", p, conv_sig[p]);
+		}
+		std::cin.ignore();
+		}
+		f+=f_1+f_2+f_3;
+	}
+	double temps2_conv = omp_get_wtime();
+
+	temps_ravel+=temps2_ravel-temps1_ravel;
+	temps1_ravel = omp_get_wtime();
+	for(int i=0; i<n_beta-M.n_gauss; i++){
+		g[i]=deriv[i];
+	}
+	temps2_ravel = omp_get_wtime();
+	temps_ravel+=temps2_ravel-temps1_ravel;
+
+
+	if (print)
+	{
+		for(int i=0; i<lim; i++){
+			printf("g[%d] = %.16f\n",i, g[i]);
+		}
+		for(int i=lim-40; i<lim; i++){
+			printf("g[%d] = %.16f\n",i, g[i]);
+		}
+		printf("fin -> f = %.16f\n", f);
+        std::cin.ignore();
+	}
+
+
+
+	temps_conv+= temps2_conv - temps1_conv;
+	temps_deriv+= temps2_deriv - temps1_deriv;
+	temps_tableaux += temps2_tableaux - temps1_tableaux;
+
+	temps_modification_beta += temps_modification_beta2 - temps_modification_beta1;
+
+	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
+
+	free(deriv);
+	free(residual);
+	free(std_map_);
+
+	free(conv_amp);
+	free(conv_conv_amp);
+	free(conv_mu);
+	free(conv_conv_mu);
+	free(conv_sig);
+	free(conv_conv_sig);
+	free(image_sig);
+	free(image_mu);
+	free(image_amp);
+
+}
+
+
+
+template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters &M, T &f, T* g, int n, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
+{
+
+	std::vector<T> b_params(M.n_gauss,0.);
+
+	int i,k,j,l,p;
+
+	int taille_params_flat[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_residual[] = {indice_v, indice_y, indice_x};
+	int taille_std_map_[] = {indice_y, indice_x};
+	int taille_beta[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_beta_modif[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_cube[] = {indice_v, indice_y, indice_x};
+	int taille_image_conv[] = {indice_y, indice_x};
+
+	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
+	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
+	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
+	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
+	int product_cube = taille_cube[0]*taille_cube[1]*taille_cube[2]; 
+	int product_beta = taille_beta[0]*taille_beta[1]*taille_beta[2];
+	int product_beta_modif = taille_beta[0]*taille_beta[1]*taille_beta[2];
+	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
+
+	size_t size_deriv = product_deriv * sizeof(T);
+	size_t size_res = product_residual * sizeof(T);
+	size_t size_std = product_std_map_ * sizeof(T);
+	size_t size_beta_modif = product_beta_modif * sizeof(T);
+	size_t size_image_conv = product_image_conv * sizeof(T);
+
+	T* deriv = (T*)malloc(size_deriv);
+	T* residual = (T*)malloc(size_res);
+	T* std_map_ = (T*)malloc(size_std);
+
+	T* conv_amp = (T*)malloc(size_image_conv);
+	T* conv_mu = (T*)malloc(size_image_conv);
+	T* conv_sig = (T*)malloc(size_image_conv);
+	T* conv_conv_amp = (T*)malloc(size_image_conv);
+	T* conv_conv_mu = (T*)malloc(size_image_conv);
+	T* conv_conv_sig = (T*)malloc(size_image_conv);
+	T* image_amp = (T*)malloc(size_image_conv);
+	T* image_mu = (T*)malloc(size_image_conv);
+	T* image_sig = (T*)malloc(size_image_conv);
+
+	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
+
+	double temps1_ravel = omp_get_wtime();
+	for(int i = 0; i<product_deriv; i++){
+		deriv[i]=0.;
+	}
+
+	for(i=0; i<indice_y; i++){
+		for(j=0; j<indice_x; j++){
+			std_map_[i*indice_x+j]=std_map[i][j];
+		}
+	}
+
+	for(int i = 0; i< n; i++){
+		g[i]=0.;
+	}
+	f=0.;
+
+	for(int i = 0; i<M.n_gauss; i++){
+		b_params[i]=beta[n_beta-M.n_gauss+i];
+//		printf("b_params[%d]= %f\n", i, b_params[i]);
+	}
+	double temps2_ravel = omp_get_wtime();
+	temps_ravel+=temps2_ravel-temps1_ravel;
+	double temps_modification_beta1 = omp_get_wtime();
+
+	double temps_modification_beta2 = omp_get_wtime();
+
+	double temps1_dF_dB = omp_get_wtime();
+	double temps2_dF_dB = omp_get_wtime();
+
+	double temps1_tableaux = omp_get_wtime();
+	f =  compute_residual_and_f(beta, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
+	double temps2_tableaux = omp_get_wtime();
+
+	double temps1_deriv = omp_get_wtime();
+	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
+	double temps2_deriv = omp_get_wtime();
+
+    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
+
+	double temps1_conv = omp_get_wtime();
+
+	for(int k=0; k<M.n_gauss; k++){
+		for(int p=0; p<indice_y; p++){
+			for(int q=0; q<indice_x; q++){
+				image_amp[indice_x*p+q]= beta[(0+3*k)*indice_x*indice_y + p*indice_x+q];
+				image_mu[indice_x*p+q]=beta[(1+3*k)*indice_x*indice_y + p*indice_x+q];
+				image_sig[indice_x*p+q]=beta[(2+3*k)*indice_x*indice_y + p*indice_x+q];
+			}
+		}
+
+		if(false){//indice_x>=128 || indice_y>=128){//true){//
+			conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+
+			conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+		} else{
+			this->convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, image_sig, conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+
+			this->convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
 		}
 
 		for(int i=0; i<indice_y; i++){
@@ -3232,30 +2350,188 @@ int i,k,j,l,p;
 	temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
 
-/*
-	if (indice_x != indice_y)
-	{
+	temps_conv+= temps2_conv - temps1_conv;
+	temps_deriv+= temps2_deriv - temps1_deriv;
+	temps_tableaux += temps2_tableaux - temps1_tableaux;
 
-		for(int i=0; i<1000; i++){
-			printf("g[%d] = %f\n",i, g[i]);
-		}
-		exit(0);
+	temps_modification_beta += temps_modification_beta2 - temps_modification_beta1;
+
+	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
+
+	free(deriv);
+	free(residual);
+	free(std_map_);
+
+	free(conv_amp);
+	free(conv_conv_amp);
+	free(conv_mu);
+	free(conv_conv_mu);
+	free(conv_sig);
+	free(conv_conv_sig);
+	free(image_sig);
+	free(image_mu);
+	free(image_amp);
+}
+
+
+
+template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib_device_fg(parameters &M, T &f, T* g_dev, int n, T* beta_dev, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
+{
+//	printf("TEST 1\n");
+
+    T* g = NULL;
+    g = (T*)malloc(n*sizeof(T)); 
+    T* beta = NULL;
+    beta = (T*)malloc(n*sizeof(T)); 
+
+	checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(beta, beta_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+
+	std::vector<T> b_params(M.n_gauss,0.);
+
+	int i,k,j,l,p;
+
+	int taille_params_flat[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_residual[] = {indice_v, indice_y, indice_x};
+	int taille_std_map_[] = {indice_y, indice_x};
+	int taille_beta[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_beta_modif[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_cube[] = {indice_v, indice_y, indice_x};
+	int taille_image_conv[] = {indice_y, indice_x};
+
+	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
+	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
+	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
+	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
+	int product_cube = taille_cube[0]*taille_cube[1]*taille_cube[2]; 
+	int product_beta = taille_beta[0]*taille_beta[1]*taille_beta[2];
+	int product_beta_modif = taille_beta[0]*taille_beta[1]*taille_beta[2];
+	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
+
+	size_t size_deriv = product_deriv * sizeof(T);
+	size_t size_res = product_residual * sizeof(T);
+	size_t size_std = product_std_map_ * sizeof(T);
+	size_t size_beta_modif = product_beta_modif * sizeof(T);
+	size_t size_image_conv = product_image_conv * sizeof(T);
+
+	T* deriv = (T*)malloc(size_deriv);
+	T* residual = (T*)malloc(size_res);
+	T* std_map_ = (T*)malloc(size_std);
+
+	T* conv_amp = (T*)malloc(size_image_conv);
+	T* conv_mu = (T*)malloc(size_image_conv);
+	T* conv_sig = (T*)malloc(size_image_conv);
+	T* conv_conv_amp = (T*)malloc(size_image_conv);
+	T* conv_conv_mu = (T*)malloc(size_image_conv);
+	T* conv_conv_sig = (T*)malloc(size_image_conv);
+	T* image_amp = (T*)malloc(size_image_conv);
+	T* image_mu = (T*)malloc(size_image_conv);
+	T* image_sig = (T*)malloc(size_image_conv);
+
+	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
+
+	double temps1_ravel = omp_get_wtime();
+
+//	printf("TEST 2\n");
+
+	for(int i = 0; i<product_deriv; i++){
+		deriv[i]=0.;
 	}
-*/
-/*
-	for(int l=0; l<3*M.n_gauss; l++){
+
+	for(i=0; i<indice_y; i++){
+		for(j=0; j<indice_x; j++){
+			std_map_[i*indice_x+j]=std_map[i][j];
+		}
+	}
+
+	for(int i = 0; i< n; i++){
+		g[i]=0.;
+	}
+	f=0.;
+
+	for(int i = 0; i<M.n_gauss; i++){
+		b_params[i]=beta[n_beta-M.n_gauss+i];
+//		printf("b_params[%d]= %f\n", i, b_params[i]);
+	}
+//	printf("TEST 3\n");
+
+	double temps2_ravel = omp_get_wtime();
+	temps_ravel+=temps2_ravel-temps1_ravel;
+	double temps_modification_beta1 = omp_get_wtime();
+
+	double temps_modification_beta2 = omp_get_wtime();
+
+	double temps1_dF_dB = omp_get_wtime();
+	double temps2_dF_dB = omp_get_wtime();
+
+	double temps1_tableaux = omp_get_wtime();
+	f =  compute_residual_and_f(beta, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
+	double temps2_tableaux = omp_get_wtime();
+
+	double temps1_deriv = omp_get_wtime();
+	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
+	double temps2_deriv = omp_get_wtime();
+
+    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
+
+	double temps1_conv = omp_get_wtime();
+
+//	printf("TEST 4\n");
+
+	for(int k=0; k<M.n_gauss; k++){
+//		printf("TEST 5\n");
+		for(int p=0; p<indice_y; p++){
+			for(int q=0; q<indice_x; q++){
+				image_amp[indice_x*p+q]= beta[(0+3*k)*indice_x*indice_y + p*indice_x+q];
+				image_mu[indice_x*p+q]=beta[(1+3*k)*indice_x*indice_y + p*indice_x+q];
+				image_sig[indice_x*p+q]=beta[(2+3*k)*indice_x*indice_y + p*indice_x+q];
+			}
+		}
+//		printf("TEST 6\n");
+
+		if(false){//indice_x>=128 || indice_y>=128){//true){//
+			conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+
+			conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
+			conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
+		} else{
+			this->convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, image_sig, conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+
+			this->convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+		}
+
+//		printf("TEST 7\n");
 		for(int i=0; i<indice_y; i++){
 			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv[l*indice_y*indice_x+i*indice_x+j];// + dR_over_dB[l][i][j];
+				f+= 0.5*M.lambda_amp*pow(conv_amp[indice_x*i+j],2);
+				f+= 0.5*M.lambda_mu*pow(conv_mu[indice_x*i+j],2);
+				f+= 0.5*M.lambda_sig*pow(conv_sig[indice_x*i+j],2) + 0.5*M.lambda_var_sig*pow(image_sig[indice_x*i+j]-b_params[k],2);
+
+				deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*conv_conv_amp[indice_x*i+j];
+				deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*conv_conv_mu[indice_x*i+j];
+				deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*conv_conv_sig[indice_x*i+j]+M.lambda_var_sig*(image_sig[indice_x*i+j]-b_params[k]);
+				g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[indice_x*i+j]);
 			}
 		}
 	}
+	double temps2_conv = omp_get_wtime();
+//	printf("TEST 8\n");
 
-	//CLEAN
-	//	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-	three_D_to_one_D_same_dimensions(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-*/
-
+	temps_ravel+=temps2_ravel-temps1_ravel;
+	temps1_ravel = omp_get_wtime();
+	for(int i=0; i<n_beta-M.n_gauss; i++){
+		g[i]=deriv[i];
+	}
+	temps2_ravel = omp_get_wtime();
+	temps_ravel+=temps2_ravel-temps1_ravel;
 
 	temps_conv+= temps2_conv - temps1_conv;
 	temps_deriv+= temps2_deriv - temps1_deriv;
@@ -3279,1143 +2555,41 @@ int i,k,j,l,p;
 	free(image_mu);
 	free(image_amp);
 
-
-	printf("--> fin-chemin : f = %.16f\n", f);
-	std::cin.ignore();
-
-
+	checkCudaErrors(cudaMemcpy(g_dev, g, n*sizeof(T), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(beta_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
+	free(g);
+	free(beta);
 }
 
-
-//test optims OpenMP for f_g_cube
-void algo_rohsa::f_g_cube_cuda_L_deux_tiers(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened) 
-{
-
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-
-//décommenter en bas
-
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<double> b_params(M.n_gauss,0.);
-
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-int i,k,j,l,p;
-
-	int taille_params_flat[] = {indice_y, indice_x,3*M.n_gauss};
-	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_residual[] = {indice_x, indice_y, indice_v};
-	int taille_std_map_[] = {indice_y, indice_x};
-	int taille_beta[] = {indice_x, indice_y, 3*M.n_gauss};
-	int taille_cube[] = {indice_x, indice_y, indice_v};
-
-	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
-	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
-	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
-	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
-	int product_cube = taille_cube[0]*taille_cube[1]*taille_cube[2]; 
-	int product_beta = taille_beta[0]*taille_beta[1]*taille_beta[2];
-
-	size_t size_deriv = product_deriv * sizeof(double);
-	size_t size_res = product_residual * sizeof(double);
-	size_t size_std = product_std_map_ * sizeof(double);
-	size_t size_params = product_params_flat*sizeof(double);
-
-	double* params_flat = (double*)malloc(size_params);
-	double* deriv = (double*)malloc(size_deriv);
-	double* residual = (double*)malloc(size_res);
-	double* std_map_ = (double*)malloc(size_std);
-
-	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-	double temps1_tableaux = omp_get_wtime();
-
-	for(j=0; j<indice_y; j++)
-	{
-		for(i=0; i<indice_x; i++)
-		{
-			for(k=0; k<3*M.n_gauss; k++)
-			{
-				params_flat[j*3*M.n_gauss*indice_x+i*3*M.n_gauss+k] = beta[i*indice_y*3*M.n_gauss+j*3*M.n_gauss+k];
-			}
-		}
-	}
-
-
-	for(int i = 0; i<product_deriv; i++){
-		deriv[i]=0.;
-	}
-
-	for(i=0; i<indice_y; i++){
-		for(j=0; j<indice_x; j++){
-			std_map_[i*indice_x+j]=std_map[i][j];
-		}
-	}
-
-
-	for(int i = 0; i< n; i++){
-		g[i]=0.;
-	}
-	f=0.;
-
-//beta est de taille : x,y,3g
-//params est de taille : 3g,y,x
-
-	for(int i = 0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
-	}
-
-//exit(0);
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-
-
-
-f = compute_residual_and_f(beta, taille_beta, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
-
-
-
-double temps2_dF_dB = omp_get_wtime();
-
-
-
-	double temps1_deriv = omp_get_wtime();
-
-//AJOUT
-//-----------------------------------------------------------------------------------
-//params    3g y  x
-//params_T  y  x 3g
-//dF_over_dB_bis[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-	gradient_L_2(deriv, taille_deriv, product_deriv, params_flat, taille_params_flat, product_params_flat, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
-
-	double temps2_deriv = omp_get_wtime();
-
-	double temps1_conv = omp_get_wtime();
-
-	for(int k=0; k<M.n_gauss; k++){
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-
-				image_amp[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+ (0+3*k)];
-				image_mu[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+ (1+3*k)];
-				image_sig[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+ (2+3*k)];
-			}
-		}
-
-	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-
-	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2);
-			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2);
-			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-b_params[k],2);
-
-			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j];
-			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j];
-			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-b_params[k]);
-
-			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[i][j]);
-		}
-	}
-	}
-
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv[l*indice_y*indice_x+i*indice_x+j] + dR_over_dB[l][i][j];
-			}
-		}
-	}
-	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-
-	double temps2_conv = omp_get_wtime();
-
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
-	free(deriv);
-	free(residual);
-	free(std_map_);
-	free(params_flat);
-
-}
-
-
-void algo_rohsa::f_g_cube_cuda_L_2(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig) 
-{
-
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-
-//décommenter en bas
-
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_bis(3*M.n_gauss,std::vector<std::vector<std::vector<double>>>( indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.))));
-std::vector<std::vector<std::vector<double>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> residual_bis(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<double> b_params(M.n_gauss,0.);
-
-//TEST VALIDITÉ GPU
-/*
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_bis(indice_v,std::vector<std::vector<std::vector<double>>>( indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.))));
-std::vector<std::vector<std::vector<double>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-*/
-std::vector<std::vector<std::vector<double>>> params_T(indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.)));
-
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-int i,k,j,l,p;
-
-int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-double temps1_tableaux = omp_get_wtime();
-for(int i = 0; i< n; i++){
-	g[i]=0.;
-}
-f=0.;
-
-unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-
-for(int i = 0; i<M.n_gauss; i++){
-	b_params[i]=beta[n_beta-M.n_gauss+i];
-}
-
-for(int j=0; j<indice_x; j++){
-	for(int i=0; i<indice_y; i++){
-		std::vector<double> residual_1D(indice_v,0.);
-		std::vector<double> params_flat(params.size(),0.);
-		std::vector<double> cube_flat(cube[0][0].size(),0.);
-		for (int p=0;p<params_flat.size();p++){
-			params_flat[p]=params[p][i][j];
-		}
-		for (int p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[j][i][p];
-		}
-		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (int p=0;p<residual_1D.size();p++){
-			residual_bis[j][i][p]=residual_1D[p];
-		}
-		if(std_map[i][j]>0.){
-			f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
-		}
-	}
-}
-
-
-
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-
-
-
-
-
-double temps2_dF_dB = omp_get_wtime();
-
-double temps1_deriv = omp_get_wtime();
-
-//AJOUT
-//-----------------------------------------------------------------------------------
-//params    3g y  x
-//params_T  y  x 3g
-//dF_over_dB_bis[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-	for(k=0; k<3*M.n_gauss; k++)
-	{
-		for(j=0; j<indice_y; j++)
-		{
-			for(i=0; i<indice_x; i++)
-			{
-				params_T[j][i][k] = params[k][j][i];
-			}
-		}
-	}
-
-	int taille_params_flat[] = {indice_y, indice_x,3*M.n_gauss};
-	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_residual[] = {indice_x, indice_y, indice_v};
-	int taille_std_map_[] = {indice_y, indice_x};
-
-	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
-	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
-	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
-	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
-		
-	size_t size_deriv = product_deriv * sizeof(double);
-	size_t size_res = product_residual * sizeof(double);
-	size_t size_std = product_std_map_ * sizeof(double);
-	size_t size_params = product_params_flat*sizeof(double);
-
-	double* params_flat = (double*)malloc(size_params);
-	double* deriv = (double*)malloc(size_deriv);
-	double* residual = (double*)malloc(size_res);
-	double* std_map_ = (double*)malloc(size_std);
-
-	for(int i = 0; i<product_deriv; i++){
-		deriv[i]=0.;
-	}
-	for(i=0; i<indice_y; i++){
-		for(j=0; j<indice_x; j++){
-			std_map_[i*indice_x+j]=std_map[i][j];
-		}
-	}
-
-	for(int j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			for (int p=0;p<indice_v;p++){
-				residual[j*indice_y*indice_v+i*indice_v+p]=residual_bis[j][i][p];
-			}
-		}
-	}
-
-
-	for(i=0; i<indice_y; i++){
-		for(j=0; j<indice_x; j++){
-			for (p=0;p<3*M.n_gauss;p++){
-				params_flat[i*3*M.n_gauss*indice_x+j*3*M.n_gauss+p]=params_T[i][j][p];
-			}
-		}
-	}
-
-	gradient_L_2(deriv, taille_deriv, product_deriv, params_flat, taille_params_flat, product_params_flat, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
-
-/*
-printf("beta[0] = %f \n",beta[0]);
-printf("beta[1] = %f \n",beta[1]);
-printf("beta[2] = %f \n",beta[2]);
-printf("beta[3] = %f \n",beta[3]);
-*/
-
-	double temps1_conv = omp_get_wtime();
-
-	for(int k=0; k<M.n_gauss; k++){
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				image_amp[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+ (0+3*k)];
-				image_mu[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+ (1+3*k)];
-				image_sig[p][q]=params_flat[p*indice_x*3*M.n_gauss+q*3*M.n_gauss+ (2+3*k)];
-			}
-		}
-
-	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-
-/*
-printf("-> image_amp[0] = %f \n",image_amp[0][0]);
-printf("-> image_amp[1] = %f \n",image_amp[0][1]);
-
-printf("image_amp[0] = %f \n",image_amp[0][0]);
-printf("image_amp[1] = %f \n",image_amp[0][1]);
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_amp[i][j] = %f \n",conv_amp[i][j]);
-		}
-	}
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_mu[i][j] = %f \n",conv_mu[i][j]);
-		}
-	}
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			printf("conv_sig[i][j] = %f \n",conv_sig[i][j]);
-		}
-	}
-//	exit(0);
-std::cin.ignore();
-*/
-	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2);
-			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2);
-			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-b_params[k],2);
-
-			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j];
-			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j];
-			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-b_params[k]);
-
-			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[i][j]);
-		}
-	}
-	}
-
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv[l*indice_y*indice_x+i*indice_x+j] + dR_over_dB[l][i][j];
-			}
-		}
-	}
-	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-	/*
-	printf("g[0] = %f \n",g[0]);
-	printf("g[1] = %f \n",g[1]);
-	printf("g[2] = %f \n",g[2]);
-	std::cin.ignore();
-	*/
-
-	double temps2_conv = omp_get_wtime();
-
-	temps_conv+= temps2_conv - temps1_conv;
-//	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
-	free(deriv);
-	free(residual);
-	free(std_map_);
-	free(params_flat);
-}
-
-
-void algo_rohsa::f_g_cube_cuda_L_2_2Bverified(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig) 
-{
-
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-
-//décommenter en bas
-
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_bis(3*M.n_gauss,std::vector<std::vector<std::vector<double>>>( indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.))));
-std::vector<std::vector<std::vector<double>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> residual_bis(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<double> b_params(M.n_gauss,0.);
-
-//TEST VALIDITÉ GPU
-/*
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_bis(indice_v,std::vector<std::vector<std::vector<double>>>( indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.))));
-std::vector<std::vector<std::vector<double>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-*/
-std::vector<std::vector<std::vector<double>>> params_T(indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.)));
-
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-int i,k,j,l,p;
-
-int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-double temps1_tableaux = omp_get_wtime();
-for(int i = 0; i< n; i++){
-	g[i]=0.;
-}
-f=0.;
-
-unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-
-for(int i = 0; i<M.n_gauss; i++){
-	b_params[i]=beta[n_beta-M.n_gauss+i];
-}
-
-for(int j=0; j<indice_x; j++){
-	for(int i=0; i<indice_y; i++){
-		std::vector<double> residual_1D(indice_v,0.);
-		std::vector<double> params_flat(params.size(),0.);
-		std::vector<double> cube_flat(cube[0][0].size(),0.);
-		for (int p=0;p<params_flat.size();p++){
-			params_flat[p]=params[p][i][j];
-		}
-		for (int p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[j][i][p];
-		}
-		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (int p=0;p<residual_1D.size();p++){
-			residual_bis[j][i][p]=residual_1D[p];
-		}
-		if(std_map[i][j]>0.){
-			f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
-		}
-	}
-}
-
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-
-
-
-/*
-//-----------------------------------------------------------------------------
-
-#pragma omp parallel private(i,k) shared(dF_over_dB_bis ,params ,M ,indice_v ,indice_y ,indice_x) //num_threads(1) //
-{
-#pragma omp for
-for(int i=0; i<M.n_gauss; i++){
-        for(k=0; k<indice_v; k++){
-                for(int j=0; j<indice_y; j++){
-                        for(int l=0; l<indice_x; l++){
-
-				dF_over_dB_bis[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB_bis[1+3*i][k][j][l] +=  params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * 
-									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB_bis[2+3*i][k][j][l] += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * 
-									exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-                        }
-                }
-        }
-}
-}
-
-double temps2_dF_dB = omp_get_wtime();
-
-double temps1_deriv = omp_get_wtime();
-#pragma omp parallel private(k,j) shared(deriv_bis, dF_over_dB_bis, M, indice_v, indice_y, indice_x, std_map, residual_bis)
-{
-#pragma omp for
-for(k=0; k<indice_v; k++){
-	for(j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			for(int l=0; l<3*M.n_gauss; l++){
-				if(std_map[i][j]>0.){
-					deriv_bis[l][i][j]+=  dF_over_dB_bis[l][k][i][j]*residual_bis[j][i][k]/pow(std_map[i][j],2);
-				}
-			}
-		}
-	}
-}
-}
-
-double temps2_deriv = omp_get_wtime();
-*/
-//-----------------------------------------------------------------------------
-
-
-double temps2_dF_dB = omp_get_wtime();
-
-double temps1_deriv = omp_get_wtime();
-//	int i,j,l,k;
-int compteur_cpu = 0;
-//#pragma omp parallel private(i,l,j) shared(params, deriv_bis, M, indice_v, indice_y, indice_x, std_map, residual_bis)
-//{
-	for(j=0; j<indice_x; j++){
-		for(i=0; i<indice_y; i++){
-			for(l=0; l<M.n_gauss; l++){
-				if(std_map[i][j]>0.){
-				double temp1=0.;
-				double temp2=0.;
-				double temp3=0.;
-				double res_std=0.;
-					for(int k_=0; k_<indice_v; k_++){
-					res_std = residual_bis[j][i][k_]/pow(std_map[i][j],2);
-					temp1 += exp(-pow( double(k_+1)-params[1+3*l][i][j],2.)/(2*pow(params[2+3*l][i][j],2.)) )*res_std;
-					temp2 +=  params[3*l][i][j]*( double(k_+1) - params[1+3*l][i][j])/pow(params[2+3*l][i][j],2.) * 
-							exp(-pow( double(k_+1)-params[1+3*l][i][j],2.)/(2*pow(params[2+3*l][i][j],2.)) )*res_std;
-					temp3 += params[3*l][i][j]*pow( double(k_+1) - params[1+3*l][i][j], 2.)/(pow(params[2+3*l][i][j],3.)) * 
-							exp(-pow( double(k_+1)-params[1+3*l][i][j],2.)/(2*pow(params[2+3*l][i][j],2.)) )*res_std;
-/*
-dF_over_dB_bis[0+3*l][k][i][j] += exp(-pow( double(k+1)-params[1+3*l][i][j],2.)/(2*pow(params[2+3*l][i][j],2.)) );
-dF_over_dB_bis[1+3*l][k][i][j] +=  params[3*l][i][j]*( double(k+1) - params[1+3*l][i][j])/pow(params[2+3*l][i][j],2.) * 
-						exp(-pow( double(k+1)-params[1+3*l][i][j],2.)/(2*pow(params[2+3*l][i][j],2.)) );
-dF_over_dB_bis[2+3*l][k][i][j] += params[3*l][i][j]*pow( double(k+1) - params[1+3*l][i][j], 2.)/(pow(params[2+3*l][i][j],3.)) * 
-						exp(-pow( double(k+1)-params[1+3*l][i][j],2.)/(2*pow(params[2+3*l][i][j],2.)) );
-*/
-					}
-
-
-
-//				printf("temp1 = %f \n", temp1);
-//				printf("temp1 = %d , temp2 = %d , temp3 = %d\n", temp1, temp2, temp3);
-
-				deriv_bis[3*l+0][i][j]+=  temp1;
-				deriv_bis[3*l+1][i][j]+=  temp2;
-				deriv_bis[3*l+2][i][j]+=  temp3;
-				}
-				printf("j = %d , i = %d , l = %d\n",j,i,l);
-//				compteur_cpu++;
-			}
-		}
-	}
-//}
-
-std::cout<<"compteur_cpu = "<<compteur_cpu<<std::endl;
-
-//AJOUT
-//-----------------------------------------------------------------------------------
-//params    3g y  x
-//params_T  y  x 3g
-//dF_over_dB_bis[0+3*i][k][j][l] += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-
-	for(k=0; k<3*M.n_gauss; k++)
-	{
-		for(j=0; j<indice_y; j++)
-		{
-			for(i=0; i<indice_x; i++)
-			{
-				params_T[j][i][k] = params[k][j][i];
-			}
-		}
-	}
-
-	int taille_params_flat[] = {indice_y, indice_x,3*M.n_gauss};
-	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_residual[] = {indice_x, indice_y, indice_v};
-	int taille_std_map_[] = {indice_y, indice_x};
-
-	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
-	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
-	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
-	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
-		
-	size_t size_deriv = product_deriv * sizeof(double);
-	size_t size_res = product_residual * sizeof(double);
-	size_t size_std = product_std_map_ * sizeof(double);
-	size_t size_params = product_params_flat*sizeof(double);
-
-	double* params_flat = (double*)malloc(size_params);
-	double* deriv = (double*)malloc(size_deriv);
-	double* residual = (double*)malloc(size_res);
-	double* std_map_ = (double*)malloc(size_std);
-
-	for(int i = 0; i<product_deriv; i++){
-		deriv[i]=0.;
-	}
-	for(i=0; i<indice_y; i++){
-		for(j=0; j<indice_x; j++){
-			std_map_[i*indice_x+j]=std_map[i][j];
-		}
-	}
-
-	for(int j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			for (int p=0;p<indice_v;p++){
-				residual[j*indice_y*indice_v+i*indice_v+p]=residual_bis[j][i][p];
-			}
-		}
-	}
-
-
-	for(i=0; i<indice_y; i++){
-		for(j=0; j<indice_x; j++){
-			for (p=0;p<3*M.n_gauss;p++){
-				params_flat[i*3*M.n_gauss*indice_x+j*3*M.n_gauss+p]=params_T[i][j][p];
-			}
-		}
-	}
-	gradient_L_2(deriv, taille_deriv, product_deriv, params_flat, taille_params_flat, product_params_flat, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
-	int vieux_compteur = 0;
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-//				if (abs(deriv_bis[l][i][j]-deriv[l*indice_x*indice_y+i*indice_x+j])!=0)
-//				{
-
-//					std::cout<< "deriv_bis[l][i][j]                      = "<<deriv_bis[l][i][j]<<std::endl;
-//					std::cout<< "deriv[l*indice_x*indice_y+i*indice_x+j] = "<<deriv[l*indice_x*indice_y+i*indice_x+j]<<std::endl;
-
-//					vieux_compteur++;
-//				}
-			}
-		}
-	}
-	std::cout<<"--> vieux_compteur =  "<<vieux_compteur<<std::endl;
-	free(deriv);
-	free(residual);
-	free(std_map_);
-	free(params_flat);
-
-//	exit(0);
-//-----------------------------------------------------------------------------------
-
-
-double temps1_conv = omp_get_wtime();
-
-for(int k=0; k<M.n_gauss; k++){
-	for(int p=0; p<indice_y; p++){
-		for(int q=0; q<indice_x; q++){
-			image_amp[p][q]=params[0+3*k][p][q];
-			image_mu[p][q]=params[1+3*k][p][q];
-			image_sig[p][q]=params[2+3*k][p][q];
-		}
-	}
-
-	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-
-	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2);
-			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2);
-			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-b_params[k],2);
-
-			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j];
-			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j];
-			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-b_params[k]);
-
-			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[i][j]);
-		}
-	}
-	}
-
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv_bis[l][i][j] + dR_over_dB[l][i][j];
-			}
-		}
-	}
-	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-
-	double temps2_conv = omp_get_wtime();
-
-	temps_conv+= temps2_conv - temps1_conv;
-//	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-}
-
-
-//test optims OpenMP for f_g_cube
-void algo_rohsa::f_g_cube_omp(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig) 
+template <typename T> void algo_rohsa::f_g_cube_omp_without_regul(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map) 
 {
 
 //std::cout<<"Début f_g_cube_test"<<std::endl;
 
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<T>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 //°
 //décommenter en bas
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_bis(indice_v,std::vector<std::vector<std::vector<double>>>( indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.))));
-std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//std::vector<std::vector<std::vector<double>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
+std::vector<std::vector<std::vector<std::vector<T>>>> dF_over_dB_bis(indice_v,std::vector<std::vector<std::vector<T>>>( indice_y,std::vector<std::vector<T>>(indice_x, std::vector<T>(3*M.n_gauss,0.))));
+std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+//std::vector<std::vector<std::vector<T>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 //dF_over_dB[v][y][x][M.n__gauss]
 //deriv[gauss][y][x]
-std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-
-std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> params_T(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
-std::vector<double> b_params(M.n_gauss,0.);
-
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
-
-int i,k,j,l,p;
-
-for(int i = 0; i< n; i++){
-	g[i]=0.;
-}
-f=0.;
-
-double temps1_ravel = omp_get_wtime();
-
-//extracting one params_T for the gradient and another for calculations below
-// WARNING
-unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-unravel_3D_T(beta, params_T,  3*M.n_gauss, indice_x,indice_y);
-
-
-int N_x = indice_x;
-int N_y = indice_y;
-int N_z = 3*M.n_gauss;
-
-/*
-std::cout<<"1 : "<<params_T[indice_y-1][indice_x-1][3*M.n_gauss-1]<<std::endl;
-
-std::cout<<"2 : "<<params[3*M.n_gauss-1][0][1]<<std::endl;
-std::cout<<"1 : "<<params_T[0][1][3*M.n_gauss-1]<<std::endl;
-*/
-//exit(0);
-double temps2_ravel = omp_get_wtime();
-temps_ravel+=temps2_ravel-temps1_ravel;
-
-/*for(int i = 0; i<M.n_gauss; i++){
-	b_params[i]=beta[n_beta-M.n_gauss+i];
-}*/
-//cout.precision(dbl::max_digits10);
-
-
-//#pragma omp parallel private(j,i) shared(cube,params,std_map,residual,indice_x,indice_y,indice_v,M,f)
-//{
-//#pragma omp for
-double temps1_tableaux = omp_get_wtime();
-for(j=0; j<indice_x; j++){
-	for(i=0; i<indice_y; i++){
-		std::vector<double> residual_1D(indice_v,0.);
-		std::vector<double> params_flat(params.size(),0.);
-		std::vector<double> cube_flat(cube[0][0].size(),0.);
-		for (p=0;p<params_flat.size();p++){
-			params_flat[p]=params[p][i][j];
-		}
-		for (p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[i][j][p];
-		}
-		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (p=0;p<residual_1D.size();p++){
-			residual[j][i][p]=residual_1D[p];
-		}
-		if(std_map[i][j]>0.){
-			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
-		}
-	}
-
-//}
-}
-
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-
-
-// µµ
-
-/*
-for(i=0; i<indice_y; i++){
-	for(j=0; j<indice_x; j++){
-		for (p=0;p<3*M.n_gauss;p++){
-			std::cout<<params_T[i][j][p]<<std::endl;
-			std::cout<<params_flat[p+3*M.n_gauss*j+3*M.n_gauss*indice_x*i]<<std::endl;
-			std::cout<<beta[p+3*M.n_gauss*i+3*M.n_gauss*indice_x*j]<<std::endl;
-			std::cout<<"  "<<std::endl;
-		}
-	}
-}
-*/
-
-/*
-for(int l=0; l<indice_y; l++){
-	for(int i=0; i<indice_x; i++){
-		for(int j=0; j<3*M.n_gauss; j++){
-	std::cout<<"params_T   ["<<l<<"]["<<i<<"]["<< j <<"] ="<< params_T[l][i][j]<<std::endl;
-	std::cout<<"params_flat["<<l<<"]["<<i<<"]["<< j <<"] ="<< params_flat[l*t3*t2+i*t3+j]<<std::endl;
-	std::cout<<"  "<<std::endl;
-		}
-	}
-}
-*/
-
-//gradient.cu gpu
-////gradient(dF_over_dB, taille_dF_over_dB, product_taille_dF_over_dB, beta, taille_params_flat, product_taille_params_flat, M.n_gauss);
-
-/*
-   for(int p; p<product_taille_dF_over_dB; p++)
-     {
-	std::cout<<"dF_over_dB["<<p<<"] = "<<dF_over_dB[p]<<std::endl;
-//        printf("p =  %d et dF_over_dB = %f\n",p,dF_over_dB[p]);
-     }
-*/
-
-//repère_cuda °
-
-
-// v y x 3*i+.
-//std::cout<<"DEBUG 1"<<std::endl;
-#pragma omp parallel private(k,l,j) shared(dF_over_dB_bis,params_T,M,indice_v,indice_y,indice_x)
-{
-#pragma omp for
-for(int k=0; k<indice_v; k++){
-	for(int l=0; l<indice_y; l++){
-		for(int j=0; j<indice_x; j++){
-			for(int i=0; i<M.n_gauss; i++){
-				//ojqpsfdijpsqojdfpoidspoidfpojqspodij sdjfpjqspodfijiopqs jdpofijojfoiq sdoipf oqisdhfophjqsopidf opis dofi poqs dfop qspoidf jopiqjsdopif jopqisd fop Âsopid fpoij qsdf
-				double par0 = params_T[l][j][3*i+0];
-				double par1 = double(k+1) - params_T[l][j][3*i+1];
-				double par2 = params_T[l][j][3*i+2];
-
-//				double par1_k = double(k+1) - par1;
-				double par2_pow = 1/(2*pow(par2,2.));
-//dF_over_dB[v][y][x][M.n__gauss]
-				dF_over_dB_bis[k][l][j][3*i+0] = exp( -pow( par1 ,2.)*par2_pow );//( -pow( par1_k ,2.)*par2_pow );
-				dF_over_dB_bis[k][l][j][3*i+1] = par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ); //par0*par1_k*par2_pow*2 * exp(-pow( par1_k,2.)*par2_pow );
-				dF_over_dB_bis[k][l][j][3*i+2] = par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow );//par0*pow( par1_k, 2.)/(pow(par2,3.)) * exp(-pow( par1_k,2.)*par2_pow );
-//				std::cout<<"par0 = "<<par0<<std::endl;
-			}
-		}
-	}
-}
-}
-
-/*
-for(int k=0; k<10; k++){
-//if (k<2){
-	for(int l=0; l<indice_y; l++){
-		for(int j=0; j<indice_x; j++){
-			for(int i=0; i<3*M.n_gauss; i++){
-	std::cout<<"dF_over_dB_bis["<<k<<"]["<<l<<"]["<<j<<"]["<< i <<"] ="<< dF_over_dB_bis[k][l][j][i]<<std::endl;
-	std::cout<<"dF_over_dB    ["<<k<<"]["<<l<<"]["<<j<<"]["<< i <<"] ="<< dF_over_dB[i+j*t3+l*t2*t3+k*t2*t1*t3]<<std::endl;
-	std::cout<<"  "<<std::endl;
-			}
-		}
-	}
-//}
-}
-*/
-
-
-
-/*
-for(int k=0; k<indice_v; k++){
-if (k==0){
-	for(int l=0; l<indice_y; l++){
-		for(int j=0; j<indice_x; j++){
-			for(int i=0; i<3*M.n_gauss; i++){
-	std::cout<<"dF_over_dB_bis["<<k<<"]["<<l<<"]["<<j<<"]["<< i <<"] ="<< dF_over_dB_bis[k][l][j][i]<<std::endl;
-			}
-		}
-	}
-}
-}
-std::cout<<"dF_over_dB_bis[1][0][0][0] ="<< dF_over_dB_bis[1][0][0][0]<<std::endl;
-std::cout<<"dF_over_dB_bis[0][1][0][0] ="<< dF_over_dB_bis[0][1][0][0]<<std::endl;
-std::cout<<"dF_over_dB_bis[0][0][1][0] ="<< dF_over_dB_bis[0][0][1][0]<<std::endl;
-std::cout<<"dF_over_dB_bis[0][0][0][1] ="<< dF_over_dB_bis[0][0][0][1]<<std::endl;
-
-
-exit(0);
-*/
-double temps2_dF_dB = omp_get_wtime();
-
-double temps1_deriv = omp_get_wtime();
-//Bon code deriv
-/*
-#pragma omp parallel private(k,l) shared(deriv,dF_over_dB,M,indice_v,indice_y,indice_x,std_map,residual)
-{
-#pragma omp for
-for(k=0; k<indice_v; k++){
-	for(l=0; l<3*M.n_gauss; l++){
-		for(i=0; i<indice_y; i++){
-			for(j=0; j<indice_x; j++){
-				if(std_map[i][j]>0.){
-					deriv[l][i][j]+=  dF_over_dB[l][k][i][j]*residual[j][i][k]/pow(std_map[i][j],2);
-				}
-			}
-		}
-	}
-}
-std::cout<<"2 : "<<params[3*M.n_gauss-1][indice_y-1][indice_x-1]<<std::endl;
-std::cout<<"1 : "<<params_T[indice_y-1][indice_x-1][3*M.n_gauss-1]<<std::endl;
-
-}
-*/
-
-//$$
-// DERIV pour dF_over_dB_bis
-	for(j=0; j<indice_x; j++){
-		for(i=0; i<indice_y; i++){
-			for(k=0; k<indice_v; k++){
-				for(l=0; l<3*M.n_gauss; l++){
-				if(std_map[i][j]>0.){
-					deriv[l][i][j]+=  dF_over_dB_bis[k][i][j][l]*residual[j][i][k]/pow(std_map[i][j],2);
-					}
-				}
-			}
-		}
-	}
-
-
-
-/*
-#pragma omp parallel private(i) shared(deriv, dF_over_dB, residual, std_map,M,indice_v,indice_y,indice_x)
-{
-#pragma omp for
-*/
-
-/*
-	for(j=0; j<indice_x; j++){
-		for(i=0; i<indice_y; i++){
-			for(k=0; k<indice_v; k++){
-				for(l=0; l<3*M.n_gauss; l++){
-				if(std_map[i][j]>0.){
-//					coordinates[0] = l;
-//					coordinates[1] = k;
-//					coordinates[2] = i;
-//					coordinates[3] = j;
-					deriv[l][i][j]+=  dF_over_dB[k*t2*t1*t3+i*t2*t3+j*t3+l]*residual[j][i][k]/pow(std_map[i][j],2);
-				}
-			}
-		}
-	}
-}
-*/
-
-/*
-for(int j=0; j<indice_x; j++){
-	for(int i=0; i<indice_y; i++){
-		for(int l=0; l<3*M.n_gauss; l++){
-	std::cout<<"deriv_bis["<<l<<"]["<<i<<"]["<< j <<"] ="<< deriv_bis[l][i][j]<<std::endl;
-	std::cout<<"deriv    ["<<l<<"]["<<i<<"]["<< j <<"] ="<< deriv[l][i][j]<<std::endl;
-	std::cout<<"  "<<std::endl;
-		}
-	}
-}
-*/
-
-
-
-
-/*
-		for(i=0; i<indice_y; i++){
-
-			for(k=0; k<indice_v; k++){
-	for(j=0; j<indice_x; j++){
-			    for(l=0; l<3*M.n_gauss; l++){
-
-			         if(std_map[i][j]>0.){
-					deriv[l][i][j]+=  dF_over_dB[k][i][j][l]*residual[j][i][k]/pow(std_map[i][j],2);
-					//dF_over_dB[v][y][x][M.n__gauss]
-					//deriv[gauss][y][x]
-				}
-				}
-			}
-		}
-	}
-*/
-//}
-// v y x 3*i+.
-
-double temps2_deriv = omp_get_wtime();
-
-double temps1_conv = omp_get_wtime();
-
-for(int k=0; k<M.n_gauss; k++){
-
-	for(int p=0; p<indice_y; p++){
-		for(int q=0; q<indice_x; q++){
-			image_amp[p][q]=params[0+3*k][p][q];
-			image_mu[p][q]=params[1+3*k][p][q];
-			image_sig[p][q]=params[2+3*k][p][q];
-		}
-	}
-
-	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-
-	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-
-
-	for(int j=0; i<indice_y; j++){
-		for(int i=0; j<indice_x; i++){
-			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2) + 0.5*M.lambda_var_amp*pow(image_amp[i][j]-mean_amp[k],2);
-			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2) + 0.5*M.lambda_var_mu*pow(image_mu[i][j]-mean_mu[k],2);
-			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-mean_sig[k],2);
-
-			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j]+M.lambda_var_amp*(image_amp[i][j]-mean_amp[k]);
-			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j]+M.lambda_var_mu*(image_mu[i][j]-mean_mu[k]);
-			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-mean_sig[k]);
-		}
-	}
-}
-
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv[l][i][j] + dR_over_dB[l][i][j];
-			}
-		}//deriv 3*M.n_gauss y x
-	}
-	double temps2_conv = omp_get_wtime();
-
-	temps1_ravel = omp_get_wtime();
-	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-	temps2_ravel = omp_get_wtime();
-	temps_ravel+=temps2_ravel-temps1_ravel;
-
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-	temps_ravel+=temps2_ravel-temps1_ravel;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
-}
-
-void algo_rohsa::f_g_cube_omp_without_regul(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig) 
-{
-
-//std::cout<<"Début f_g_cube_test"<<std::endl;
-
-std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//°
-//décommenter en bas
-std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB_bis(indice_v,std::vector<std::vector<std::vector<double>>>( indice_y,std::vector<std::vector<double>>(indice_x, std::vector<double>(3*M.n_gauss,0.))));
-std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//std::vector<std::vector<std::vector<double>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-//dF_over_dB[v][y][x][M.n__gauss]
-//deriv[gauss][y][x]
-std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-
-std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-std::vector<std::vector<std::vector<double>>> params_T(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(3*M.n_gauss,0.)));
-std::vector<double> b_params(M.n_gauss,0.);
-
-std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
+std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
+
+std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+std::vector<std::vector<std::vector<T>>> params_T(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(3*M.n_gauss,0.)));
+std::vector<T> b_params(M.n_gauss,0.);
+
+std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
+std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
 int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
 
@@ -4451,9 +2625,9 @@ temps_ravel+=temps2_ravel-temps1_ravel;
 double temps1_tableaux = omp_get_wtime();
 for(j=0; j<indice_x; j++){
 	for(i=0; i<indice_y; i++){
-		std::vector<double> residual_1D(indice_v,0.);
-		std::vector<double> params_flat(params.size(),0.);
-		std::vector<double> cube_flat(cube[0][0].size(),0.);
+		std::vector<T> residual_1D(indice_v,0.);
+		std::vector<T> params_flat(params.size(),0.);
+		std::vector<T> cube_flat(cube[0][0].size(),0.);
 		for (p=0;p<params_flat.size();p++){
 			params_flat[p]=params[p][i][j];
 		}
@@ -4487,12 +2661,12 @@ for(int k=0; k<indice_v; k++){
 		for(int j=0; j<indice_x; j++){
 			for(int i=0; i<M.n_gauss; i++){
 				//ojqpsfdijpsqojdfpoidspoidfpojqspodij sdjfpjqspodfijiopqs jdpofijojfoiq sdoipf oqisdhfophjqsopidf opis dofi poqs dfop qspoidf jopiqjsdopif jopqisd fop Âsopid fpoij qsdf
-				double par0 = params_T[l][j][3*i+0];
-				double par1 = double(k+1) - params_T[l][j][3*i+1];
-				double par2 = params_T[l][j][3*i+2];
+				T par0 = params_T[l][j][3*i+0];
+				T par1 = T(k+1) - params_T[l][j][3*i+1];
+				T par2 = params_T[l][j][3*i+2];
 
-//				double par1_k = double(k+1) - par1;
-				double par2_pow = 1/(2*pow(par2,2.));
+//				T par1_k = double(k+1) - par1;
+				T par2_pow = 1/(2*pow(par2,2.));
 //dF_over_dB[v][y][x][M.n__gauss]
 				dF_over_dB_bis[k][l][j][3*i+0] = exp( -pow( par1 ,2.)*par2_pow );//( -pow( par1_k ,2.)*par2_pow );
 				dF_over_dB_bis[k][l][j][3*i+1] = par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ); //par0*par1_k*par2_pow*2 * exp(-pow( par1_k,2.)*par2_pow );
@@ -4550,409 +2724,23 @@ double temps1_conv = omp_get_wtime();
 }
 
 
-
-
-void algo_rohsa::f_g_cube_naive(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig){
-
-//std::cout<<"Début f_g_cube_test"<<std::endl;
-	std::vector<std::vector<std::vector<double>>> deriv(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<double>>> g_3D(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-
-	std::vector<std::vector<std::vector<double>>> residual(indice_x,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_v,0.)));
-
-	std::vector<std::vector<std::vector<double>>> params(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<double> b_params(M.n_gauss,0.);
-
-	std::vector<std::vector<std::vector<double>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.)));
-	std::vector<std::vector<std::vector<std::vector<double>>>> dF_over_dB(3*M.n_gauss,std::vector<std::vector<std::vector<double>>>( indice_v,std::vector<std::vector<double>>(indice_y, std::vector<double>(indice_x,0.))));
-
-	std::vector<std::vector<double>> conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> conv_conv_sig(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_amp(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_mu(indice_y,std::vector<double>(indice_x, 0.));
-	std::vector<std::vector<double>> image_sig(indice_y,std::vector<double>(indice_x, 0.));
-
-	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-
-	for(int i = 0; i< n; i++){
-		g[i]=0.;
-	}
-	f=0.;
-
-	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-	for(int i = 0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
-	}
-
-	for(int j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			std::vector<double> residual_1D(indice_v,0.);
-			std::vector<double> params_flat(params.size(),0.);
-			std::vector<double> cube_flat(cube[0][0].size(),0.);
-
-			for (int p=0;p<params_flat.size();p++){
-				params_flat[p]=params[p][i][j];
-			}
-
-//			std::cout<< "--> cube_flat.size() = "<<cube_flat.size() <<std::endl;
-			for (int p=0;p<cube_flat.size();p++){
-				cube_flat[p]=cube[j][i][p];
-			}
-
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-
-			for (int p=0;p<residual_1D.size();p++){
-				residual[j][i][p]=residual_1D[p];
-			}
-
-			if(std_map[i][j]>0.){
-				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
-			}
-		}
-	}
-//§§
-//	printf("->f = %f\n",f);
-//	std::cout<<"->f = "<<f<<std::endl;
-/*
-	for(int j=0; j<indice_y; j++){
-		for(int i = 0; i<indice_x;i++){
-		std::cout<<"std_map["<<i<<"]["<<j<<"] = "<<std_map[i][j]<<std::endl;
-		}
-	}
-*/
-//	exit(0);
-
-//	std::cout<< "AVANT GRADIENT+CONVO" <<std::endl;
-
-	for(int i=0; i<M.n_gauss; i++){
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				image_amp[p][q]=params[0+3*i][p][q];
-				image_mu[p][q]=params[1+3*i][p][q];
-				image_sig[p][q]=params[2+3*i][p][q];
-			}
-		}
-
-//		std::cout<< "AVANT CONVO" <<std::endl;
-
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-//		std::cout<< "AVANT SOMME F" <<std::endl;
-		for(int l=0; l<indice_x; l++){
-			for(int j=0; j<indice_y; j++){
-				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
-				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
-				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
-
-				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
-
-				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
-				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
-				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
-			}
-		}
-	}
-	for(int i=0; i<M.n_gauss; i++){
-		for(int l=0; l<indice_x; l++){
-			for(int j=0; j<indice_y; j++){
-			int k;
-			double v_1=0.,v_2=0.,v_3=0.;
-
-		//		std::cout<< "AVANT GRADIENT BIDOUILLÉ" <<std::endl;
-
-			if(std_map[j][l]>0.){
-				for(k=0; k<indice_v; k++){
-					v_1 += exp(-pow( double(k)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-			//printf("--->curseur = %e\n", std_map[j][l] );//residual[l][j][k]  );
-					v_2 +=  params[3*i][j][l]*( double(k) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-				
-					v_3 += params[3*i][j][l]*pow( double(k) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-					}
-				}
-			deriv[0+3*i][j][l]+=v_1;
-			deriv[1+3*i][j][l]+=v_2;
-			deriv[2+3*i][j][l]+=v_3;
-			}
-		}
-	}
-
-	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
-}
-
-
-void algo_rohsa::minimize(parameters &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
-    /* System generated locals */
-    int i__1;
-	int  i__c = 0;
-    double d__1, d__2;
-    /* Local variables */
-
-    double t1, t2, f;// , g[n];
-//	std::cout<< "AVANT MALLOC G AVEC n" <<std::endl;
-
-	double* g = (double*)malloc(n*sizeof(double));
-//	std::cout<< "APRÈS MALLOC G AVEC n" <<std::endl;
-
-    int i__;
-    int taille_wa = 2*M.m*n+5*n+11*M.m*M.m+8*M.m;
-    int taille_iwa = 3*n;
-
-
-    long* nbd = NULL;
-    nbd = (long*)malloc(n*sizeof(double)); 
-    long* iwa = NULL;
-    iwa = (long*)malloc(taille_iwa*sizeof(double)); 
-
-	float temps_transfert_boucle = 0.;
-
-//    long nbd[n], iwa[taille_iwa];
-/*
-int* memoireAllouee = NULL; // On crée un pointeur sur int
-
-memoireAllouee = malloc(sizeof(int)); // La fonction malloc inscrit dans notre pointeur l'adresse qui a été reservée.
-*/
-    double* wa = NULL;
-    wa = (double*)malloc(taille_wa*sizeof(double)); 
-//    double wa[taille_wa];
-
-//std::cout << " DEBUG  TEST 1" << std::endl;
-/*     char task[60]; */
-    long taskValue;
-
-    long *task=&taskValue; /* must initialize !! */
-/*      http://stackoverflow.com/a/11278093/269192 */
-    double factr;
-    long csaveValue;
-
-    long *csave=&csaveValue;
-//std::cout << " DEBUG  TEST -1" << std::endl;
-    double dsave[29];
-    long isave[44];
-    logical lsave[4];
-    double pgtol;
-
-
-//std::cout << " DEBUG  TEST 2" << std::endl;
-/*
-std::cout << "beta.size() = " <<beta.size()<< std::endl;
-std::cout << "lb_v.size() = " <<lb_v.size()<< std::endl;
-std::cout << "ub_v.size() = " <<ub_v.size()<< std::endl;
-*/
-// converts the vectors into a regular list
-//2Bfixed
-//std::cout << " DEBUG  TEST 0" << std::endl;
-
-	double temps2_tableau_update = omp_get_wtime();
-
-/*
-	printf("dim_x = %d\n", dim_x);
-	printf("dim_y = %d\n", dim_y);
-	printf("dim_v = %d\n", dim_v);
-	printf("3*M.n_gauss = %d\n", 3*M.n_gauss);
-	printf("n = %d\n", n);
-
-	printf("beta.size() = %d\n", beta.size());
-	printf("lb_v.size() = %d\n", lb_v.size());
-	printf("ub_v.size() = %d\n", ub_v.size());
-
-exit(0);
-*/
-
-
-//	std::cout<< "AVANT BOUCLE i<n" <<std::endl;
-
-    for(int i(0); i<n; i++) {
-	g[i]=0.;
-    } 
-//	std::cout<< "APRÈS BOUCLE i<n" <<std::endl;
-	temps_tableau_update += omp_get_wtime() - temps2_tableau_update;
-
-     f=0.;
-
-/*     We specify the tolerances in the stopping criteria. */
-    factr = 1e7;
-    pgtol = 1e-5;
-
-/*     We now provide nbd which defines the bounds on the variables: */
-/*                    l   specifies the lower bounds, */
-/*                    u   specifies the upper bounds. */
-/*     First set bounds on the odd-numbered variables. */
-
-//std::cout << " DEBUG  TEST 3" << std::endl;
-    for (i__ = 0; i__ < n; i__ ++) {
-        nbd[i__] = 2;
-    }
-
-    /*     We start the iteration by initializing task. */
-    *task = (long)START;
-/*     s_copy(task, "START", (ftnlen)60, (ftnlen)5); */
-    /*        ------- the beginning of the loop ---------- */
-L111:
-
-	double temps1_f_g_cube = omp_get_wtime();
-//std::cout << " DEBUG  TEST 4" << std::endl;
-    while(IS_FG(*task) or *task==NEW_X or *task==START){ 
-		i__c ++;
-    /*     This is the call to the L-BFGS-B code. */
-//    std::cout<<" Début appel BFGS "<<std::endl;
-////printf("g[0] = %f \n",g[0] );
-////printf("f = %f \n",f );
-////printf("x[0] = %f \n",x[0] );
-////printf("cube_flattened[0] = %f \n",cube_flattened[0] );
-////printf("lb[0] = %f \n",lb[0] );
-////printf("ub[0] = %f \n",ub[0] );
-////printf("n = %d	\n",int(n) );
-
-////printf("setulb \n");
-
-	double temps_temp = omp_get_wtime();
-    setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
-            &M.iprint, csave, lsave, isave, dsave);
-	temps_setulb += omp_get_wtime() - temps_temp;
-
-/*     if (s_cmp(task, "FG", (ftnlen)2, (ftnlen)2) == 0) { */
-    if ( IS_FG(*task) ) {
-
-//µ$£ù
-//either f_g_cube or f_g_cube_vector or f_g_cube_test
-// Wrong values
-//	f_g_cube_old_archive(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_omp(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-
-// good values
-// CPU
-//	f_g_cube_vector(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); // OK grandes données
-//	f_g_cube_naive(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_fast(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); //OK
-
-// GPU
-//	f_g_cube_cuda_L(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
-//	f_g_cube_cuda_L_2(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); // ça marche !! (c'est f_g_cube_cuda_L_2_2Bverified sans la partie vérification)
-//	printf("temps = %f\n", temps_transfert_boucle);
-
-//exit(0);
-
-////printf("g[0] = %f \n",g[0] );
-////printf("f = %f \n",f );
-////printf("cube_flattened[0] = %f \n",cube_flattened[0] );
-
-////printf("f_g_cube \n");
-
-/*
-printf("g[0] = %f \n",g[0] );
-printf("f = %f \n",f );
-*/
-//printf("cube_flattened[0] = %f \n",cube_flattened[0] );
-
-//if (i__c >2){
-//	exit(0);
-//}
-
-/*
-for(int i = 0; i<(3*M.n_gauss*dim_x*dim_y)+M.n_gauss; i++){
-	printf("g[%d] = %f \n",i,g[i] );
-}
-printf("f = %f \n",f );
-*/
-//std::cin.ignore();
-
-
-
-//	f_g_cube_cuda_L_deux_tiers(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // doesn't work
-//	f_g_cube_cuda_L_2_2Bverified(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); //gradient qui marche
-
-
-
-// not precise
-//	f_g_cube_fast_without_regul(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); 
-//	f_g_cube_sep(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-//	f_g_cube_test(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-
-/*
-std::cout<< "Après gradient " <<std::endl;
-   for(int p; p<4; p++)
-     {
-	std::cout<< " -> "<<g[p] <<std::endl;
-	 }
-	std::cout<< " f = "<<f <<std::endl;
-std::cout<< "pas d'erreur ? " <<std::endl;
-*/
-
-//usual gradient with vectors
-//	f_g_cube_vector(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-
-//	std::cout<<"DEBUG 3"<<std::endl;
-	}
-
-	if (*task==NEW_X ) {
-		if (isave[33] >= M.maxiter) {
-			*task = STOP_ITER;
-			}
-		if (dsave[12] <= (fabs(f) + 1.) * 1e-10) {
-			*task = STOP_GRAD;
-		}
-	}
-
-	}
-
-
-//std::cout << " DEBUG  TEST 3" << std::endl;
-	double temps4_tableau_update = omp_get_wtime();
-	
-	temps_tableau_update += omp_get_wtime() - temps4_tableau_update;
-
-	double temps2_f_g_cube = omp_get_wtime();
-
-	std::cout<< "Temps de calcul gradient : " << temps2_f_g_cube - temps1_f_g_cube<<std::endl;
-
-
-    /* System generated locals */
-
-	free(wa);
-	free(nbd);
-	free(iwa);
-	free(g);
-
-printf("----------------->temps_transfert_boucle = %f \n", temps_transfert_boucle);
-this->temps_transfert_d += temps_transfert_boucle;
-/*
-	free(dsave);
-	free(isave);
-	free(lsave);
-
-*/
-}
-
-void algo_rohsa::minimize_clean(parameters &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
+template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
     int i__1;
 	int  i__c = 0;
     double d__1, d__2;
 
     double t1, t2, f;
 
-	double* g = (double*)malloc(n*sizeof(double));
+	T* g = (T*)malloc(n*sizeof(T));
 
     int i__;
     int taille_wa = 2*M.m*n+5*n+11*M.m*M.m+8*M.m;
     int taille_iwa = 3*n;
 
-	int compteur_iter_boucle_optim = 0;
-
     long* nbd = NULL;
-    nbd = (long*)malloc(n*sizeof(double)); 
+    nbd = (long*)malloc(n*sizeof(long)); 
     long* iwa = NULL;
-    iwa = (long*)malloc(taille_iwa*sizeof(double)); 
+    iwa = (long*)malloc(taille_iwa*sizeof(long)); 
 
 	float temps_transfert_boucle = 0.;
 
@@ -4995,36 +2783,121 @@ void algo_rohsa::minimize_clean(parameters &M, long n, long m, double* beta, dou
 
 	double temps1_f_g_cube = omp_get_wtime();
 
+    T* std_map_ = NULL;
+    std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T)); 
+
+
+	for(int i=0; i<dim_y; i++){
+		for(int j=0; j<dim_x; j++){
+			std_map_[i*dim_x+j]=std_map[i][j];
+		}
+	}
+	T* std_map_dev = NULL;
+	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
+	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
+	T* cube_flattened_dev = NULL;
+	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
+	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
+
 /*
 	for(int i=0; i<200; i++){
 		printf("--> minimize :: beta[%d] = %f\n",i, beta[i]);
 	}
 */
-    while(IS_FG(*task) or *task==NEW_X or *task==START){ 
+	int compteur_iter_boucle_optim = 0;
 
-		compteur_iter_boucle_optim++;
+	printf("dim_x = %d , dim_y = %d , dim_v = %d \n", dim_x, dim_y, dim_v);
+	printf("n = %d , n_gauss = %d\n", int(n), M.n_gauss);
+//	printf("beta[n_beta-1] = %f , beta[n_beta] = %f\n", beta[n-1], beta[n-1]);
+
+	if (true){//dim_x >128){
+		printf("beta[n_beta-1] = %f , beta[n_beta] = %f\n", beta[n-1], beta[n-1]);
+		printf("cube_flattened[dim_x*dim_y*dim_v-1] = %f , cube_flattened[dim_x*dim_y*dim_v] = %f\n", cube_flattened[dim_x*dim_y*dim_v-1], cube_flattened[dim_x*dim_y*dim_v]);
+	}
+
+    T* temps = NULL;
+    temps = (T*)malloc(4*sizeof(T)); 
+    temps[0] = 0.;
+    temps[1] = 0.;
+    temps[2] = 0.;
+    temps[3] = 0.;
+    temps[4] = 0.;
+
+	while(IS_FG(*task) or *task==NEW_X or *task==START){ 
+
+
 		double temps_temp = omp_get_wtime();
 		setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
 				&M.iprint, csave, lsave, isave, dsave);
 		temps_setulb += omp_get_wtime() - temps_temp;
 
 		// CPU
-//		f_g_cube_fast_clean(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); //OK
-//		f_g_cube_fast_clean_optim_CPU(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig); //OK
+//		f_g_cube_fast_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map); //OK
+//		f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map); //OK
+//		this->f_g_cube_fast_clean_optim_CPU_lib<T>(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, NULL);
 
 		// GPU
+/*
+		if(dim_x >128){
+			for(int i = 0; i<300; i++){
+				printf("beta[%d] = %f\n", i, beta[i]);
+			}
+		if(beta[0] ==  0.){
+			for(int i = 0; i<300; i++){
+				printf("cube_flattened[%d] = %f\n", i, cube_flattened[i]);
+			}
+		}
+		}
+*/
+
+	if(false){//dim_x<64){
+//		f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map);
+//		f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
+	}else{
+
+		if(M.select_version == 0){ //-cpu
+			f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map);
+		}else if(M.select_version == 1){ //-gpu
+			T* x_dev = nullptr;
+			T* g_dev = nullptr;
+			cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
+			cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
+			checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
+			checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
+			checkCudaErrors(cudaDeviceSynchronize());
+			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
+			checkCudaErrors(cudaDeviceSynchronize());
+			checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+			checkCudaErrors(cudaFree(x_dev));
+			checkCudaErrors(cudaFree(g_dev));
+			checkCudaErrors(cudaDeviceSynchronize());
+		}else if(M.select_version == 2){ //-autre
+			f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
+		}
+	}
+
 		//dim g, beta : 3*M.n_gauss, indice_y, indice_x
-//		f_g_cube_cuda_L_clean(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); // expérimentation gradient
-// 		temps_transfert_boucle += f_g_cube_parallel_clean(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube, temps_transfert_boucle);
-	f_g_cube_parallel(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube);
+//        this->f_g_cube_cuda_L_clean_lib<T>(M, f, g, n, beta, dim_v, dim_y, dim_x, std_map, cube_flattened);
+ //		temps_transfert_boucle += f_g_cube_parallel_clean(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube, temps_transfert_boucle);
+//		f_g_cube_parallel<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube);
 		//failed correction attempt
-		//		f_g_cube_parallel(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube, temps_transfert_boucle);
+		//		f_g_cube_parallel<T>(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened, this->temps_conv, this->temps_deriv, this->temps_tableaux, this->temps_f_g_cube, temps_transfert_boucle);
+
+/*
+	for(int i=0; i<50; i++){
+		printf("g[%d] = %.16f\n",i, g[i]);
+	}
+        compteur_iter_boucle_optim++;
+		printf("compteur_iter_boucle_optim = %d\n", compteur_iter_boucle_optim);
+		printf(" --> fin-chemin : f = %.16f\n", f);
+	    std::cin.ignore();
+*/
 
 /*
 		if(dim_x!=dim_y){
-			f_g_cube_fast_clean_optim_CPU(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
+			f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map);
 		}else{
-			f_g_cube_cuda_L_clean(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig, cube_flattened); 
+			f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); 
 		}
 */
 /*
@@ -5051,9 +2924,19 @@ void algo_rohsa::minimize_clean(parameters &M, long n, long m, double* beta, dou
 				*task = STOP_GRAD;
 			}
 		}
+
 	}
 
+/*
+	for(int i=0; i<100; i++){
+		printf("beta[%d] = %f\n",i, beta[i]);
+	}
+	printf("CLASSIQUE\n");
+	exit(0);
+	std::cin.ignore();
+*/
 ///	printf("--> nombre d'itérations dans la boucle d'optimisation (limite à 800) = %d \n", compteur_iter_boucle_optim);
+
 
 	double temps4_tableau_update = omp_get_wtime();
 	
@@ -5061,12 +2944,31 @@ void algo_rohsa::minimize_clean(parameters &M, long n, long m, double* beta, dou
 
 	double temps2_f_g_cube = omp_get_wtime();
 
+	this->temps_conv += temps[3]/1000;
+	this->temps_deriv += temps[2]/1000;
+	this->temps_tableaux += temps[1]/1000;
+	this->temps_copy += temps[0]/1000;
+	this->temps_f_g_cube +=  temps[4]/1000;
+
+	printf("this->temps_copy = %f\n", this->temps_copy);
+	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
+	printf("this->temps_deriv = %f\n", this->temps_deriv);
+	printf("this->temps_conv = %f\n", this->temps_conv);
+	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
+
 	std::cout<< "Temps de calcul gradient : " << temps2_f_g_cube - temps1_f_g_cube<<std::endl;
 
 	free(wa);
 	free(nbd);
 	free(iwa);
 	free(g);
+	free(std_map_);
+	free(temps);
+
+
+	checkCudaErrors(cudaFree(std_map_dev));
+	checkCudaErrors(cudaFree(cube_flattened_dev));
+
 
 printf("----------------->temps_transfert_boucle = %f \n", temps_transfert_boucle);
 this->temps_transfert_d += temps_transfert_boucle;
@@ -5074,90 +2976,290 @@ this->temps_transfert_d += temps_transfert_boucle;
 
 
 
-void algo_rohsa::minimize_clean_gpu(parameters &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
+template <typename T> void algo_rohsa::minimize_clean_gpu(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
 
-// we first initialize LBFGSB_CUDA_OPTION and LBFGSB_CUDA_STATE 
-/*
-	LBFGSB_CUDA_OPTION<double> lbfgsb_options;
-  	lbfgsbcuda::lbfgsbdefaultoption<double>(lbfgsb_options);
-  	lbfgsb_options.mode = LCM_CUDA;
-  	lbfgsb_options.eps_f = static_cast<double>(1e-8);
-  	lbfgsb_options.eps_g = static_cast<double>(1e-8);
-  	lbfgsb_options.eps_x = static_cast<double>(1e-8);
-  	lbfgsb_options.max_iteration = M.maxiter;
+    T* cube_flattened_dev = NULL;
+    checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
+    checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
 
-	LBFGSB_CUDA_STATE<double> state;
-  	memset(&state, 0, sizeof(state));
-  	cublasStatus_t stat = cublasCreate(&(state.m_cublas_handle));
+    T* std_map_ = NULL;
+    std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T)); 
+	for(int i=0; i<dim_y; i++){
+		for(int j=0; j<dim_x; j++){
+			std_map_[i*dim_x+j]=std_map[i][j];
+		}
+	}
+    T* std_map_dev = NULL;
+    checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
+    checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
+    double* temps = NULL;
+    temps = (double*)malloc(4*sizeof(double)); 
+    temps[0] = 0.;
+    temps[1] = 0.;
+    temps[2] = 0.;
+    temps[3] = 0.;
+    temps[4] = 0.;
 
-    double minimal_f = std::numeric_limits<double>::max();
-  	state.m_funcgrad_callback = [&assist_buffer_cpu, &minimal_f](
-                                  double* x, double& f, double* g,
-                                  const cudaStream_t& stream,
-                                  const LBFGSB_CUDA_SUMMARY<real>& summary) {
-    dsscfg_cpu<real>(g_nx, g_ny, x, f, g, &assist_buffer_cpu, 'FG', g_lambda);
-    if (summary.num_iteration % 100 == 0) {
-      std::cout << "CPU iteration " << summary.num_iteration << " F: " << f
-                << std::endl;    
-    }
+    LBFGSB_CUDA_OPTION<T> lbfgsb_options;
 
-    minimal_f = fmin(minimal_f, f);
-    return 0;
-  };
-*/
+    lbfgsbcuda::lbfgsbdefaultoption<T>(lbfgsb_options);
+    lbfgsb_options.mode = LCM_CUDA;
+    lbfgsb_options.eps_f = static_cast<T>(1e-8);
+    lbfgsb_options.eps_g = static_cast<T>(1e-8);
+    lbfgsb_options.eps_x = static_cast<T>(1e-8);
+    lbfgsb_options.max_iteration = M.maxiter;
 
-	printf("La librairie marche !!!\n");
-	exit(0);
-}
-
-void algo_rohsa::minimize_clean_cpu(parameters &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
-
-// we first initialize LBFGSB_CUDA_OPTION and LBFGSB_CUDA_STATE 
-	LBFGSB_CUDA_OPTION<double> lbfgsb_options;
-
-	lbfgsbcuda::lbfgsbdefaultoption<double>(lbfgsb_options);
-	lbfgsb_options.mode = LCM_NO_ACCELERATION;
-	lbfgsb_options.eps_f = static_cast<double>(1e-8);
-	lbfgsb_options.eps_g = static_cast<double>(1e-8);
-	lbfgsb_options.eps_x = static_cast<double>(1e-8);
-	lbfgsb_options.max_iteration = M.maxiter;
-
-	// initialize LBFGSB state
-	LBFGSB_CUDA_STATE<double> state;
+	// initialize LBFGSB state	
+	LBFGSB_CUDA_STATE<T> state;
 	memset(&state, 0, sizeof(state));
-	double* assist_buffer_cpu = nullptr;
+	T* assist_buffer_cuda = nullptr;
+	cublasStatus_t stat = cublasCreate(&(state.m_cublas_handle));
+	if (CUBLAS_STATUS_SUCCESS != stat) {
+		std::cout << "CUBLAS init failed (" << stat << ")" << std::endl;
+		exit(0);
+	}
 
-  	double minimal_f = std::numeric_limits<double>::max();
-  	state.m_funcgrad_callback = [&assist_buffer_cpu, &minimal_f, this, &M, n, &cube,
-&std_map, mean_amp, mean_mu, mean_sig, dim_x, dim_y, dim_v](
-/*parameters &M, long n, std::vector<std::vector<std::vector<double>>> &cube,
-std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, 
-std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_y, int dim_v,*/
-                                  double* x, double& f, double* g,
+	T minimal_f = std::numeric_limits<T>::max();
+
+  	// setup callback function that evaluate function value and its gradient
+  	state.m_funcgrad_callback = [&assist_buffer_cuda, &minimal_f, this, &M, n, &cube_flattened_dev, &cube_flattened,
+&std_map_dev, &std_map, dim_x, dim_y, dim_v, &temps, &beta](
+                                  T* x_dev, T& f, T* g_dev,
                                   const cudaStream_t& stream,
-                                  const LBFGSB_CUDA_SUMMARY<double>& summary) -> int {
+                                  const LBFGSB_CUDA_SUMMARY<T>& summary) -> int {
 
-	f_g_cube_fast_clean_optim_CPU_lib(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, &assist_buffer_cpu);
-//	f_g_cube_fast_clean_optim_CPU(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-    ////dsscfg_cpu<double>(g_nx, g_ny, x, f, g, &assist_buffer_cpu, 'FG', g_lambda);
-    if (summary.num_iteration % 100 == 0) {
-      std::cout << "CPU iteration " << summary.num_iteration << " F: " << f
-                << std::endl;    
-    }
+		int temp = 0;
+		for(int ind = 0; ind < n; ind++){
+			if(isnan(beta[ind]) && temp == 0){
+				checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
+				temp=1;
+			}
+		}
 
-    minimal_f = fmin(minimal_f, f);
-    return 0;
+	    checkCudaErrors(cudaDeviceSynchronize());
+		f_g_cube_parallel_lib<T>(M, f, g_dev, n, x_dev, dim_v, dim_y, dim_x, std_map_dev, cube_flattened_dev, temps);
+	    checkCudaErrors(cudaDeviceSynchronize());
+
+		checkCudaErrors(cudaMemcpy(beta, x_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+
+
+	
+/*
+        printf("LIB --> fin-chemin : f = %.16f\n", f);
+	    std::cin.ignore();
+	    checkCudaErrors(cudaDeviceSynchronize());
+		f_g_cube_cuda_L_clean_lib_device_fg<T>(M, f, g_dev, n, x_dev, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
+	    checkCudaErrors(cudaDeviceSynchronize());
+*/
+		//	f_g_cube_fast_clean_optim_CPU_lib<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, &assist_buffer_cpu);
+		//    dsscfg_cuda<T>(g_nx, g_ny, x, f, g, &assist_buffer_cuda, 'FG', g_lambda);
+		if (summary.num_iteration % 100 == 0) {
+		std::cout << "CUDA iteration " << summary.num_iteration << " F: " << f
+					<< std::endl;
+		}
+		minimal_f = fmin(minimal_f, f);
+//		printf("Before return\n", n);
+		return 0;
 	};
 
+	// initialize CUDA buffers
+	int N_elements = n;//g_nx * g_ny;
+
+	T* x_dev = nullptr;
+	T* g_dev = nullptr;
+	T* xl_dev = nullptr;
+	T* xu_dev = nullptr;
+	int* nbd_dev = nullptr;
+
+	printf("TEST GPU _________________________________\n");
+
+	cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
+	cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
+
+	cudaMalloc(&xl_dev, n * sizeof(xl_dev[0]));
+	cudaMalloc(&xu_dev, n * sizeof(xu_dev[0]));
+
+	checkCudaErrors(cudaMemset(xl_dev, 0, n * sizeof(xl_dev[0])));
+	cudaMemset(xu_dev, 0, n * sizeof(xu_dev[0]));
+
+	checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(xl_dev, lb, n*sizeof(T), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(xu_dev, ub, n*sizeof(T), cudaMemcpyHostToDevice));
+
+	// initialize starting point
+	T f_init = 0.;
+//	double f_init = std::numeric_limits<double>::max();
+//dsscfg_cuda<T>(g_nx, g_ny, x, f_init, g, &assist_buffer_cuda, 'XS', g_lambda);
+	// initialize number of bounds
+	int* nbd = new int[n];
+	memset(nbd, 0, n * sizeof(nbd[0]));
+	for(int i = 0; i<n ; i++){
+		nbd[i] = 2;		
+	}
+	cudaMalloc(&nbd_dev, n * sizeof(nbd_dev[0]));
+	cudaMemset(nbd_dev, 0, n * sizeof(nbd_dev[0]));
+	checkCudaErrors(cudaMemcpy(nbd_dev, nbd, n*sizeof(int), cudaMemcpyHostToDevice));
+
+	LBFGSB_CUDA_SUMMARY<T> summary;
+	memset(&summary, 0, sizeof(summary));
+
+	double t1 = omp_get_wtime();
+	printf("Before lbfgsbminimize\n");
+	// call optimization
+	auto start_time = std::chrono::steady_clock::now();
+	lbfgsbcuda::lbfgsbminimize<T>(n, state, lbfgsb_options, x_dev, nbd_dev,
+									xl_dev, xu_dev, summary);
+	auto end_time = std::chrono::steady_clock::now();
+	printf("After lbfgsbminimize\n");
+	std::cout << "Timing: "
+				<< (std::chrono::duration<T, std::milli>(end_time - start_time)
+						.count() /
+					static_cast<T>(summary.num_iteration))
+				<< " ms / iteration" << std::endl;
+
+	double t2 = omp_get_wtime();
+	temps_global+=t2-t1;
+
+	checkCudaErrors(cudaMemcpy(beta, x_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+
+	this->temps_conv += temps[3]/1000;
+	this->temps_deriv += temps[2]/1000;
+	this->temps_tableaux += temps[1]/1000;
+	this->temps_copy += temps[0]/1000;
+	this->temps_f_g_cube +=  temps[4]/1000;
+
+	printf("this->temps_copy = %f\n", this->temps_copy);
+	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
+	printf("this->temps_deriv = %f\n", this->temps_deriv);
+	printf("this->temps_conv = %f\n", this->temps_conv);
+	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
+
+	std::cout<< "Temps de calcul gradient : " << t2 - t1<<std::endl;
+
+	free(temps);
+	// release allocated memory
+	checkCudaErrors(cudaFree(x_dev));
+	checkCudaErrors(cudaFree(g_dev));
+	checkCudaErrors(cudaFree(xl_dev));
+	checkCudaErrors(cudaFree(xu_dev));
+	checkCudaErrors(cudaFree(nbd_dev));
+	checkCudaErrors(cudaFree(std_map_dev));
+	checkCudaErrors(cudaFree(cube_flattened_dev));
+	delete[] nbd;
+	checkCudaErrors(cudaFree(assist_buffer_cuda));
+	free(std_map_);
+	// release cublas
+	cublasDestroy(state.m_cublas_handle);
+//	return minimal_f;
+
+	printf("TEST GPU _________________________________\n");
+
+/*
+	exit(0);
+*/
+}
+
+
+
+template <typename T> void algo_rohsa::minimize_clean_cpu(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
+
+    double* temps = NULL;
+    temps = (double*)malloc(4*sizeof(double)); 
+    temps[0] = 0.;
+    temps[1] = 0.;
+    temps[2] = 0.;
+    temps[3] = 0.;
+    temps[4] = 0.;
+
+    T* std_map_ = NULL;
+    std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T)); 
+
+
+	for(int i=0; i<dim_y; i++){
+		for(int j=0; j<dim_x; j++){
+			std_map_[i*dim_x+j]=std_map[i][j];
+		}
+	}
+	T* std_map_dev = NULL;
+	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
+	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
+	T* cube_flattened_dev = NULL;
+	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
+	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
+
+// we first initialize LBFGSB_CUDA_OPTION and LBFGSB_CUDA_STATE 
+	LBFGSB_CUDA_OPTION<T> lbfgsb_options;
+
+	lbfgsbcuda::lbfgsbdefaultoption<T>(lbfgsb_options);
+	lbfgsb_options.mode = LCM_NO_ACCELERATION;
+	lbfgsb_options.eps_f = static_cast<T>(1e-15);
+	lbfgsb_options.eps_g = static_cast<T>(1e-15);
+	lbfgsb_options.eps_x = static_cast<T>(1e-15);
+	lbfgsb_options.max_iteration = M.maxiter;
+    lbfgsb_options.step_scaling = 1.0;
+	lbfgsb_options.hessian_approximate_dimension = 8;
+  	lbfgsb_options.machine_epsilon = 1e-15;
+  	lbfgsb_options.machine_maximum = std::numeric_limits<T>::max();
+
+	// initialize LBFGSB state
+	LBFGSB_CUDA_STATE<T> state;
+	memset(&state, 0, sizeof(state));
+	T* assist_buffer_cpu = nullptr;
+
+  	T minimal_f = std::numeric_limits<T>::max();
+  	state.m_funcgrad_callback = [&assist_buffer_cpu, &minimal_f, this, &M, &n, &cube, &cube_flattened, &cube_flattened_dev,
+&std_map, &std_map_dev, dim_x, dim_y, dim_v, &temps](
+                                  T* x, T& f, T* g,
+                                  const cudaStream_t& stream,
+                                  const LBFGSB_CUDA_SUMMARY<T>& summary) -> int {
+		T* x_dev = nullptr;
+		T* g_dev = nullptr;
+		cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
+		cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
+		checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
+		checkCudaErrors(cudaMemcpy(x_dev, x, n*sizeof(T), cudaMemcpyHostToDevice));
+    	checkCudaErrors(cudaDeviceSynchronize());
+		f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
+	    checkCudaErrors(cudaDeviceSynchronize());
+		checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+		checkCudaErrors(cudaFree(x_dev));
+		checkCudaErrors(cudaFree(g_dev));
+	    checkCudaErrors(cudaDeviceSynchronize());	//	f_g_cube_cuda_L_clean(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, cube_flattened);
+	//  f_g_cube_cuda_L_clean<T>(M, f, g, &n, &cube, x, &dim_v, &dim_y, &dim_x, &std_map, &cube_flattened);
+	//	this->f_g_cube_cuda_L_clean_lib<T>(M, f, g, n, x, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
+    //    callback_test(M, f, g, n, cube, x, dim, std_map, &assist_buffer_cpu);
+	//	this->f_g_cube_fast_clean_optim_CPU_lib<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, &assist_buffer_cpu);
+	//	f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map);
+		////dsscfg_cpu<T>(g_nx, g_ny, x, f, g, &assist_buffer_cpu, 'FG', g_lambda);
+		if (summary.num_iteration % 100 == 0) {
+		std::cout << "CPU iteration " << summary.num_iteration << " F: " << f
+					<< std::endl;    
+		}
+
+		minimal_f = fmin(minimal_f, f);
+//        minimal_f = f;
+
+/*	
+	for(int i=0; i<n; i++){
+		printf("x[%d] = %.16f\n",i, x[i]);
+	}
+	for(int i=0; i<n; i++){
+		printf("g[%d] = %.16f\n",i, g[i]);
+	}
+        printf("LIB --> fin-chemin : f = %.16f\n", f);
+	    std::cin.ignore();
+*/
+		return 0;
+	};
 	// initialize CPU buffers
 	int N_elements = n;
-	double* x = new double[n];
-	double* g = new double[n];
+	T* x = new T[n];
+	T* g = new T[n];
 
-	double* xl = new double[n];
-	double* xu = new double[n];
+	T* xl = new T[n];
+	T* xu = new T[n];
 
-	// in this example, we don't have boundaries
+	// we have boundaries
 	memset(xl, 0, n * sizeof(xl[0]));
 	memset(xu, 0, n * sizeof(xu[0]));
 	int* nbd = new int[n];
@@ -5172,29 +3274,49 @@ std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_
 
 
 	// initialize starting point
-	double f_init = std::numeric_limits<double>::max();
-	f_init=0.;
-	//	f_g_cube_fast_clean_optim_CPU(M, f_init, nullptr, n, cube, beta, dim_v, dim_y, dim_x, std_map, mean_amp, mean_mu, mean_sig);
-////	dsscfg_cpu<double>(g_nx, g_ny, x, f_init, nullptr, &assist_buffer_cpu, 'XS', g_lambda);
+	T f_init = 0.;
+	//	f_g_cube_fast_clean_optim_CPU<T>(M, f_init, nullptr, n, cube, beta, dim_v, dim_y, dim_x, std_map);
+////	dsscfg_cpu<T>(g_nx, g_ny, x, f_init, nullptr, &assist_buffer_cpu, 'XS', g_lambda);
 	// initialize number of bounds (0 for this example)
 
-	LBFGSB_CUDA_SUMMARY<double> summary;
+	LBFGSB_CUDA_SUMMARY<T> summary;
 	memset(&summary, 0, sizeof(summary));
 
 
 	// call optimization
 	auto start_time = std::chrono::steady_clock::now();
-//	lbfgsbcuda::lbfgsbminimize<double>(n, state, lbfgsb_options, x, nbd,
+//	lbfgsbcuda::lbfgsbminimize<T>(n, state, lbfgsb_options, x, nbd,
 //									xl, xu, summary);
-	lbfgsbcuda::lbfgsbminimize<double>(n, state, lbfgsb_options, beta, nbd,
-									lb, ub, summary);
+
+	double t1 = omp_get_wtime();
+
+	lbfgsbcuda::lbfgsbminimize<T>(n, state, lbfgsb_options, x, nbd,
+									xl, xu, summary);
+
+	double t2 = omp_get_wtime();
+
 	auto end_time = std::chrono::steady_clock::now();
 	std::cout << "Timing: "
-				<< (std::chrono::duration<double, std::milli>(end_time - start_time)
+				<< (std::chrono::duration<T, std::milli>(end_time - start_time)
 						.count() /
-					static_cast<double>(summary.num_iteration))
+					static_cast<T>(summary.num_iteration))
 				<< " ms / iteration" << std::endl;
 
+
+	for(int i = 0; i<n ; i++){
+		beta[i]=x[i];
+	}
+	temps_global+=t2-t1;
+
+	printf("temps_global cumulé = %f\n",temps_global);
+
+/*
+	for(int i=0; i<100; i++){
+		printf("beta[%d] = %f\n",i, beta[i]);
+	}
+	printf("LIB\n");
+	std::cin.ignore();
+*/
 	// release allocated memory
 	delete[] x;
 	delete[] g;
@@ -5202,15 +3324,22 @@ std::vector<double> &mean_mu, std::vector<double> &mean_sig, int dim_x, int dim_
 	delete[] xu;
 	delete[] nbd;
 	delete[] assist_buffer_cpu;
+	free(std_map_);
+	checkCudaErrors(cudaFree(cube_flattened_dev));
+	checkCudaErrors(cudaFree(std_map_dev));
 
+	this->temps_conv += temps[3]/1000;
+	this->temps_deriv += temps[2]/1000;
+	this->temps_tableaux += temps[1]/1000;
+	this->temps_copy += temps[0]/1000;
+	this->temps_f_g_cube +=  temps[4]/1000;
 
+	printf("this->temps_copy = %f\n", this->temps_copy);
+	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
+	printf("this->temps_deriv = %f\n", this->temps_deriv);
+	printf("this->temps_conv = %f\n", this->temps_conv);
+	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
 
-/*
-  printf("minimal_f = %f\n",minimal_f);
-
-	printf("La librairie marche !!!\n");
-	exit(0);
-*/
 }
 
 
@@ -5725,6 +3854,20 @@ void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, double* image, 
 
 	float temps_temp = omp_get_wtime();
 
+/*
+	if(dim_x >=128){
+	printf("print image :\n");
+	for(int i=0; i<5; i++)
+	{
+		for(int j=0; j<dim_x+4; j++)
+		{
+			printf("image[%d] = %.16f\n",j+(dim_x)*i,image[j+(dim_x)*i]);
+		}
+	}
+    std::cin.ignore();
+	}
+*/
+
 	for(int j(0); j<dim_y; j++)
 	{
 		for(int i(0); i<dim_x; i++)
@@ -5732,6 +3875,20 @@ void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, double* image, 
 			extended[2+j][2+i]=image[dim_x*j+i];
 		}
 	}
+
+/*
+	if(dim_x >=128){
+	printf("print ext image avant mirroir :\n");
+	for(int i=0; i<5; i++)
+	{
+		for(int j=0; j<dim_x+4; j++)
+		{
+			printf("extended[%d] = %.16f\n",j+(dim_x+4)*i,extended[i][j]);
+		}
+	}
+	std::cin.ignore();
+	}
+*/
 
 	for(int j(0); j<2; j++)
 	{
@@ -5765,13 +3922,18 @@ void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, double* image, 
 		}
 	}
 	temps_mirroirs += omp_get_wtime() - temps_temp;
+
 /*
-	for(int j=0; j<dim_x+4; j++)
+	if(dim_x >=128){
+	printf("print ext image :\n");
+	for(int i=0; i<5; i++)
 	{
-		for(int i=0; i<dim_y+4; i++)
+		for(int j=0; j<dim_x+4; j++)
 		{
-			std::cout<<"extended["<<i+(dim_x+4)*j<<"] = "<<extended[i][j]<<std::endl;
+			printf("extended[%d] = %.16f\n",j+(dim_x+4)*i,extended[i][j]);
 		}
+	}
+	exit(0);
 	}
 */
 
@@ -5896,6 +4058,7 @@ void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, float* image, f
 
 void algo_rohsa::convolution_2D_mirror(const parameters &M, const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k)
 {
+
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
 
 	std::vector <std::vector<double>> ext_conv(dim_y+4, std::vector<double>(dim_x+4,0.));
@@ -5998,21 +4161,6 @@ void algo_rohsa::ravel_2D(const std::vector<std::vector<double>> &map, std::vect
 
 void algo_rohsa::ravel_3D_bis(const std::vector<std::vector<std::vector<double>>> &cube, double vector[], int dim_v, int dim_y, int dim_x)
 {
-/*
-    int i__(0);
-	for(int i(0); i<dim_x; i++)
-		{
-        for(int j(0); j<dim_y; j++)
-            {
-	        for(int k(0); k<dim_v; k++)
-    		    {
-	                vector[i__] = cube[i][j][k];
-       	            i__++;
-				}
-            }
-	    }
-*/
-
 	for(int i(0); i<dim_x; i++)
 		{
         for(int j(0); j<dim_y; j++)
@@ -6023,28 +4171,12 @@ void algo_rohsa::ravel_3D_bis(const std::vector<std::vector<std::vector<double>>
 				}
             }
 	    }
-
-
 }
 
 
 void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube_3D, std::vector<double> &vector, int dim_v, int dim_y, int dim_x)
 {
         int i__ = 0;
-
-/*
-			for(int i(0); i<dim_v; i++)
-			{
-            for(int j(0); j<dim_y; j++)
-                {
-		        for(int k(0); k<dim_x; k++)
-        {
-	                        vector[i__] = cube[i][j][k];
-        	                i__++;
-			}
-                }
-        }
-*/
 	std::cout << "dim_v : " << dim_v <<  std::endl;
 	std::cout << "dim_y : " << dim_y <<  std::endl;
 	std::cout << "dim_x : " << dim_x <<  std::endl;
@@ -6054,20 +4186,6 @@ void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &c
 
 //	std::cout << "avant cube[0][0][0] " <<  std::endl;
 
-
-/*
-    for(int k(0); k<dim_x; k++)
-    {
-        for(int j(0); j<dim_y; j++)
-	        {
-			for(int i(0); i<dim_v; i++)
-			{
-	            vector[i__] = cube_3D[i][j][k];
-				i__++;
-			}
-		}
-    }
-*/
     for(int k(0); k<dim_x; k++)
 	    {
         for(int j(0); j<dim_y; j++)
@@ -6091,9 +4209,13 @@ void algo_rohsa::initialize_array(double* array, int size, double value)
 
 void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<double>>> &cube_3D, std::vector<double> &vector, int dim_x, int dim_y, int dim_v)
 {
-    for(int k(0); k<dim_x; k++)
+	int k,j;
+	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
+	{
+	#pragma omp for
+    for(k=0; k<dim_x; k++)
 	    {
-        for(int j(0); j<dim_y; j++)
+        for(j=0; j<dim_y; j++)
 	        {
 			for(int i(0); i<dim_v; i++)
 				{
@@ -6101,13 +4223,18 @@ void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<doub
 				}
 			}
 	    }
+	}
 }
 
 void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<double>>> &cube_3D, double* vector, int dim_x, int dim_y, int dim_v)
 {
-    for(int k(0); k<dim_x; k++)
+	int k,j;
+	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
+	{
+	#pragma omp for
+    for(k=0; k<dim_x; k++)
 	    {
-        for(int j(0); j<dim_y; j++)
+        for(j=0; j<dim_y; j++)
 	        {
 			for(int i(0); i<dim_v; i++)
 				{
@@ -6115,14 +4242,19 @@ void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<doub
 				}
 			}
 	    }
+	}
 }
 
 
 void algo_rohsa::one_D_to_three_D_same_dimensions(double* vector, std::vector<std::vector<std::vector<double>>> &cube_3D, int dim_x, int dim_y, int dim_v)
 {
-    for(int k(0); k<dim_x; k++)
+	int k,j;
+	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
+	{
+	#pragma omp for
+    for(k=0; k<dim_x; k++)
 	    {
-        for(int j(0); j<dim_y; j++)
+        for(j=0; j<dim_y; j++)
 	        {
 			for(int i(0); i<dim_v; i++)
 				{
@@ -6130,6 +4262,7 @@ void algo_rohsa::one_D_to_three_D_same_dimensions(double* vector, std::vector<st
 				}
 			}
 	    }
+	}
 }
 
 /*
@@ -6150,9 +4283,13 @@ void algo_rohsa::three_D_to_one_D_same_dimensions_omp(const std::vector<std::vec
 */
 void algo_rohsa::three_D_to_one_D_same_dimensions(const std::vector<std::vector<std::vector<double>>> &cube_3D, double* vector, int dim_x, int dim_y, int dim_v)
 {
-    for(int k(0); k<dim_x; k++)
+	int k,j;
+	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
+	{
+	#pragma omp for
+    for(k=0; k<dim_x; k++)
 	    {
-        for(int j(0); j<dim_y; j++)
+        for(j=0; j<dim_y; j++)
 	        {
 			for(int i(0); i<dim_v; i++)
 				{
@@ -6160,6 +4297,7 @@ void algo_rohsa::three_D_to_one_D_same_dimensions(const std::vector<std::vector<
 				}
 			}
 	    }
+	}
 }
 
 void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube, double vector[], int dim_v, int dim_y, int dim_x)
@@ -6545,3 +4683,29 @@ void algo_rohsa::mean_parameters(std::vector<std::vector<std::vector<double>>> &
 void algo_rohsa::descente_sans_regu(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
 	
 }
+
+
+template void algo_rohsa::descente<double>(parameters&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&);
+template void algo_rohsa::reshape_down<double>(std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&);
+template void algo_rohsa::set_stdmap<double>(std::vector<std::vector<double>>&, std::vector<std::vector<std::vector<double>>>&, int, int);
+template void algo_rohsa::set_stdmap_transpose<double>(std::vector<std::vector<double>>&, std::vector<std::vector<std::vector<double>>>&, int, int);
+template void algo_rohsa::update_clean<double>(parameters&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, std::vector<double>&);
+
+template void algo_rohsa::minimize_clean<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
+template void algo_rohsa::minimize_clean_cpu<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
+template void algo_rohsa::minimize_clean_gpu<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
+
+template void algo_rohsa::f_g_cube_fast<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_fast_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_fast_clean_optim_CPU<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double** assist_buffer);
+template void algo_rohsa::f_g_cube_fast_without_regul<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_vector<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+
+template void algo_rohsa::f_g_cube_cuda_L<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double*);
+template void algo_rohsa::f_g_cube_cuda_L_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double*);
+template void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters&, double&, double*, int, double*, int, int, int, std::vector<std::vector<double>>&, double*);
+template void algo_rohsa::f_g_cube_cuda_L_clean_lib_device_fg(parameters&, double&, double*, int, double*, int, int, int, std::vector<std::vector<double>>&, double*);
+template void algo_rohsa::f_g_cube_omp_without_regul<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+
+//template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<T>> &std_map, std::vector<std::vector<std::vector<T>>> &cube, int lb, int ub){
