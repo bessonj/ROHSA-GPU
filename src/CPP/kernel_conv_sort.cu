@@ -324,7 +324,7 @@ __global__ void initialize_b_params(T* b_params_dev, T* beta_dev, int size, int 
     int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if(pixel_x < size){
-		b_params_dev[pixel_x]=beta_dev[n_beta-n_gauss+pixel_x];
+		b_params_dev[pixel_x]=beta_dev[n_beta-n_gauss+pixel_x-1];
 	}
 }
 

@@ -83,6 +83,7 @@ class hypercube
 	std::vector<double> read_vector_from_file(std::string filename);
 
 	template <typename T> void save_result(std::vector<std::vector<std::vector<T>>>&, parameters&);
+	template <typename T> void save_result_multires(std::vector<std::vector<std::vector<T>>>&, parameters&, int);
 
 
 	int indice_debut, indice_fin; //!< Only some spectral ranges of the hypercube are exploitable. We cut the hypercube, this will introduce an offset on the result values.

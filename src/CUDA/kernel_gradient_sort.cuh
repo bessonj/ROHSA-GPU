@@ -19,7 +19,7 @@ __global__ void kernel_conv_g_sort(int n_beta, double* d_g, double* d_IMAGE_sig,
 
 __global__ void kernel_conv_g_reduction_sort(int n_beta, double* d_g, double* result_reduction_sig, double lambda_var_sig, int n_gauss, double* b_params_dev, int k, int image_x, int image_y)
 { 
-    d_g[n_beta - n_gauss + k] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
+    d_g[n_beta - n_gauss + k-1] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
 }
 
 __global__ void kernel_update_deriv_conv_conv_sort(double* deriv, double lambda_amp, double lambda_mu, double lambda_sig, double lambda_var_sig, double* conv_conv_amp, double* conv_conv_mu, double* conv_conv_sig, double* image_sig, double* b_params_dev, int indice_y, int indice_x, int k)

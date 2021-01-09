@@ -58,7 +58,6 @@ hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole
 
 	if(M.file_type_fits){
 		if(last_level_power_of_two){
-	std::cout << "	DEBUG " << std::endl;
 			std::vector<std::vector<std::vector<double>>> data_reshaped_local(dim_cube[0], std::vector<std::vector<double>>(dim_cube[1],std::vector<double>(dim_cube[2],0.)));
 			data_reshaped_local = reshape_up_for_last_level(indice_debut, indice_fin);
 			this->dim_data[0]=this->dim_cube[0];
@@ -66,7 +65,6 @@ hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole
 			dim_cube[0] =pow(2.0,nside-1);
 			dim_cube[1] =pow(2.0,nside-1);
 			cube = reshape_up_for_last_level(indice_debut, indice_fin);
-	std::cout << "	DEBUG " << std::endl;
 
 /*
 			for(int i=0; i< this->dim_cube[0]/2; i++)
@@ -1094,7 +1092,6 @@ void hypercube::display_result(std::vector<std::vector<std::vector<double>>> &pa
 {
 	std::vector<std::vector<double>> model(this->dim_cube[0],std::vector<double>(this->dim_cube[1],0.));
 
-
 	for(int p(0); p<this->dim_cube[0]; p++) {
 		for(int j(0); j<this->dim_cube[1]; j++) {
 			for(int i(0); i<n_gauss_i; i++) {
@@ -1547,14 +1544,15 @@ template <typename T> void hypercube::save_result(std::vector<std::vector<std::v
   std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
   std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
   
-  std::string space = "          "; 
+//  std::string space = "           "; 
 
   std::ofstream myfile;
   myfile.open(M.fileout);//, std::ofstream::out | std::ofstream::trunc);
+  myfile << std::setprecision(18);
   myfile << "# \n";
   myfile << "# ______Parameters_____\n";
   myfile << "# n_gauss = "<< M.n_gauss<<"\n";
-  myfile << "# n_gauss_add = "<< M.n_gauss<<"\n";
+//  myfile << "# n_gauss_add = "<< M.n_gauss<<"\n";
   myfile << "# lambda_amp = "<< M.lambda_amp<<"\n";
   myfile << "# lambda_mu = "<< M.lambda_mu<<"\n";
   myfile << "# lambda_sig = "<< M.lambda_sig<<"\n";
@@ -1562,6 +1560,7 @@ template <typename T> void hypercube::save_result(std::vector<std::vector<std::v
   myfile << "# lambda_var_mu = "<< M.lambda_var_mu<<"\n";
   myfile << "# lambda_var_sig = "<< M.lambda_var_sig<<"\n";
   myfile << "# amp_fact_init = "<< M.amp_fact_init<<"\n";
+  myfile << "# sig_init = "<< M.sig_init<<"\n";
   myfile << "# lb_sig_init = "<< M.lb_sig_init<<"\n";
   myfile << "# ub_sig_init = "<< M.ub_sig_init<<"\n";
   myfile << "# lb_sig = "<< M.lb_sig<<"\n";
@@ -1589,23 +1588,83 @@ template <typename T> void hypercube::save_result(std::vector<std::vector<std::v
   for(int i = 0; i<dim_data[1]; i++){
   	for(int j = 0; j<dim_data[0]; j++){
   	  for(int k = 0; k<M.n_gauss; k++){
-        myfile << i << space << j << space << grid_params[3*k+0][i][j] << space << grid_params[3*k+1][i][j] << space << grid_params[3*k+2][i][j] <<"\n";
+//        myfile << "           "<< i << "           " << j << "  " << grid_params[3*k+0][i][j] << "        " << grid_params[3*k+1][i][j] << "        " << grid_params[3*k+2][i][j] <<"     \n";
+        myfile << "\t"<< i << "\t" << j << "\t" << grid_params[3*k+0][i][j] << "\t" << grid_params[3*k+1][i][j] << "\t" << grid_params[3*k+2][i][j] <<"\t\n";
       }
   	}
   }
+}
 
 
-  /*
+template <typename T> void hypercube::save_result_multires(std::vector<std::vector<std::vector<T>>>& grid_params, parameters& M, int num) {
+
+	std::string s = std::to_string(num);//"plot_through_regu_level_num_");
+	char const *pchar = s.c_str();
+
+	char str[220];
+	strcpy (str,"result_level_");
+	strcat (str,pchar);
+	strcat (str,".dat");
+	puts (str);
+
+  std::cout << "grid_params.size() : "<< grid_params.size() << " , " << grid_params[0].size()  << " , " << grid_params[0][0].size() << std::endl;
+
+//  std::string space = "           "; 
+
+  std::ofstream myfile;
+  myfile.open(str);//, std::ofstream::out | std::ofstream::trunc);
+  myfile << std::setprecision(18);
+  myfile << "# \n";
+  myfile << "# ______Parameters_____\n";
+  myfile << "# n_gauss = "<< M.n_gauss<<"\n";
+//  myfile << "# n_gauss_add = "<< M.n_gauss<<"\n";
+  myfile << "# lambda_amp = "<< M.lambda_amp<<"\n";
+  myfile << "# lambda_mu = "<< M.lambda_mu<<"\n";
+  myfile << "# lambda_sig = "<< M.lambda_sig<<"\n";
+  myfile << "# lambda_var_amp = "<< M.lambda_var_amp<<"\n";
+  myfile << "# lambda_var_mu = "<< M.lambda_var_mu<<"\n";
+  myfile << "# lambda_var_sig = "<< M.lambda_var_sig<<"\n";
+  myfile << "# amp_fact_init = "<< M.amp_fact_init<<"\n";
+  myfile << "# sig_init = "<< M.sig_init<<"\n";
+  myfile << "# lb_sig_init = "<< M.lb_sig_init<<"\n";
+  myfile << "# ub_sig_init = "<< M.ub_sig_init<<"\n";
+  myfile << "# lb_sig = "<< M.lb_sig<<"\n";
+  myfile << "# ub_sig = "<< M.ub_sig<<"\n";
+  myfile << "# init_option = "<< M.init_option<<"\n";
+  myfile << "# maxiter_itit = "<< M.maxiter_init<<"\n";
+  myfile << "# maxiter = "<< M.maxiter<<"\n";
+  myfile << "# lstd = "<< M.lstd<<"\n";
+  myfile << "# ustd = "<< M.ustd<<"\n";
+  myfile << "# noise = "<< M.noise<<"\n";
+  myfile << "# regul = "<< M.regul<<"\n";
+  myfile << "# descent = "<< M.descent<<"\n";
+  myfile << "# \n";
+  myfile << "# \n";
+  myfile << "# \n";
+
+/*
+    write(12,fmt=*) "# n_gauss_add = ", n_gauss_add
+    write(12,fmt=*) "# lambda_lym_sig = ", lambda_lym_sig
+*/
+  myfile << "# i, j, A, mean, sigma\n";
 
 
-    
-
-	*/
+  for(int i = 0; i<grid_params[0].size(); i++){
+  	for(int j = 0; j<grid_params[0][0].size(); j++){
+  	  for(int k = 0; k<M.n_gauss; k++){
+//        myfile << "           "<< i << "           " << j << "  " << grid_params[3*k+0][i][j] << "        " << grid_params[3*k+1][i][j] << "        " << grid_params[3*k+2][i][j] <<"     \n";
+        myfile << "\t"<< i << "\t" << j << "\t" << grid_params[3*k+0][i][j] << "\t" << grid_params[3*k+1][i][j] << "\t" << grid_params[3*k+2][i][j] <<"\t\n";
+      }
+  	}
+  }
 }
 
 
 
+
+
 template void hypercube::save_result<double>(std::vector<std::vector<std::vector<double>>>&, parameters&);
+template void hypercube::save_result_multires<double>(std::vector<std::vector<std::vector<double>>>&, parameters&, int);
 
 /*	
 void hypercube::print_regulation_on_cube() {

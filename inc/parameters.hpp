@@ -87,7 +87,6 @@ class parameters
 	bool save_second_to_last_level;
 	std::string second_to_last_level_grid_name;
 
-
 	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
 
 /*

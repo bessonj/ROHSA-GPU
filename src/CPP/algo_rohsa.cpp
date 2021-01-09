@@ -39,14 +39,14 @@ algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 	this->dim_x = dim_cube[0];
 	this->dim_y = dim_cube[1];
 	this->dim_v = dim_cube[2];
-	std_spectrum(dim_data[0], dim_data[1], dim_data[2]); //oublier
-	mean_spectrum(dim_data[0], dim_data[1], dim_data[2]);
-	max_spectrum(dim_data[0], dim_data[1], dim_data[2]); //oublier
+	std_spectrum<double>(dim_data[0], dim_data[1], dim_data[2]); //oublier
+	mean_spectrum<double>(dim_data[0], dim_data[1], dim_data[2]);
+	max_spectrum<double>(dim_data[0], dim_data[1], dim_data[2]); //oublier
 
 	//compute the maximum of the mean spectrum
 	double max_mean_spect = *std::max_element(mean_spect.begin(), mean_spect.end());
 
-	max_spectrum_norm(dim_data[0], dim_data[1], dim_data[2], max_mean_spect);
+	max_spectrum_norm<double>(dim_data[0], dim_data[1], dim_data[2], max_mean_spect);
 
 
 	std::cout << " descent : "<< M.descent << std::endl;
@@ -65,9 +65,7 @@ algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 	grid_params=grid_params_;
 	}
 
-			
 //		std::cout << "test fit_params : "<<fit_params[0][0][0]<<std::endl;
-		
 	if(M.descent)
 	{
 		std::cout<<"DÉBUT DE DESCENTE"<<std::endl;
@@ -111,8 +109,8 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 		fit_params[1+3*i][0][0] = 1.;
 		fit_params[2+3*i][0][0] = 1.;
 	}
-	std::cout << "fit_params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
 
+	std::cout << "fit_params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
 	std::cout << "grid_params.size() : "<< grid_params.size() << " , " << grid_params[0].size()  << " , " << grid_params[0][0].size() << std::endl;
 
 	double temps2_before_nside;
@@ -121,7 +119,6 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 	std::vector<T> fit_params_flat(fit_params.size(),0.); //used below
 
 	double temps_multiresol=0.;
-
 	double temps_init_spectrum=0.;
 	double temps_upgrade=0.;
 	double temps_update_pp=0.;
@@ -150,7 +147,7 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 
 			std::vector<std::vector<std::vector<T>>> cube_mean(power, std::vector<std::vector<T>>(power,std::vector<T>(dim_v,1.)));
 
-			mean_array(power, cube_mean);
+			mean_array<T>(power, cube_mean);
 
 			std::vector<T> cube_mean_flat(cube_mean[0][0].size());
 
@@ -169,6 +166,7 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 				std::cout<<"Init mean spectrum"<<std::endl;
 				
 				init_spectrum(M, cube_mean_flat, fit_params_flat);
+
 
 	//				init_spectrum(M, cube_mean_flat, std_spect); //option spectre
 	//				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
@@ -196,7 +194,7 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 						fit_params[e][0][0]=fit_params_flat[e];
 						grid_params[e][0][0] = fit_params[e][0][0];
 					}
-					upgrade(M ,cube_mean, fit_params, power);
+					upgrade<T>(M ,cube_mean, fit_params, power);
 					double temps2_upgrade = omp_get_wtime();
 					temps_upgrade+=temps2_upgrade-temps1_upgrade;
 
@@ -216,10 +214,30 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 	//exit(0);
 	*/
 						double temps1_upgrade = omp_get_wtime();
-						upgrade(M ,cube_mean, fit_params, power);
+						upgrade<T>(M ,cube_mean, fit_params, power);
 						double temps2_upgrade = omp_get_wtime();
 						temps_upgrade+=temps2_upgrade-temps1_upgrade;
 
+/*
+fit_params_flat[           0 ] =    1.1454068277424101      ;
+ fit_params_flat[           1 ] =    112.30789394074108      ;
+ fit_params_flat[           2 ] =    12.982614096639615      ;
+ fit_params_flat[           3 ] =   0.21948491606468604      ;
+ fit_params_flat[           4 ] =    56.182098876927235      ;
+ fit_params_flat[           5 ] =    20.478687961565907      ;
+ fit_params_flat[           6 ] =   0.51110135774187704      ;
+ fit_params_flat[           7 ] =    58.786557558140842      ;
+ fit_params_flat[           8 ] =    5.0494650801412417      ;
+ fit_params_flat[           9 ] =   0.11318346395203341      ;
+ fit_params_flat[          10 ] =    190.08101186634414      ;
+ fit_params_flat[          11 ] =    12.672410247775835      ;
+ fit_params_flat[          12 ] =   0.14173905736921663      ;
+ fit_params_flat[          13 ] =    68.004342587999275      ;
+ fit_params_flat[          14 ] =    13.120821723698482      ;
+ fit_params_flat[          15 ] =   0.14499495597698078      ;
+ fit_params_flat[          16 ] =    111.60646739170868      ;
+ fit_params_flat[          17 ] =    2.6502357761271091      ;
+*/
 	//	(this->file).plot_multi_lines(fit_params, cube_mean, "second_plot");
 
 	/*
@@ -236,164 +254,6 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 					if (n>0 and n<file.nside){
 
 						if (power ==2){
-/*
-			fit_params[           0 ][           0 ][           0 ] =   0.12800975412547183      ;
-			fit_params[           0 ][           0 ][           1 ] =   0.12800975412547183      ;
-			fit_params[           0 ][           1 ][           0 ] =   0.12800975412547183      ;
-			fit_params[           0 ][           1 ][           1 ] =   0.12800975412547183      ;
-			fit_params[           1 ][           0 ][           0 ] =    180.05482716213552      ;
-			fit_params[           1 ][           0 ][           1 ] =    180.05482716213552      ;
-			fit_params[           1 ][           1 ][           0 ] =    180.05482716213552      ;
-			fit_params[           1 ][           1 ][           1 ] =    180.05482716213552      ;
-			fit_params[           2 ][           0 ][           0 ] =    12.106686744104559      ;
-			fit_params[           2 ][           0 ][           1 ] =    12.106686744104559      ;
-			fit_params[           2 ][           1 ][           0 ] =    12.106686744104559      ;
-			fit_params[           2 ][           1 ][           1 ] =    12.106686744104559      ;
-			fit_params[           3 ][           0 ][           0 ] =    1.0600407207659746      ;
-			fit_params[           3 ][           0 ][           1 ] =    1.0600407207659746      ;
-			fit_params[           3 ][           1 ][           0 ] =    1.0600407207659746      ;
-			fit_params[           3 ][           1 ][           1 ] =    1.0600407207659746      ;
-			fit_params[           4 ][           0 ][           0 ] =    250.52298969665108      ;
-			fit_params[           4 ][           0 ][           1 ] =    250.52298969665108      ;
-			fit_params[           4 ][           1 ][           0 ] =    250.52298969665108      ;
-			fit_params[           4 ][           1 ][           1 ] =    250.52298969665108      ;
-			fit_params[           5 ][           0 ][           0 ] =    14.238167675192740      ;
-			fit_params[           5 ][           0 ][           1 ] =    14.238167675192740      ;
-			fit_params[           5 ][           1 ][           0 ] =    14.238167675192740      ;
-			fit_params[           5 ][           1 ][           1 ] =    14.238167675192740      ;
-			fit_params[           6 ][           0 ][           0 ] =    1.2084617713378702      ;
-			fit_params[           6 ][           0 ][           1 ] =    1.2084617713378702      ;
-			fit_params[           6 ][           1 ][           0 ] =    1.2084617713378702      ;
-			fit_params[           6 ][           1 ][           1 ] =    1.2084617713378702      ;
-			fit_params[           7 ][           0 ][           0 ] =    224.48625973277666      ;
-			fit_params[           7 ][           0 ][           1 ] =    224.48625973277666      ;
-			fit_params[           7 ][           1 ][           0 ] =    224.48625973277666      ;
-			fit_params[           7 ][           1 ][           1 ] =    224.48625973277666      ;
-			fit_params[           8 ][           0 ][           0 ] =    11.357933194038875      ;
-			fit_params[           8 ][           0 ][           1 ] =    11.357933194038875      ;
-			fit_params[           8 ][           1 ][           0 ] =    11.357933194038875      ;
-			fit_params[           8 ][           1 ][           1 ] =    11.357933194038875      ;
-			fit_params[           9 ][           0 ][           0 ] =    2.3550818551629462e-2 ;
-			fit_params[           9 ][           0 ][           1 ] =    2.3550818551629462e-2 ;
-			fit_params[           9 ][           1 ][           0 ] =    2.3550818551629462e-2 ;
-			fit_params[           9 ][           1 ][           1 ] =    2.3550818551629462e-2 ;
-			fit_params[          10 ][           0 ][           0 ] =    142.67171188631278      ;
-			fit_params[          10 ][           0 ][           1 ] =    142.67171188631278      ;
-			fit_params[          10 ][           1 ][           0 ] =    142.67171188631278      ;
-			fit_params[          10 ][           1 ][           1 ] =    142.67171188631278      ;
-			fit_params[          11 ][           0 ][           0 ] =    24.303045603972546      ;
-			fit_params[          11 ][           0 ][           1 ] =    24.303045603972546      ;
-			fit_params[          11 ][           1 ][           0 ] =    24.303045603972546      ;
-			fit_params[          11 ][           1 ][           1 ] =    24.303045603972546      ;
-			fit_params[          12 ][           0 ][           0 ] =    2.4168148793963518      ;
-			fit_params[          12 ][           0 ][           1 ] =    2.4168148793963518      ;
-			fit_params[          12 ][           1 ][           0 ] =    2.4168148793963518      ;
-			fit_params[          12 ][           1 ][           1 ] =    2.4168148793963518      ;
-			fit_params[          13 ][           0 ][           0 ] =    203.40124971351946      ;
-			fit_params[          13 ][           0 ][           1 ] =    203.40124971351946      ;
-			fit_params[          13 ][           1 ][           0 ] =    203.40124971351946      ;
-			fit_params[          13 ][           1 ][           1 ] =    203.40124971351946      ;
-			fit_params[          14 ][           0 ][           0 ] =    11.067689564722622      ;
-			fit_params[          14 ][           0 ][           1 ] =    11.067689564722622      ;
-			fit_params[          14 ][           1 ][           0 ] =    11.067689564722622      ;
-			fit_params[          14 ][           1 ][           1 ] =    11.067689564722622      ;
-			fit_params[          15 ][           0 ][           0 ] =    6.5103157015035176e-2 ;
-			fit_params[          15 ][           0 ][           1 ] =    6.5103157015035176e-2 ;
-			fit_params[          15 ][           1 ][           0 ] =    6.5103157015035176e-2 ;
-			fit_params[          15 ][           1 ][           1 ] =    6.5103157015035176e-2;
-			fit_params[          16 ][           0 ][           0 ] =    272.23544007289087      ;
-			fit_params[          16 ][           0 ][           1 ] =    272.23544007289087      ;
-			fit_params[          16 ][           1 ][           0 ] =    272.23544007289087      ;
-			fit_params[          16 ][           1 ][           1 ] =    272.23544007289087      ;
-			fit_params[          17 ][           0 ][           0 ] =    14.676429309765949      ;
-			fit_params[          17 ][           0 ][           1 ] =    14.676429309765949      ;
-			fit_params[          17 ][           1 ][           0 ] =    14.676429309765949      ;
-			fit_params[          17 ][           1 ][           1 ] =    14.676429309765949      ;
-			fit_params[          18 ][           0 ][           0 ] =   0.55919737225271182      ;
-			fit_params[          18 ][           0 ][           1 ] =   0.55919737225271182      ;
-			fit_params[          18 ][           1 ][           0 ] =   0.55919737225271182      ;
-			fit_params[          18 ][           1 ][           1 ] =   0.55919737225271182      ;
-			fit_params[          19 ][           0 ][           0 ] =    197.19727306460263      ;
-			fit_params[          19 ][           0 ][           1 ] =    197.19727306460263      ;
-			fit_params[          19 ][           1 ][           0 ] =    197.19727306460263      ;
-			fit_params[          19 ][           1 ][           1 ] =    197.19727306460263      ;
-			fit_params[          20 ][           0 ][           0 ] =    3.7498051053837402      ;
-			fit_params[          20 ][           0 ][           1 ] =    3.7498051053837402      ;
-			fit_params[          20 ][           1 ][           0 ] =    3.7498051053837402      ;
-			fit_params[          20 ][           1 ][           1 ] =    3.7498051053837402      ;
-			fit_params[          21 ][           0 ][           0 ] =   0.37501802803217477      ;
-			fit_params[          21 ][           0 ][           1 ] =   0.37501802803217477      ;
-			fit_params[          21 ][           1 ][           0 ] =   0.37501802803217477      ;
-			fit_params[          21 ][           1 ][           1 ] =   0.37501802803217477      ;
-			fit_params[          22 ][           0 ][           0 ] =    203.32039391313074      ;
-			fit_params[          22 ][           0 ][           1 ] =    203.32039391313074      ;
-			fit_params[          22 ][           1 ][           0 ] =    203.32039391313074      ;
-			fit_params[          22 ][           1 ][           1 ] =    203.32039391313074      ;
-			fit_params[          23 ][           0 ][           0 ] =    2.7070692040635058      ;
-			fit_params[          23 ][           0 ][           1 ] =    2.7070692040635058      ;
-			fit_params[          23 ][           1 ][           0 ] =    2.7070692040635058      ;
-			fit_params[          23 ][           1 ][           1 ] =    2.7070692040635058      ;
-			fit_params[          24 ][           0 ][           0 ] =   0.51704192683721151      ;
-			fit_params[          24 ][           0 ][           1 ] =   0.51704192683721151      ;
-			fit_params[          24 ][           1 ][           0 ] =   0.51704192683721151      ;
-			fit_params[          24 ][           1 ][           1 ] =   0.51704192683721151      ;
-			fit_params[          25 ][           0 ][           0 ] =    200.07319126869734      ;
-			fit_params[          25 ][           0 ][           1 ] =    200.07319126869734      ;
-			fit_params[          25 ][           1 ][           0 ] =    200.07319126869734      ;
-			fit_params[          25 ][           1 ][           1 ] =    200.07319126869734      ;
-			fit_params[          26 ][           0 ][           0 ] =    12.457897408187174      ;
-			fit_params[          26 ][           0 ][           1 ] =    12.457897408187174      ;
-			fit_params[          26 ][           1 ][           0 ] =    12.457897408187174      ;
-			fit_params[          26 ][           1 ][           1 ] =    12.457897408187174      ;
-			fit_params[          27 ][           0 ][           0 ] =    5.0955018710702592e-2 ;
-			fit_params[          27 ][           0 ][           1 ] =    5.0955018710702592e-2;
-			fit_params[          27 ][           1 ][           0 ] =    5.0955018710702592e-2;
-			fit_params[          27 ][           1 ][           1 ] =    5.0955018710702592e-2 ;
-			fit_params[          28 ][           0 ][           0 ] =    297.76970529211712      ;
-			fit_params[          28 ][           0 ][           1 ] =    297.76970529211712      ;
-			fit_params[          28 ][           1 ][           0 ] =    297.76970529211712      ;
-			fit_params[          28 ][           1 ][           1 ] =    297.76970529211712      ;
-			fit_params[          29 ][           0 ][           0 ] =    12.161470649157568      ;
-			fit_params[          29 ][           0 ][           1 ] =    12.161470649157568      ;
-			fit_params[          29 ][           1 ][           0 ] =    12.161470649157568      ;
-			fit_params[          29 ][           1 ][           1 ] =    12.161470649157568      ;
-			fit_params[          30 ][           0 ][           0 ] =    6.8536627841306402e-2 ;
-			fit_params[          30 ][           0 ][           1 ] =    6.8536627841306402e-2 ;
-			fit_params[          30 ][           1 ][           0 ] =    6.8536627841306402e-2 ;
-			fit_params[          30 ][           1 ][           1 ] =    6.8536627841306402e-2 ;
-			fit_params[          31 ][           0 ][           0 ] =    257.58792869697089      ;
-			fit_params[          31 ][           0 ][           1 ] =    257.58792869697089      ;
-			fit_params[          31 ][           1 ][           0 ] =    257.58792869697089      ;
-			fit_params[          31 ][           1 ][           1 ] =    257.58792869697089      ;
-			fit_params[          32 ][           0 ][           0 ] =    3.2948315664618648      ;
-			fit_params[          32 ][           0 ][           1 ] =    3.2948315664618648      ;
-			fit_params[          32 ][           1 ][           0 ] =    3.2948315664618648      ;
-			fit_params[          32 ][           1 ][           1 ] =    3.2948315664618648      ;
-			fit_params[          33 ][           0 ][           0 ] =    4.2440241626722545e-2 ;
-			fit_params[          33 ][           0 ][           1 ] =    4.2440241626722545e-2 ;
-			fit_params[          33 ][           1 ][           0 ] =    4.2440241626722545e-2 ;
-			fit_params[          33 ][           1 ][           1 ] =    4.2440241626722545e-2 ;
-			fit_params[          34 ][           0 ][           0 ] =    214.96764833274480      ;
-			fit_params[          34 ][           0 ][           1 ] =    214.96764833274480      ;
-			fit_params[          34 ][           1 ][           0 ] =    214.96764833274480      ;
-			fit_params[          34 ][           1 ][           1 ] =    214.96764833274480      ;
-			fit_params[          35 ][           0 ][           0 ] =    2.2912606146642367      ;
-			fit_params[          35 ][           0 ][           1 ] =    2.2912606146642367      ;
-			fit_params[          35 ][           1 ][           0 ] =    2.2912606146642367      ;
-			fit_params[          35 ][           1 ][           1 ] =    2.2912606146642367      ;
-			b_params[           0 ] =    12.000000000000000      ;
-			b_params[           1 ] =    12.000000000000000      ;
-			b_params[           2 ] =    12.000000000000000      ;
-			b_params[           3 ] =    12.000000000000000      ;
-			b_params[           4 ] =    11.756541084302166      ;
-			b_params[           5 ] =    11.892606675545769      ;
-			b_params[           6 ] =    3.8724543060279322      ;
-			b_params[           7 ] =    2.7406645675468209      ;
-			b_params[           8 ] =    11.523657275718318      ;
-			b_params[           9 ] =    10.349266870430457      ;
-			b_params[          10 ] =    3.1369301998655779      ;
-			b_params[          11 ] =    1.8009704780789586      ;
-*/
 
 						}
 						std::vector<std::vector<T>> std_map(power, std::vector<T>(power,0.));
@@ -433,7 +293,7 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 						if (M.n_gauss_add != 0){
 							//Add new Gaussian if one reduced chi square > 1  
 						}
-						mean_parameters(fit_params);
+						mean_parameters<T>(fit_params);
 					}
 				}
 
@@ -443,7 +303,9 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 				}
 
 		double temps_go_up_level1=omp_get_wtime();
-		go_up_level(fit_params);
+
+		go_up_level<T>(fit_params);
+
 		this->fit_params = fit_params; //updating the model class
 		double temps_go_up_level2=omp_get_wtime();
 		temps_go_up_level=temps_go_up_level2-temps_go_up_level1;
@@ -525,7 +387,6 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 	if(M.noise){
 		//std_map=std_data;
 	} else {
-
 		set_stdmap<T>(std_map, this->file.data, M.lstd, M.ustd);
 	}
 	double temps_std_map2=omp_get_wtime();
@@ -533,12 +394,14 @@ template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::
 
 	double temps_update_dp1 = omp_get_wtime();
 
+
 	if(M.regul){
 		std::cout<<"Updating last level"<<std::endl;
 		// repère recherche pb %
-		update_clean(M, this->file.data, grid_params, std_map, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
+		update_clean<T>(M, this->file.data, grid_params, std_map, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
 		//modification update
 	}
+
 
 	double temps_update_dp2 = omp_get_wtime();
 	temps_update_dp +=temps_update_dp2-temps_update_dp1;
@@ -687,9 +550,9 @@ std::cout<<"Taille std_map : "<<std_map.size()<<" , "<<std_map[0].size()<<std::e
 	lb = (T*)malloc(size_n_beta);
 	ub = (T*)malloc(size_n_beta);
 	beta = (T*)malloc(size_n_beta);
-	initialize_array(lb, n_beta, 0.);
-	initialize_array(ub, n_beta, 0.);
-	initialize_array(beta, n_beta, 0.);
+	initialize_array<T>(lb, n_beta, 0.);
+	initialize_array<T>(ub, n_beta, 0.);
+	initialize_array<T>(beta, n_beta, 0.);
 
 	std::vector<std::vector<std::vector<T>>> lb_3D(3*M.n_gauss, std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
@@ -738,7 +601,7 @@ if(cube_avgd_or_data[0].size() == 35){
 				ub_3D_flat[p]=ub_3D[p][i][j];
 			}
 //	std::cout<<"ERREUR 2"<<std::endravel_3D(l;
-			init_bounds(M, cube_flat, M.n_gauss, lb_3D_flat, ub_3D_flat, false); //bool _init = false 
+			init_bounds<T>(M, cube_flat, M.n_gauss, lb_3D_flat, ub_3D_flat, false); //bool _init = false 
 //	std::cout<<"ERREUR 3"<<std::endl;
 			for(int p=0; p<3*M.n_gauss; p++){
 				lb_3D[p][i][j]=lb_3D_flat[p]; // the indices have been inverted
@@ -748,13 +611,19 @@ if(cube_avgd_or_data[0].size() == 35){
 	}
 
 	//CLEAN
-	//three_D_to_one_D(threeD, oneD, x,y,z) transforms a 3D array of dimensions z,y,x into a 1D array of dimensions x,y,z
-	//lb 1difié est du format x, y, 3*ng
-	three_D_to_one_D_same_dimensions(lb_3D, lb, 3*M.n_gauss, indice_y, indice_x);
-	//ravel_3D(lb_3D, lb, 3*M.n_gauss, indice_y, indice_x);//ancien
-	three_D_to_one_D_same_dimensions(ub_3D, ub, 3*M.n_gauss, indice_y, indice_x);
-	//ravel_3D(ub_3D, ub, 3*M.n_gauss, indice_y, indice_x); //ancien
-	three_D_to_one_D_same_dimensions(params, beta, 3*M.n_gauss, indice_y, indice_x);
+	if(M.select_version == 0){ //-cpu
+		//three_D_to_one_D_inverted_dimensions<T>(threeD, oneD, x,y,z) transforms a 3D array of dimensions z,y,x into a 1D array of dimensions z,y,x
+		three_D_to_one_D_inverted_dimensions<T>(lb_3D, lb, 3*M.n_gauss, indice_y, indice_x);
+		three_D_to_one_D_inverted_dimensions<T>(ub_3D, ub, 3*M.n_gauss, indice_y, indice_x);
+		three_D_to_one_D_inverted_dimensions<T>(params, beta, 3*M.n_gauss, indice_y, indice_x);
+	}else if(M.select_version == 1 || M.select_version == 2){ //-gpu
+		//three_D_to_one_D_same_dimensions<T>(threeD, oneD, x,y,z) transforms a 3D array of dimensions z,y,x into a 1D array of dimensions x,y,z
+		//lb 1difié est du format x, y, 3*ng
+		three_D_to_one_D_same_dimensions<T>(lb_3D, lb, 3*M.n_gauss, indice_y, indice_x);
+		three_D_to_one_D_same_dimensions<T>(ub_3D, ub, 3*M.n_gauss, indice_y, indice_x);
+		three_D_to_one_D_same_dimensions<T>(params, beta, 3*M.n_gauss, indice_y, indice_x);
+	}
+
 
 	for(int i=0; i<M.n_gauss; i++){
 		lb[n_beta-M.n_gauss+i] = M.lb_sig;
@@ -764,6 +633,14 @@ if(cube_avgd_or_data[0].size() == 35){
 
 	temps_tableau_update += omp_get_wtime() - temps1_tableau_update;
 
+/*
+	for(int i=0; i<n_beta; i++){
+		printf("ub[%d] = %f\n",i, ub[i]);
+	}
+	for(int i=0; i<n_beta; i++){
+		printf("lb[%d] = %f\n",i, lb[i]);
+	}
+*/
 
 //	minimize_clean_gpu<T>(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
 
@@ -782,13 +659,22 @@ if(cube_avgd_or_data[0].size() == 35){
 
 	double temps2_tableau_update = omp_get_wtime();
 	//x,y,z->x,y,z
-	one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
-//	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
-	int number_plot_2D = ceil(log(indice_x)/log(2));
-	this->file.simple_plot_through_regu(params, 0,0,number_plot_2D);
-	this->file.simple_plot_through_regu(params, 0,1,number_plot_2D);
-	this->file.simple_plot_through_regu(params, 0,2,number_plot_2D);
+	if(M.select_version == 0){ //-cpu
+		one_D_to_three_D_inverted_dimensions<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	}else if(M.select_version == 1 || M.select_version == 2){ //-gpu and -h
+		one_D_to_three_D_same_dimensions<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	//	unravel_3D<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	}
+
+	bool print = false;
+	if(print){
+		int number_plot_2D = ceil(log(indice_x)/log(2));
+		this->file.simple_plot_through_regu(params, 0,0,number_plot_2D);
+		this->file.simple_plot_through_regu(params, 0,1,number_plot_2D);
+		this->file.simple_plot_through_regu(params, 0,2,number_plot_2D);
+		this->file.save_result_multires<double>(params, M, number_plot_2D);
+	}
 
 	for(int i=0; i<M.n_gauss; i++){
 		b_params[i]=beta[n_beta-M.n_gauss+i];
@@ -813,7 +699,7 @@ template <typename T> void algo_rohsa::set_stdmap(std::vector<std::vector<T>> &s
 			for(int p=0; p<line.size(); p++){
 				line[p] = cube_or_data[i][j][p+lb];
 			}
-			std_map[j][i] = Std(line);
+			std_map[j][i] = Std<T>(line);
 		}
 	}
 }
@@ -830,93 +716,215 @@ template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vec
 			for(int p=0; p<= ub-lb; p++){
 				line[p] = cube[i][j][p+lb];
 			}
-			std_map[j][i] = Std(line);
-//		printf("Std(line) = %f \n",Std(line));
+			std_map[j][i] = Std<T>(line);
+//		printf("Std<T>(line) = %f \n",Std<T>(line));
 		}
 	}
 }
 
-template <typename T> void algo_rohsa::f_g_cube_fast(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
-	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-	std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-	std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
-	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-	std::vector<T> b_params(M.n_gauss,0.);
+template <typename T> void algo_rohsa::f_g_cube_fast_unidimensional(parameters &M, T &f, T* g, int n, T* cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* beta, int indice_v, int indice_y, int indice_x, T* std_map){
 
-	std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
-	std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
+    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
+
+	std::vector<T> b_params(M.n_gauss,0.);
+	int taille_params_flat[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_residual[] = {indice_v, indice_y, indice_x};
+	int taille_std_map_[] = {indice_y, indice_x};
+	int taille_beta[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_cube[] = {indice_v, indice_y, indice_x};
+	int taille_image_conv[] = {indice_y, indice_x};
+	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
+	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
+	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
+	int product_cube = taille_cube[0]*taille_cube[1]*taille_cube[2]; 
+	int product_beta = taille_beta[0]*taille_beta[1]*taille_beta[2];
+	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
+
+	size_t size_res = product_residual * sizeof(T);
+	size_t size_std = product_std_map_ * sizeof(T);
+	size_t size_image_conv = product_image_conv * sizeof(T);
+
+	T* residual = (T*)malloc(size_res);
+	T* std_map_ = (T*)malloc(size_std);
+
+	T* conv_amp = (T*)malloc(size_image_conv);
+	T* conv_mu = (T*)malloc(size_image_conv);
+	T* conv_sig = (T*)malloc(size_image_conv);
+	T* conv_conv_amp = (T*)malloc(size_image_conv);
+	T* conv_conv_mu = (T*)malloc(size_image_conv);
+	T* conv_conv_sig = (T*)malloc(size_image_conv);
+	T* image_amp = (T*)malloc(size_image_conv);
+	T* image_mu = (T*)malloc(size_image_conv);
+	T* image_sig = (T*)malloc(size_image_conv);
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
-	for(int i = 0; i< n; i++){
+	double temps1_ravel = omp_get_wtime();
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			std_map_[j*indice_y+i] = std_map[i*indice_x+j];
+		}
+	}
+	for(int i = 0; i<n_beta; i++){
 		g[i]=0.;
 	}
 	f=0.;
-
-	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
 	for(int i = 0; i<M.n_gauss; i++){
 		b_params[i]=beta[n_beta-M.n_gauss+i];
 	}
+	double temps2_ravel = omp_get_wtime();
+	this->temps_copy+=temps2_ravel-temps1_ravel;
 
+	double temps1_tableaux = omp_get_wtime();
+
+	int i,j,l;
+
+/*
+	#pragma omp parallel private(j,i) shared(f,M,beta,cube_for_cache,std_map_,residual,indice_v,indice_y,indice_x)
+	{
+	#pragma omp for
+*/
+
+/*
+	for(j=0; j<indice_x; j++){
+		for(i=0; i<indice_y; i++){
+			std::vector<T> residual_1D(indice_v,0.);
+			std::vector<T> params_flat(3*M.n_gauss,0.);
+			std::vector<T> cube_flat(indice_v,0.);
+			for (int p=0; p<3*M.n_gauss; p++){
+				params_flat[p]=beta[j*indice_y*3*M.n_gauss + i*3*M.n_gauss+p];
+			}
+			for (int p=0; p<indice_v; p++){
+				cube_flat[p]=cube_for_cache[j][i][p];//*indice_y*indice_v+i*indice_v+p];
+			}
+			myresidual<T>(params_flat, cube_flat, residual_1D, M.n_gauss);
+			for (int p=0;p<indice_v;p++){
+				residual[j*indice_y*indice_v+i*indice_v+p]=residual_1D[p];
+			}
+			if(std_map_[j*indice_x+i]>0.){
+				f += myfunc_spec<T>(residual_1D)*1/pow(std_map_[j*indice_x+i],2.); //std_map est arrondie... 
+			}
+		}
+	}
+//	}
+*/
+
+	T* hypercube_tilde = NULL;
+	hypercube_tilde = (T*)malloc(indice_x*indice_y*indice_v*sizeof(T));
+
+	T* par = NULL;
+	par = (T*)malloc(3*sizeof(T));
+
+//	omp_set_num_threads(2);
+	#pragma omp parallel private(j,i) shared(hypercube_tilde, residual ,par,M,beta,std_map_,indice_v,indice_y,indice_x)
+	{
+	#pragma omp for
+	for(j=0; j<indice_x; j++){
+		for(i=0; i<indice_y; i++){
+			for (int p=0; p<indice_v; p++){
+				T accu = 0.;
+				for (int p_par=0; p_par<M.n_gauss; p_par++){
+					par[0]= beta[j*3*M.n_gauss*indice_y+i*3*M.n_gauss+(3*p_par+0)];
+					par[1]= beta[j*3*M.n_gauss*indice_y+i*3*M.n_gauss+(3*p_par+1)];
+					par[2]= beta[j*3*M.n_gauss*indice_y+i*3*M.n_gauss+(3*p_par+2)];
+					accu+= par[0]*exp(-pow(T(p+1)-par[1],2)/(2*pow(par[2],2.)));
+				}
+			residual[j*indice_y*indice_v+i*indice_v+p] = accu-cube_for_cache[j][i][p];
+//				hypercube_tilde[j*indice_y*indice_v+i*indice_v+p] = accu;	
+			}
+		}
+	}
+	}
+/*
 	for(int j=0; j<indice_x; j++){
 		for(int i=0; i<indice_y; i++){
-			std::vector<T> residual_1D(indice_v,0.);
-			std::vector<T> params_flat(params.size(),0.);
-			std::vector<T> cube_flat(cube[0][0].size(),0.);
-
-			for (int p=0;p<params_flat.size();p++){
-				params_flat[p]=params[p][i][j];
+			for (int p=0; p<indice_v; p++){
+				residual[j*indice_y*indice_v+i*indice_v+p] = hypercube_tilde[j*indice_y*indice_v+i*indice_v+p]-cube_for_cache[j][i][p];
 			}
+		}
+	}
+*/
+	free(hypercube_tilde);
+	free(par);
 
-//			std::cout<< "--> cube_flat.size() = "<<cube_flat.size() <<std::endl;
-			for (int p=0;p<cube_flat.size();p++){
-				cube_flat[p]=cube[j][i][p];
-			}
-
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-
-			for (int p=0;p<residual_1D.size();p++){
-				residual[j][i][p]=residual_1D[p];
-			}
-
-			if(std_map[i][j]>0.){
-				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+	for(j=0; j<indice_x; j++){
+		for(i=0; i<indice_y; i++){
+			if(std_map_[j*indice_x+i]>0.){
+				T accu = 0.;
+				for (int p=0; p<indice_v; p++){
+					accu+=pow(residual[j*indice_y*indice_v+i*indice_v+p],2.);
+				}
+	//				printf("accu = %f\n",accu);
+				f += 0.5*accu/pow(std_map_[j*indice_x+i],2.); //std_map est arrondie... 
 			}
 		}
 	}
 
-/*
-	printf("std_map[0][0] = %f \n",std_map[0][0]);
-	printf("std_map[0][1] = %f \n",std_map[0][1]);
-	printf("std_map[1][0] = %f \n",std_map[1][0]);
-	printf("std_map[1][1] = %f \n",std_map[1][1]);
-	printf("-->f = %f\n",f);
-	exit(0);
-*/
-
-//§§
-
-//	std::cout<<"->f = "<<f<<std::endl;
-/*
-	for(int j=0; j<indice_y; j++){
-		for(int i = 0; i<indice_x;i++){
-		std::cout<<"std_map["<<i<<"]["<<j<<"] = "<<std_map[i][j]<<std::endl;
-		}
-	}
-*/
-//	exit(0);
-
-//	std::cout<< "AVANT GRADIENT+CONVO" <<std::endl;
+	double temps2_tableaux = omp_get_wtime();
+	this->temps_tableaux+=temps2_tableaux-temps1_tableaux;
 
 	for(int i=0; i<M.n_gauss; i++){
+		double temps1_conv = omp_get_wtime();
+		for(int q=0; q<indice_x; q++){
+			for(int p=0; p<indice_y; p++){
+				image_amp[indice_x*p+q]= beta[q*indice_y*3*M.n_gauss + p*3*M.n_gauss+(0+3*i)];
+				image_mu[indice_x*p+q]=beta[q*indice_y*3*M.n_gauss + p*3*M.n_gauss+(1+3*i)];
+				image_sig[indice_x*p+q]=beta[q*indice_y*3*M.n_gauss + p*3*M.n_gauss+(2+3*i)];
+			}
+		}
+		convolution_2D_mirror_flat<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror_flat<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror_flat<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
+		convolution_2D_mirror_flat<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror_flat<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror_flat<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+
+		for(int j=0; j<indice_y; j++){
+			for(int l=0; l<indice_x; l++){
+				f+= 0.5*M.lambda_amp*pow(conv_amp[j*indice_x+l],2);
+				f+= 0.5*M.lambda_mu*pow(conv_mu[j*indice_x+l],2);
+				f+= 0.5*M.lambda_sig*pow(conv_sig[j*indice_x+l],2) + 0.5*M.lambda_var_sig*pow(image_sig[j*indice_x+l]-b_params[i],2);
+
+				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j*indice_x+l]);
+				g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss+(0+3*i)] += M.lambda_amp*conv_conv_amp[j*indice_x+l];
+				g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss+(1+3*i)] += M.lambda_mu*conv_conv_mu[j*indice_x+l];
+				g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss+(2+3*i)] += M.lambda_sig*conv_conv_sig[j*indice_x+l]+M.lambda_var_sig*(image_sig[j*indice_x+l]-b_params[i]);
+			}
+		}
+		double temps2_conv = omp_get_wtime();
+		this->temps_conv+=temps2_conv-temps1_conv;
+	}
+
+	double temps1_deriv = omp_get_wtime();
+
+
+	#pragma omp parallel private(j,l) shared(g,M,beta,std_map_,residual,indice_v,indice_y,indice_x)
+	{
+	#pragma omp for
+
+	for(l=0; l<indice_x; l++){
+		for(j=0; j<indice_y; j++){
+			if(std_map_[l*indice_x+j]>0.){
+				for(int i=0; i<M.n_gauss; i++){
+					T par0 = beta[l*indice_y*3*M.n_gauss +j*3*M.n_gauss +(0+3*i)];
+					T par1_ = beta[l*indice_y*3*M.n_gauss +j*3*M.n_gauss +(1+3*i)];
+					T par2 = beta[l*indice_y*3*M.n_gauss +j*3*M.n_gauss +(2+3*i)];							
+					for(int k=0; k<indice_v; k++){	
+					T par1 = T(k+1) - par1_;
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(0+3*i)] += exp(-pow( par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_x+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(1+3*i)] += par0*par1/pow(par2,2.) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_x+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(2+3*i)] += par0*pow(par1, 2.)/(pow(par2,3.)) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_x+j],2);
+				}
+			}
+		}
+	}
+	}
+	}
+	double temps2_deriv = omp_get_wtime();
+	this->temps_deriv+=temps2_deriv-temps1_deriv;
+	
+	/*
+		for(int i=0; i<M.n_gauss; i++){
 		for(int p=0; p<indice_y; p++){
 			for(int q=0; q<indice_x; q++){
 				image_amp[p][q]=params[0+3*i][p][q];
@@ -925,80 +933,54 @@ template <typename T> void algo_rohsa::f_g_cube_fast(parameters &M, T &f, T g[],
 			}
 		}
 
-//		std::cout<< "AVANT CONVO" <<std::endl;
-
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
 	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 
-//		std::cout<< "AVANT SOMME F" <<std::endl;
-		for(int l=0; l<indice_x; l++){
-			for(int j=0; j<indice_y; j++){
+
+		for(int j=0; j<indice_y; j++){
+			for(int l=0; l<indice_x; l++){
 				f+= 0.5*M.lambda_amp*pow(conv_amp[j][l],2);
 				f+= 0.5*M.lambda_mu*pow(conv_mu[j][l],2);
-				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2)+0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
+				f+= 0.5*M.lambda_sig*pow(conv_sig[j][l],2) + 0.5*M.lambda_var_sig*pow(image_sig[j][l]-b_params[i],2);
+//				printf("b_params[i] = %f\n", b_params[i]);
 
 				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
-			
-		int k;
-		T v_1=0.,v_2=0.,v_3=0.;
-
-//		std::cout<< "AVANT GRADIENT BIDOUILLÉ" <<std::endl;
-
-		if(std_map[j][l]>0.){
-			for(k=0; k<indice_v; k++){
-				v_1 += exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-				v_2 += params[3*i][j][l]*( double(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
-				v_3 += params[3*i][j][l]*pow( double(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( double(k+1)-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*(residual[l][j][k]/pow(std_map[j][l],2));
+				for(int k=0; k<indice_v; k++){
+					if(std_map[j][l]>0.){
+						T spec = T(k+1);
+						deriv[0+3*i][j][l] += exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
+						deriv[1+3*i][j][l] += params[3*i][j][l]*(spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
+						deriv[2+3*i][j][l] += params[3*i][j][l]*pow( spec - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
+					}
+				}
+				double temps2_deriv = omp_get_wtime();
+				temps_deriv+= temps2_deriv - temps1_deriv;
+				deriv[0+3*i][j][l] += M.lambda_amp*conv_conv_amp[j][l];
+				deriv[1+3*i][j][l] += M.lambda_mu*conv_conv_mu[j][l];
+				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
 			}
 		}
-		deriv[0+3*i][j][l] += v_1 + M.lambda_amp*conv_conv_amp[j][l];
-		deriv[1+3*i][j][l] += v_2 + M.lambda_mu*conv_conv_mu[j][l];
-		deriv[2+3*i][j][l] += v_3 + M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
-
-
-
-/*
-	printf("--->M.lambda_amp = %f\n",M.lambda_amp);
-	printf("--->M.lambda_mu = %f\n",M.lambda_mu);
-	printf("--->M.lambda_sig = %f\n",M.lambda_sig);
-
-	printf("--->conv_conv_amp = %f\n",conv_conv_amp[j][l]);
-	printf("--->conv_conv_mu = %f\n",conv_conv_mu[j][l]);
-	printf("--->conv_conv_sig = %f\n",conv_conv_sig[j][l]);
-
-	printf("--->deriv = %f\n",deriv[0+3*i][j][l]);
-	printf("--->deriv = %f\n",deriv[1+3*i][j][l]);
-	printf("--->deriv = %f\n",deriv[2+3*i][j][l]);
-	exit(0);	
-*/
-			}
-		}
-		
-
 	}
-//		std::cout<< "AVANT TABLEAUX FIN" <<std::endl;
+	*/
 
-	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
-	//	std::cout<<"g["<<i<<"] = "<<g[i]<<std::endl;
-//	std::cout<<"g["<<i<<"] = "<<g[i]<<std::endl;
+	free(residual);
+	free(std_map_);
+	free(conv_amp);
+	free(conv_mu);
+	free(conv_sig);
+	free(conv_conv_amp);
+	free(conv_conv_mu);
+	free(conv_conv_sig);
+	free(image_amp);
+	free(image_mu);
+	free(image_sig);
 
-/*
-	for(int i = 0; i<n_beta;i++)
-	{
-		printf("g[%i] = %f\n",i,g[i]);
-	}
-	printf("--->f = %f\n",f);
-	exit(0);
-*/
-//	exit(0);
-
-
-	}
+}
 
 
 template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
@@ -1018,9 +1000,13 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, 
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
-	for(int i = 0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
+
+
+/*
+	for(int i = 0; i< n_beta; i++){
+		printf("beta[%d] = %f\n", i, beta[i]);
 	}
+*/
 
 	for(int i = 0; i< n_beta; i++){
 		g[i]=0.;
@@ -1028,17 +1014,23 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, 
 	f=0.;
 
 	double temps1_ravel = omp_get_wtime();
-	one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	one_D_to_three_D_same_dimensions<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
+
+
 	double temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
-	//unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	//unravel_3D<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
+
+	for(int i = 0; i<M.n_gauss; i++){
+		b_params[i]=beta[n_beta-M.n_gauss+i];
+	}
 
 	double temps1_tableaux = omp_get_wtime();
 	for(int j=0; j<indice_x; j++){
 		for(int i=0; i<indice_y; i++){
 			std::vector<T> residual_1D(indice_v,0.);
-			std::vector<T> params_flat(params.size(),0.);
-			std::vector<T> cube_flat(cube[0][0].size(),0.);
+			std::vector<T> params_flat(3*M.n_gauss,0.);
+			std::vector<T> cube_flat(indice_v,0.);
 
 			for (int p=0; p<3*M.n_gauss; p++){
 				params_flat[p]=params[p][i][j];
@@ -1047,14 +1039,14 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, 
 				cube_flat[p]=cube[j][i][p];
 			}
 
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+			myresidual<T>(params_flat, cube_flat, residual_1D, M.n_gauss);
 
 			for (int p=0;p<indice_v;p++){
 				residual[j][i][p]=residual_1D[p];
 			}
 
 			if(std_map[i][j]>0.){
-				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+				f += myfunc_spec<T>(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
 			}
 		}
 	}
@@ -1070,13 +1062,13 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, 
 			}
 		}
 
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
 	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 
 /*
 		for(int p=0; p<indice_y; p++){
@@ -1097,10 +1089,10 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, 
 
 				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j][l]);
 				for(int k=0; k<indice_v; k++){
-					if(std_map[l][j]>0.){
+					if(std_map[j][l]>0.){
 						T spec = T(k+1);
 						deriv[0+3*i][j][l] += exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
-						deriv[1+3*i][j][l] += params[3*i][j][l]*( spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
+						deriv[1+3*i][j][l] += params[3*i][j][l]*(spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
 						deriv[2+3*i][j][l] += params[3*i][j][l]*pow( spec - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[l][j][k]/pow(std_map[j][l],2);
 					}
 				}
@@ -1111,22 +1103,24 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, 
 				deriv[2+3*i][j][l] += M.lambda_sig*conv_conv_sig[j][l]+M.lambda_var_sig*(image_sig[j][l]-b_params[i]);
 			}
 		}
-		
 	}
+
+
+
 	double temps2_deriv = omp_get_wtime();
 
 	temps_deriv+= temps2_deriv - temps1_deriv;
 
 	temps_ravel+=temps2_ravel-temps1_ravel;
 	temps1_ravel = omp_get_wtime();
-	three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	three_D_to_one_D_same_dimensions<T>(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
 	}
 
 
 
-template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
+template <typename T> void algo_rohsa::f_g_cube_not_very_fast_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
 	bool print = false;
 
 	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
@@ -1156,10 +1150,10 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU(parameters 
 	f=0.;
 
 	double temps1_ravel = omp_get_wtime();
-	one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	one_D_to_three_D_same_dimensions<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
 	double temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
-	//unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	//unravel_3D<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
 double temps1_tableaux = omp_get_wtime();
 	for(int i=0; i<indice_y; i++){
@@ -1167,24 +1161,19 @@ double temps1_tableaux = omp_get_wtime();
 			std::vector<T> residual_1D(indice_v,0.);
 			std::vector<T> params_flat(params.size(),0.);
 			std::vector<T> cube_flat(cube[0][0].size(),0.);
-
 			for (int p=0; p<3*M.n_gauss; p++){
 				params_flat[p]=params[p][i][j];
 			}
 			for (int p=0; p<indice_v; p++){
 				cube_flat[p]=cube[j][i][p];
 			}
-
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-
+			myresidual<T>(params_flat, cube_flat, residual_1D, M.n_gauss);
 			for (int p=0;p<indice_v;p++){
 				residual[p][i][j]=residual_1D[p];
 			}
-
 			if(std_map[i][j]>0.){
-				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+				f += myfunc_spec<T>(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
 			}
-
 		}
 	}
 double temps2_tableaux = omp_get_wtime();
@@ -1213,14 +1202,15 @@ double temps2_dF_dB = omp_get_wtime();
 double temps1_deriv = omp_get_wtime();
 	int i;
 
+
 	#pragma omp parallel private(i) shared(params,deriv,std_map,residual,indice_v,indice_y,indice_x)
 	{
 	#pragma omp for
-	for(i=0; i<M.n_gauss; i++){
-		for(int k=0; k<indice_v; k++){
-			for(int j=0; j<indice_y; j++){
-				for(int l=0; l<indice_x; l++){
-					if(std_map[j][l]>0.){
+	for(int j=0; j<indice_y; j++){
+		for(int l=0; l<indice_x; l++){
+			if(std_map[j][l]>0.){
+				for(i=0; i<M.n_gauss; i++){
+					for(int k=0; k<indice_v; k++){
 						T spec = T(k+1);
 						deriv[0+3*i][j][l] += exp(-pow( spec-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
 						deriv[1+3*i][j][l] += params[3*i][j][l]*( spec - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * exp(-pow( spec-params[1+3*i][j][l],2.)/	(2*pow(params[2+3*i][j][l],2.)) )*residual[k][j][l]/pow(std_map[j][l],2);
@@ -1270,13 +1260,13 @@ if(print){
 			}
 		}
 
-		convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
 	
-		convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		convolution_2D_mirror<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
@@ -1298,7 +1288,7 @@ if(print){
 
 	temps_ravel+=temps2_ravel-temps1_ravel;
 	temps1_ravel = omp_get_wtime();
-	three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	three_D_to_one_D_same_dimensions<T>(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
 
@@ -1307,7 +1297,7 @@ if(print){
 
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 
-	//ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	//ravel_3D<T>(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 /*
 	for(int i=0; i<3*M.n_gauss; i++){
 		for(int j=0; j<indice_y; j++){
@@ -1328,6 +1318,7 @@ if(print){
 }
 
 
+
 template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T** assist_buffer){
 	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::vector<std::vector<std::vector<T>>> residual(indice_v,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
@@ -1343,7 +1334,7 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(paramet
 	std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
 	std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
 
-	int n_beta = n;//(3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
+	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
 	for(int i = 0; i<M.n_gauss; i++){
 		b_params[i]=beta[n_beta-M.n_gauss+i];
@@ -1359,16 +1350,16 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(paramet
 	}
 
 	double temps1_ravel = omp_get_wtime();
-	this->one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	this->one_D_to_three_D_same_dimensions<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
 	double temps2_ravel = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
-	//unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	//unravel_3D<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
 double temps1_tableaux = omp_get_wtime();
 	for(int i=0; i<indice_y; i++){
 		for(int j=0; j<indice_x; j++){
 			std::vector<T> residual_1D(indice_v,0.);
-			std::vector<T> params_flat(params.size(),0.);
+			std::vector<T> params_flat(3*M.n_gauss,0.);
 			std::vector<T> cube_flat(cube[0][0].size(),0.);
 
 			for (int p=0; p<3*M.n_gauss; p++){
@@ -1378,14 +1369,14 @@ double temps1_tableaux = omp_get_wtime();
 				cube_flat[p]=cube[j][i][p];
 			}
 
-			this->myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+			this->myresidual<T>(params_flat, cube_flat, residual_1D, M.n_gauss);
 
 			for (int p=0;p<indice_v;p++){
 				residual[p][i][j]=residual_1D[p];
 			}
 
 			if(std_map[i][j]>0.){
-				f += this->myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+				f += this->myfunc_spec<T>(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
 			}
 
 		}
@@ -1428,13 +1419,13 @@ double temps1_deriv = omp_get_wtime();
 			}
 		}
 
-		this->convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-		this->convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-		this->convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
+		this->convolution_2D_mirror<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+		this->convolution_2D_mirror<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+		this->convolution_2D_mirror<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
 	
-		this->convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-		this->convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-		this->convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
+		this->convolution_2D_mirror<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+		this->convolution_2D_mirror<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+		this->convolution_2D_mirror<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 
 //		printf("M.n_gauss = %d , M.lambda_amp = %f, M.lambda_mu = %f , M.lambda_sig = %f\n", M.n_gauss, M.lambda_amp, M.lambda_mu, M.lambda_sig);
 
@@ -1457,7 +1448,7 @@ double temps1_deriv = omp_get_wtime();
 	temps_ravel+=temps2_ravel-temps1_ravel;
 
 	temps1_ravel = omp_get_wtime();
-	this->three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	this->three_D_to_one_D_same_dimensions<T>(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	temps2_ravel = omp_get_wtime();
 
 	temps_ravel+=temps2_ravel-temps1_ravel;
@@ -1495,7 +1486,7 @@ template <typename T> void algo_rohsa::f_g_cube_fast_without_regul(parameters &M
 	}
 	f=0.;
 
-	unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
+	unravel_3D<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
 	for(int i = 0; i<M.n_gauss; i++){
 		b_params[i]=beta[n_beta-M.n_gauss+i];
@@ -1512,12 +1503,12 @@ template <typename T> void algo_rohsa::f_g_cube_fast_without_regul(parameters &M
 			for (int p=0;p<cube_flat.size();p++){
 				cube_flat[p]=cube[i][j][p];
 			}
-			myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
+			myresidual<T>(params_flat, cube_flat, residual_1D, M.n_gauss);
 			for (int p=0;p<residual_1D.size();p++){
 				residual[j][i][p]=residual_1D[p];
 			}
 			if(std_map[i][j]>0.){
-				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+				f += myfunc_spec<T>(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
 			}
 		}
 	}
@@ -1562,7 +1553,7 @@ int k,i,l,j;
 	}
 	}
 	
-	ravel_3D(deriv, g, 3*M.n_gauss, indice_y, indice_x);
+	ravel_3D<T>(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 	//	std::cout<<"g["<<i<<"] = "<<g[i]<<std::endl;
 //	std::cout<<"g["<<i<<"] = "<<g[i]<<std::endl;
 
@@ -1577,383 +1568,6 @@ int k,i,l,j;
 //jeudi
 	}
 
-
-//OpenMP for f_g_cube
-template <typename T> void algo_rohsa::f_g_cube_vector(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
-
-//std::cout<<"Début f_g_cube"<<std::endl;
-
-
-std::vector<std::vector<std::vector<T>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-
-//décommenter en bas
-
-std::vector<std::vector<std::vector<std::vector<T>>>> dF_over_dB(3*M.n_gauss,std::vector<std::vector<std::vector<T>>>( indice_v,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.))));
-std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-
-std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
-
-std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-std::vector<T> b_params(M.n_gauss,0.);
-
-std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
-
-int i,k,j,l,p;
-
-int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;//+M.n_gauss;
-double temps1_tableaux = omp_get_wtime();
-for(int i = 0; i< n; i++){
-	g[i]=0.;
-}
-f=0.;
-
-unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-for(int i = 0; i<M.n_gauss; i++){
-	b_params[i]=beta[n_beta-M.n_gauss+i];
-}
-
-for(int j=0; j<indice_x; j++){
-	for(int i=0; i<indice_y; i++){
-		std::vector<T> residual_1D(indice_v,0.);
-		std::vector<T> params_flat(params.size(),0.);
-		std::vector<T> cube_flat(cube[0][0].size(),0.);
-		for (int p=0;p<params_flat.size();p++){
-			params_flat[p]=params[p][i][j];
-		}
-		for (int p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[j][i][p];
-		}
-		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (int p=0;p<residual_1D.size();p++){
-			residual[j][i][p]=residual_1D[p];
-		}
-		if(std_map[i][j]>0.){
-			f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
-		}
-	}
-}
-
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-
-#pragma omp parallel private(i,k) shared(dF_over_dB,params,M,indice_v,indice_y,indice_x) //num_threads(1) //
-{
-#pragma omp for
-for(int i=0; i<M.n_gauss; i++){
-        for(k=0; k<indice_v; k++){
-                for(int j=0; j<indice_y; j++){
-                        for(int l=0; l<indice_x; l++){
-
-				dF_over_dB[0+3*i][k][j][l] += exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB[1+3*i][k][j][l] +=  params[3*i][j][l]*( T(k+1) - params[1+3*i][j][l])/pow(params[2+3*i][j][l],2.) * 
-									exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-				dF_over_dB[2+3*i][k][j][l] += params[3*i][j][l]*pow( T(k+1) - params[1+3*i][j][l], 2.)/(pow(params[2+3*i][j][l],3.)) * 
-									exp(-pow( T(k+1)-params[1+3*i][j][l],2.)/(2*pow(params[2+3*i][j][l],2.)) );
-
-                        }
-                }
-        }
-}
-}
-
-double temps2_dF_dB = omp_get_wtime();
-
-double temps1_deriv = omp_get_wtime();
-#pragma omp parallel private(k,j) shared(deriv,dF_over_dB,M,indice_v,indice_y,indice_x,std_map,residual)
-{
-#pragma omp for
-for(k=0; k<indice_v; k++){
-	for(j=0; j<indice_x; j++){
-		for(int i=0; i<indice_y; i++){
-			for(int l=0; l<3*M.n_gauss; l++){
-				if(std_map[i][j]>0.){
-					deriv[l][i][j]+=  dF_over_dB[l][k][i][j]*residual[j][i][k]/pow(std_map[i][j],2);
-				}
-			}
-		}
-	}
-}
-}
-
-
-
-
-double temps2_deriv = omp_get_wtime();
-
-double temps1_conv = omp_get_wtime();
-
-for(int k=0; k<M.n_gauss; k++){
-
-	for(int p=0; p<indice_y; p++){
-		for(int q=0; q<indice_x; q++){
-			image_amp[p][q]=params[0+3*k][p][q];
-			image_mu[p][q]=params[1+3*k][p][q];
-			image_sig[p][q]=params[2+3*k][p][q];
-		}
-	}
-
-	convolution_2D_mirror(M, image_amp, conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_mu, conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, image_sig, conv_sig, indice_y, indice_x,3);
-
-	convolution_2D_mirror(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-	convolution_2D_mirror(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			f+= 0.5*M.lambda_amp*pow(conv_amp[i][j],2);
-			f+= 0.5*M.lambda_mu*pow(conv_mu[i][j],2);
-			f+= 0.5*M.lambda_sig*pow(conv_sig[i][j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i][j]-b_params[k],2);
-
-			dR_over_dB[0+3*k][i][j] = M.lambda_amp*conv_conv_amp[i][j];
-			dR_over_dB[1+3*k][i][j] = M.lambda_mu*conv_conv_mu[i][j];
-			dR_over_dB[2+3*k][i][j] = M.lambda_sig*conv_conv_sig[i][j]+M.lambda_var_sig*(image_sig[i][j]-b_params[k]);
-
-			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[i][j]);
-		}
-	}
-	}
-
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv[l][i][j] + dR_over_dB[l][i][j];
-			}
-		}
-	}
-	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-
-	double temps2_conv = omp_get_wtime();
-
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
-}
-
-
-
-//test optims OpenMP for f_g_cube
-template <typename T> void algo_rohsa::f_g_cube_cuda_L(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
-{
-
-std::vector<std::vector<std::vector<T>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-//décommenter en bas
-
-std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-
-std::vector<T> b_params(M.n_gauss,0.);
-
-int i,k,j,l,p;
-
-	int taille_params_flat[] = {indice_y, indice_x,3*M.n_gauss};
-	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_residual[] = {indice_v, indice_y, indice_x};
-	int taille_std_map_[] = {indice_y, indice_x};
-	int taille_beta[] = {indice_x, indice_y, 3*M.n_gauss};
-	int taille_beta_modif[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_cube[] = {indice_v, indice_y, indice_x};
-	int taille_image_conv[] = {indice_y, indice_x};
-
-	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
-	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
-	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
-	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
-	int product_cube = taille_cube[0]*taille_cube[1]*taille_cube[2]; 
-	int product_beta = taille_beta[0]*taille_beta[1]*taille_beta[2];
-	int product_beta_modif = taille_beta[0]*taille_beta[1]*taille_beta[2];
-	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
-
-	size_t size_deriv = product_deriv * sizeof(T);
-	size_t size_res = product_residual * sizeof(T);
-	size_t size_std = product_std_map_ * sizeof(T);
-	size_t size_beta_modif = product_beta_modif * sizeof(T);
-	size_t size_image_conv = product_image_conv * sizeof(T);
-
-	T* deriv = (T*)malloc(size_deriv);
-	T* residual = (T*)malloc(size_res);
-	T* std_map_ = (T*)malloc(size_std);
-	T* beta_modif = (T*)malloc(size_beta_modif);
-
-	T* conv_amp = (T*)malloc(size_image_conv);
-	T* conv_mu = (T*)malloc(size_image_conv);
-	T* conv_sig = (T*)malloc(size_image_conv);
-	T* conv_conv_amp = (T*)malloc(size_image_conv);
-	T* conv_conv_mu = (T*)malloc(size_image_conv);
-	T* conv_conv_sig = (T*)malloc(size_image_conv);
-	T* image_amp = (T*)malloc(size_image_conv);
-	T* image_mu = (T*)malloc(size_image_conv);
-	T* image_sig = (T*)malloc(size_image_conv);
-
-
-	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-	double temps1_tableaux = omp_get_wtime();
-
-	for(int i = 0; i<product_deriv; i++){
-		deriv[i]=0.;
-	}
-
-	for(i=0; i<indice_y; i++){
-		for(j=0; j<indice_x; j++){
-			std_map_[i*indice_x+j]=std_map[i][j];
-		}
-	}
-
-
-	for(int i = 0; i< n; i++){
-		g[i]=0.;
-	}
-	f=0.;
-
-//beta est de taille : x,y,3g
-//params est de taille : 3g,y,x
-
-	for(int i = 0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
-	}
-
-//exit(0);
-	double temps_modification_beta1 = omp_get_wtime();
-
-	for(j=0; j<indice_x; j++){
-		for(i=0; i<indice_y; i++){
-			for(p=0; p<3*M.n_gauss; p++){
-				beta_modif[p*indice_x*indice_y+ i*indice_x+j] = beta[j*indice_y*3*M.n_gauss+i*3*M.n_gauss+p];
-			}
-		}
-	}
-
-	double temps_modification_beta2 = omp_get_wtime();
-
-
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-
-f =  compute_residual_and_f(beta_modif, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
-
-double temps2_dF_dB = omp_get_wtime();
-
-	double temps1_deriv = omp_get_wtime();
-
-	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta_modif, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
-/*
-	for(int i = 0; i<10; i++){
-		printf("deriv[%d]= %f \n",i, deriv[i]);
-	}
-*/
-//printf("deriv[0] = %f", deriv[0]);
-//exit(0);
-
-    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
-
-//	printf("deriv[0] = %f \n",deriv[0]);
-
-	double temps2_deriv = omp_get_wtime();
-	double temps1_conv = omp_get_wtime();
-
-	for(int k=0; k<M.n_gauss; k++){
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				image_amp[p+indice_x*q]= beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (0+3*k)];
-				image_mu[p+indice_x*q]=beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (1+3*k)];
-				image_sig[p+indice_x*q]=beta[q*indice_y*3*M.n_gauss+ p*3*M.n_gauss+ (2+3*k)];
-			}
-		}
-
-if(false){//indice_x>=128 || indice_y>=128){
-	conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
-
-	conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-	conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
-
-} else{
-	convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-	convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-	convolution_2D_mirror_flat(M, image_sig, conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-
-	convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-	convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-	convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-}
-
-	for(int i=0; i<indice_y; i++){
-		for(int j=0; j<indice_x; j++){
-			f+= 0.5*M.lambda_amp*pow(conv_amp[i+indice_x*j],2);
-			f+= 0.5*M.lambda_mu*pow(conv_mu[i+indice_x*j],2);
-			f+= 0.5*M.lambda_sig*pow(conv_sig[i+indice_x*j],2) + 0.5*M.lambda_var_sig*pow(image_sig[i+indice_x*j]-b_params[k],2);
-
-			deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*conv_conv_amp[i+indice_x*j];
-			deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*conv_conv_mu[i+indice_x*j];
-
-			deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*conv_conv_sig[i+indice_x*j]+M.lambda_var_sig*(image_sig[i+indice_x*j]-b_params[k]);
-			g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[i+indice_x*j]);
-		}
-	}
-
-
-//if(indice_x != indice_y || (indice_x == 128 && indice_x == 128)){
-//}
-	//£
-//	printf("deriv[0] = %f \n",deriv[0] );
-//	exit(0);
-	}
-
-
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv[l*indice_y*indice_x+i*indice_x+j];// + dR_over_dB[l][i][j];
-			}
-		}
-	}
-	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-
-	double temps2_conv = omp_get_wtime();
-
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_modification_beta += temps_modification_beta2 - temps_modification_beta1;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
-	free(beta_modif);
-
-	free(deriv);
-	free(residual);
-	free(std_map_);
-
-	free(conv_amp);
-	free(conv_conv_amp);
-	free(conv_mu);
-	free(conv_conv_mu);
-	free(conv_sig);
-	free(conv_conv_sig);
-	free(image_sig);
-	free(image_mu);
-	free(image_amp);
-}
 
 
 
@@ -2101,13 +1715,13 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f
 			conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
 			conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 		} else{
-			convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			convolution_2D_mirror_flat(M, image_sig, conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			convolution_2D_mirror_flat<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+			convolution_2D_mirror_flat<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+			convolution_2D_mirror_flat<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
 
-			convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			convolution_2D_mirror_flat<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+			convolution_2D_mirror_flat<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+			convolution_2D_mirror_flat<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 		}
 		T f_1 = 0.;
 		T f_2 = 0.;
@@ -2318,13 +1932,13 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters &M, 
 			conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
 			conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
 		} else{
-			this->convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, image_sig, conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+			this->convolution_2D_mirror_flat<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+			this->convolution_2D_mirror_flat<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
 
-			this->convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
+			this->convolution_2D_mirror_flat<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+			this->convolution_2D_mirror_flat<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+			this->convolution_2D_mirror_flat<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 		}
 
 		for(int i=0; i<indice_y; i++){
@@ -2374,354 +1988,6 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters &M, 
 }
 
 
-
-template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib_device_fg(parameters &M, T &f, T* g_dev, int n, T* beta_dev, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
-{
-//	printf("TEST 1\n");
-
-    T* g = NULL;
-    g = (T*)malloc(n*sizeof(T)); 
-    T* beta = NULL;
-    beta = (T*)malloc(n*sizeof(T)); 
-
-	checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(beta, beta_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
-
-	std::vector<T> b_params(M.n_gauss,0.);
-
-	int i,k,j,l,p;
-
-	int taille_params_flat[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_residual[] = {indice_v, indice_y, indice_x};
-	int taille_std_map_[] = {indice_y, indice_x};
-	int taille_beta[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_beta_modif[] = {3*M.n_gauss, indice_y, indice_x};
-	int taille_cube[] = {indice_v, indice_y, indice_x};
-	int taille_image_conv[] = {indice_y, indice_x};
-
-	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
-	int product_params_flat = taille_params_flat[0]*taille_params_flat[1]*taille_params_flat[2];
-	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
-	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
-	int product_cube = taille_cube[0]*taille_cube[1]*taille_cube[2]; 
-	int product_beta = taille_beta[0]*taille_beta[1]*taille_beta[2];
-	int product_beta_modif = taille_beta[0]*taille_beta[1]*taille_beta[2];
-	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
-
-	size_t size_deriv = product_deriv * sizeof(T);
-	size_t size_res = product_residual * sizeof(T);
-	size_t size_std = product_std_map_ * sizeof(T);
-	size_t size_beta_modif = product_beta_modif * sizeof(T);
-	size_t size_image_conv = product_image_conv * sizeof(T);
-
-	T* deriv = (T*)malloc(size_deriv);
-	T* residual = (T*)malloc(size_res);
-	T* std_map_ = (T*)malloc(size_std);
-
-	T* conv_amp = (T*)malloc(size_image_conv);
-	T* conv_mu = (T*)malloc(size_image_conv);
-	T* conv_sig = (T*)malloc(size_image_conv);
-	T* conv_conv_amp = (T*)malloc(size_image_conv);
-	T* conv_conv_mu = (T*)malloc(size_image_conv);
-	T* conv_conv_sig = (T*)malloc(size_image_conv);
-	T* image_amp = (T*)malloc(size_image_conv);
-	T* image_mu = (T*)malloc(size_image_conv);
-	T* image_sig = (T*)malloc(size_image_conv);
-
-	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
-
-	double temps1_ravel = omp_get_wtime();
-
-//	printf("TEST 2\n");
-
-	for(int i = 0; i<product_deriv; i++){
-		deriv[i]=0.;
-	}
-
-	for(i=0; i<indice_y; i++){
-		for(j=0; j<indice_x; j++){
-			std_map_[i*indice_x+j]=std_map[i][j];
-		}
-	}
-
-	for(int i = 0; i< n; i++){
-		g[i]=0.;
-	}
-	f=0.;
-
-	for(int i = 0; i<M.n_gauss; i++){
-		b_params[i]=beta[n_beta-M.n_gauss+i];
-//		printf("b_params[%d]= %f\n", i, b_params[i]);
-	}
-//	printf("TEST 3\n");
-
-	double temps2_ravel = omp_get_wtime();
-	temps_ravel+=temps2_ravel-temps1_ravel;
-	double temps_modification_beta1 = omp_get_wtime();
-
-	double temps_modification_beta2 = omp_get_wtime();
-
-	double temps1_dF_dB = omp_get_wtime();
-	double temps2_dF_dB = omp_get_wtime();
-
-	double temps1_tableaux = omp_get_wtime();
-	f =  compute_residual_and_f(beta, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
-	double temps2_tableaux = omp_get_wtime();
-
-	double temps1_deriv = omp_get_wtime();
-	gradient_L_2_beta(deriv, taille_deriv, product_deriv, beta, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
-	double temps2_deriv = omp_get_wtime();
-
-    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
-
-	double temps1_conv = omp_get_wtime();
-
-//	printf("TEST 4\n");
-
-	for(int k=0; k<M.n_gauss; k++){
-//		printf("TEST 5\n");
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				image_amp[indice_x*p+q]= beta[(0+3*k)*indice_x*indice_y + p*indice_x+q];
-				image_mu[indice_x*p+q]=beta[(1+3*k)*indice_x*indice_y + p*indice_x+q];
-				image_sig[indice_x*p+q]=beta[(2+3*k)*indice_x*indice_y + p*indice_x+q];
-			}
-		}
-//		printf("TEST 6\n");
-
-		if(false){//indice_x>=128 || indice_y>=128){//true){//
-			conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
-
-			conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
-			conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert, temps_mirroirs);
-		} else{
-			this->convolution_2D_mirror_flat(M, image_amp, conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, image_mu, conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, image_sig, conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-
-			this->convolution_2D_mirror_flat(M, conv_amp, conv_conv_amp, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, conv_mu, conv_conv_mu, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-			this->convolution_2D_mirror_flat(M, conv_sig, conv_conv_sig, indice_y, indice_x,3, temps_transfert, temps_mirroirs);
-		}
-
-//		printf("TEST 7\n");
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				f+= 0.5*M.lambda_amp*pow(conv_amp[indice_x*i+j],2);
-				f+= 0.5*M.lambda_mu*pow(conv_mu[indice_x*i+j],2);
-				f+= 0.5*M.lambda_sig*pow(conv_sig[indice_x*i+j],2) + 0.5*M.lambda_var_sig*pow(image_sig[indice_x*i+j]-b_params[k],2);
-
-				deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*conv_conv_amp[indice_x*i+j];
-				deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*conv_conv_mu[indice_x*i+j];
-				deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*conv_conv_sig[indice_x*i+j]+M.lambda_var_sig*(image_sig[indice_x*i+j]-b_params[k]);
-				g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[indice_x*i+j]);
-			}
-		}
-	}
-	double temps2_conv = omp_get_wtime();
-//	printf("TEST 8\n");
-
-	temps_ravel+=temps2_ravel-temps1_ravel;
-	temps1_ravel = omp_get_wtime();
-	for(int i=0; i<n_beta-M.n_gauss; i++){
-		g[i]=deriv[i];
-	}
-	temps2_ravel = omp_get_wtime();
-	temps_ravel+=temps2_ravel-temps1_ravel;
-
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_modification_beta += temps_modification_beta2 - temps_modification_beta1;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
-	free(deriv);
-	free(residual);
-	free(std_map_);
-
-	free(conv_amp);
-	free(conv_conv_amp);
-	free(conv_mu);
-	free(conv_conv_mu);
-	free(conv_sig);
-	free(conv_conv_sig);
-	free(image_sig);
-	free(image_mu);
-	free(image_amp);
-
-	checkCudaErrors(cudaMemcpy(g_dev, g, n*sizeof(T), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(beta_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
-	free(g);
-	free(beta);
-}
-
-template <typename T> void algo_rohsa::f_g_cube_omp_without_regul(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map) 
-{
-
-//std::cout<<"Début f_g_cube_test"<<std::endl;
-
-std::vector<std::vector<std::vector<T>>> dR_over_dB(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-//°
-//décommenter en bas
-std::vector<std::vector<std::vector<std::vector<T>>>> dF_over_dB_bis(indice_v,std::vector<std::vector<std::vector<T>>>( indice_y,std::vector<std::vector<T>>(indice_x, std::vector<T>(3*M.n_gauss,0.))));
-std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-//std::vector<std::vector<std::vector<T>>> deriv_bis(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-//dF_over_dB[v][y][x][M.n__gauss]
-//deriv[gauss][y][x]
-std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
-
-std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-std::vector<std::vector<std::vector<T>>> params_T(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(3*M.n_gauss,0.)));
-std::vector<T> b_params(M.n_gauss,0.);
-
-std::vector<std::vector<T>> conv_amp(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_mu(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_sig(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_conv_amp(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_conv_mu(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> conv_conv_sig(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> image_amp(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> image_mu(indice_y,std::vector<T>(indice_x, 0.));
-std::vector<std::vector<T>> image_sig(indice_y,std::vector<T>(indice_x, 0.));
-
-int n_beta = (3*M.n_gauss*indice_x*indice_y);//+M.n_gauss;
-
-int i,k,j,l,p;
-
-for(int i = 0; i< n; i++){
-	g[i]=0.;
-}
-f=0.;
-
-double temps1_ravel = omp_get_wtime();
-
-//extracting one params_T for the gradient and another for calculations below
-// WARNING
-unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
-
-unravel_3D_T(beta, params_T,  3*M.n_gauss, indice_x,indice_y);
-
-int N_x = indice_x;
-int N_y = indice_y;
-int N_z = 3*M.n_gauss;
-
-/*
-std::cout<<"1 : "<<params_T[indice_y-1][indice_x-1][3*M.n_gauss-1]<<std::endl;
-
-std::cout<<"2 : "<<params[3*M.n_gauss-1][0][1]<<std::endl;
-std::cout<<"1 : "<<params_T[0][1][3*M.n_gauss-1]<<std::endl;
-*/
-//exit(0);
-double temps2_ravel = omp_get_wtime();
-temps_ravel+=temps2_ravel-temps1_ravel;
-
-double temps1_tableaux = omp_get_wtime();
-for(j=0; j<indice_x; j++){
-	for(i=0; i<indice_y; i++){
-		std::vector<T> residual_1D(indice_v,0.);
-		std::vector<T> params_flat(params.size(),0.);
-		std::vector<T> cube_flat(cube[0][0].size(),0.);
-		for (p=0;p<params_flat.size();p++){
-			params_flat[p]=params[p][i][j];
-		}
-		for (p=0;p<cube_flat.size();p++){
-			cube_flat[p]=cube[i][j][p];
-		}
-		myresidual(params_flat, cube_flat, residual_1D, M.n_gauss);
-		for (p=0;p<residual_1D.size();p++){
-			residual[j][i][p]=residual_1D[p];
-		}
-		if(std_map[i][j]>0.){
-			f+=myfunc_spec(residual_1D)/pow(std_map[i][j],2.); //std_map est arrondie... 
-		}
-	}
-
-//}
-}
-
-double temps2_tableaux = omp_get_wtime();
-
-double temps1_dF_dB = omp_get_wtime();
-
-
-// v y x 3*i+.
-//std::cout<<"DEBUG 1"<<std::endl;
-#pragma omp parallel private(k,l,j) shared(dF_over_dB_bis,params_T,M,indice_v,indice_y,indice_x)
-{
-#pragma omp for
-for(int k=0; k<indice_v; k++){
-	for(int l=0; l<indice_y; l++){
-		for(int j=0; j<indice_x; j++){
-			for(int i=0; i<M.n_gauss; i++){
-				//ojqpsfdijpsqojdfpoidspoidfpojqspodij sdjfpjqspodfijiopqs jdpofijojfoiq sdoipf oqisdhfophjqsopidf opis dofi poqs dfop qspoidf jopiqjsdopif jopqisd fop Âsopid fpoij qsdf
-				T par0 = params_T[l][j][3*i+0];
-				T par1 = T(k+1) - params_T[l][j][3*i+1];
-				T par2 = params_T[l][j][3*i+2];
-
-//				T par1_k = double(k+1) - par1;
-				T par2_pow = 1/(2*pow(par2,2.));
-//dF_over_dB[v][y][x][M.n__gauss]
-				dF_over_dB_bis[k][l][j][3*i+0] = exp( -pow( par1 ,2.)*par2_pow );//( -pow( par1_k ,2.)*par2_pow );
-				dF_over_dB_bis[k][l][j][3*i+1] = par0*par1*par2_pow*2 * exp(-pow( par1,2.)*par2_pow ); //par0*par1_k*par2_pow*2 * exp(-pow( par1_k,2.)*par2_pow );
-				dF_over_dB_bis[k][l][j][3*i+2] = par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow );//par0*pow( par1_k, 2.)/(pow(par2,3.)) * exp(-pow( par1_k,2.)*par2_pow );
-//				std::cout<<"par0 = "<<par0<<std::endl;
-			}
-		}
-	}
-}
-}
-
-double temps2_dF_dB = omp_get_wtime();
-
-double temps1_deriv = omp_get_wtime();
-
-	for(j=0; j<indice_x; j++){
-		for(i=0; i<indice_y; i++){
-			for(k=0; k<indice_v; k++){
-				for(l=0; l<3*M.n_gauss; l++){
-				if(std_map[i][j]>0.){
-					deriv[l][i][j]+=  dF_over_dB_bis[k][i][j][l]*residual[j][i][k]/pow(std_map[i][j],2);
-					}
-				}
-			}
-		}
-	}
-
-
-
-double temps2_deriv = omp_get_wtime();
-
-double temps1_conv = omp_get_wtime();
-
-	for(int l=0; l<3*M.n_gauss; l++){
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				g_3D[l][i][j] = deriv[l][i][j];
-			}
-		}//deriv 3*M.n_gauss y x
-	}
-	double temps2_conv = omp_get_wtime();
-
-	temps1_ravel = omp_get_wtime();
-	ravel_3D(g_3D, g, 3*M.n_gauss, indice_y, indice_x);
-	temps2_ravel = omp_get_wtime();
-	temps_ravel+=temps2_ravel-temps1_ravel;
-
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-	temps_ravel+=temps2_ravel-temps1_ravel;
-
-	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
-
-}
 
 
 template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
@@ -2730,8 +1996,6 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
     double d__1, d__2;
 
     double t1, t2, f;
-
-	T* g = (T*)malloc(n*sizeof(T));
 
     int i__;
     int taille_wa = 2*M.m*n+5*n+11*M.m*M.m+8*M.m;
@@ -2762,13 +2026,14 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 
 	double temps2_tableau_update = omp_get_wtime();
 
+	T* g = (T*)malloc(n*sizeof(T));
     for(int i(0); i<n; i++) {
 	g[i]=0.;
     } 
+    f=0.;
 
 	temps_tableau_update += omp_get_wtime() - temps2_tableau_update;
 
-    f=0.;
 
     factr = 1e+7;
     pgtol = 1e-5;
@@ -2785,8 +2050,6 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 
     T* std_map_ = NULL;
     std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T)); 
-
-
 	for(int i=0; i<dim_y; i++){
 		for(int j=0; j<dim_x; j++){
 			std_map_[i*dim_x+j]=std_map[i][j];
@@ -2799,16 +2062,10 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
 	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
 
-/*
-	for(int i=0; i<200; i++){
-		printf("--> minimize :: beta[%d] = %f\n",i, beta[i]);
-	}
-*/
 	int compteur_iter_boucle_optim = 0;
 
 	printf("dim_x = %d , dim_y = %d , dim_v = %d \n", dim_x, dim_y, dim_v);
 	printf("n = %d , n_gauss = %d\n", int(n), M.n_gauss);
-//	printf("beta[n_beta-1] = %f , beta[n_beta] = %f\n", beta[n-1], beta[n-1]);
 
 	if (true){//dim_x >128){
 		printf("beta[n_beta-1] = %f , beta[n_beta] = %f\n", beta[n-1], beta[n-1]);
@@ -2824,8 +2081,6 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
     temps[4] = 0.;
 
 	while(IS_FG(*task) or *task==NEW_X or *task==START){ 
-
-
 		double temps_temp = omp_get_wtime();
 		setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
 				&M.iprint, csave, lsave, isave, dsave);
@@ -2850,13 +2105,13 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 		}
 */
 
-	if(false){//dim_x<64){
-//		f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map);
+	if(true){//dim_x<64){
+		f_g_cube_fast_unidimensional<T>(M, f, g, n, cube_flattened, cube, beta, dim_v, dim_y, dim_x, std_map_);
+//		f_g_cube_fast_clean<T>(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map);
 //		f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
 	}else{
-
 		if(M.select_version == 0){ //-cpu
-			f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map);
+			f_g_cube_fast_unidimensional<T>(M, f, g, n, cube_flattened, cube, beta, dim_v, dim_y, dim_x, std_map_);
 		}else if(M.select_version == 1){ //-gpu
 			T* x_dev = nullptr;
 			T* g_dev = nullptr;
@@ -2871,7 +2126,8 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 			checkCudaErrors(cudaFree(x_dev));
 			checkCudaErrors(cudaFree(g_dev));
 			checkCudaErrors(cudaDeviceSynchronize());
-		}else if(M.select_version == 2){ //-autre
+		}else if(M.select_version == 2){ //-h
+//			f_g_cube_not_very_fast_clean<T>(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map);
 			f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
 		}
 	}
@@ -2965,13 +2221,11 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 	free(std_map_);
 	free(temps);
 
-
 	checkCudaErrors(cudaFree(std_map_dev));
 	checkCudaErrors(cudaFree(cube_flattened_dev));
 
-
-printf("----------------->temps_transfert_boucle = %f \n", temps_transfert_boucle);
-this->temps_transfert_d += temps_transfert_boucle;
+	printf("----------------->temps_transfert_boucle = %f \n", temps_transfert_boucle);
+	this->temps_transfert_d += temps_transfert_boucle;
 }
 
 
@@ -3028,19 +2282,19 @@ template <typename T> void algo_rohsa::minimize_clean_gpu(parameters &M, long n,
                                   const cudaStream_t& stream,
                                   const LBFGSB_CUDA_SUMMARY<T>& summary) -> int {
 
-		int temp = 0;
+/*		int temp = 0;
 		for(int ind = 0; ind < n; ind++){
 			if(isnan(beta[ind]) && temp == 0){
 				checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
 				temp=1;
 			}
 		}
-
+*/
 	    checkCudaErrors(cudaDeviceSynchronize());
 		f_g_cube_parallel_lib<T>(M, f, g_dev, n, x_dev, dim_v, dim_y, dim_x, std_map_dev, cube_flattened_dev, temps);
 	    checkCudaErrors(cudaDeviceSynchronize());
 
-		checkCudaErrors(cudaMemcpy(beta, x_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+//		checkCudaErrors(cudaMemcpy(beta, x_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
 
 
 	
@@ -3048,7 +2302,6 @@ template <typename T> void algo_rohsa::minimize_clean_gpu(parameters &M, long n,
         printf("LIB --> fin-chemin : f = %.16f\n", f);
 	    std::cin.ignore();
 	    checkCudaErrors(cudaDeviceSynchronize());
-		f_g_cube_cuda_L_clean_lib_device_fg<T>(M, f, g_dev, n, x_dev, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
 	    checkCudaErrors(cudaDeviceSynchronize());
 */
 		//	f_g_cube_fast_clean_optim_CPU_lib<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, &assist_buffer_cpu);
@@ -3212,7 +2465,35 @@ template <typename T> void algo_rohsa::minimize_clean_cpu(parameters &M, long n,
                                   T* x, T& f, T* g,
                                   const cudaStream_t& stream,
                                   const LBFGSB_CUDA_SUMMARY<T>& summary) -> int {
-		T* x_dev = nullptr;
+
+	if(true){//dim_x<64){
+//		f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map);
+		f_g_cube_fast_clean<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map);
+//		f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
+	}else{
+
+		if(M.select_version == 0){ //-cpu
+			f_g_cube_not_very_fast_clean<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map);
+		}else if(M.select_version == 1){ //-gpu
+			T* x_dev = nullptr;
+			T* g_dev = nullptr;
+			cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
+			cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
+			checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
+			checkCudaErrors(cudaMemcpy(x_dev, x, n*sizeof(T), cudaMemcpyHostToDevice));
+			checkCudaErrors(cudaDeviceSynchronize());
+			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
+			checkCudaErrors(cudaDeviceSynchronize());
+			checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+			checkCudaErrors(cudaFree(x_dev));
+			checkCudaErrors(cudaFree(g_dev));
+			checkCudaErrors(cudaDeviceSynchronize());
+		}else if(M.select_version == 2){ //-autre
+			f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
+		}
+	}
+
+/*		T* x_dev = nullptr;
 		T* g_dev = nullptr;
 		cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
 		cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
@@ -3225,10 +2506,13 @@ template <typename T> void algo_rohsa::minimize_clean_cpu(parameters &M, long n,
 		checkCudaErrors(cudaFree(x_dev));
 		checkCudaErrors(cudaFree(g_dev));
 	    checkCudaErrors(cudaDeviceSynchronize());	//	f_g_cube_cuda_L_clean(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, cube_flattened);
-	//  f_g_cube_cuda_L_clean<T>(M, f, g, &n, &cube, x, &dim_v, &dim_y, &dim_x, &std_map, &cube_flattened);
+*/
+
+//	    f_g_cube_cuda_L_clean<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, cube_flattened);
 	//	this->f_g_cube_cuda_L_clean_lib<T>(M, f, g, n, x, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
     //    callback_test(M, f, g, n, cube, x, dim, std_map, &assist_buffer_cpu);
-	//	this->f_g_cube_fast_clean_optim_CPU_lib<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, &assist_buffer_cpu);
+//    	f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, x, dim_v, dim_y, dim_x, std_map);
+//		this->f_g_cube_fast_clean_optim_CPU_lib<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map, &assist_buffer_cpu);
 	//	f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map);
 		////dsscfg_cpu<T>(g_nx, g_ny, x, f, g, &assist_buffer_cpu, 'FG', g_lambda);
 		if (summary.num_iteration % 100 == 0) {
@@ -3344,15 +2628,14 @@ template <typename T> void algo_rohsa::minimize_clean_cpu(parameters &M, long n,
 
 
 
-
-void algo_rohsa::go_up_level(std::vector<std::vector<std::vector<double>>> &fit_params) {
+template <typename T> void algo_rohsa::go_up_level(std::vector<std::vector<std::vector<T>>> &fit_params) {
 		//dimensions of fit_params
 	int dim[3];
 	dim[2]=fit_params[0][0].size();
 	dim[1]=fit_params[0].size();
 	dim[0]=fit_params.size();
  
-	std::vector<std::vector<std::vector<double>>> cube_params_down(dim[0],std::vector<std::vector<double>>(dim[1], std::vector<double>(dim[2],0.)));	
+	std::vector<std::vector<std::vector<T>>> cube_params_down(dim[0],std::vector<std::vector<T>>(dim[1], std::vector<T>(dim[2],0.)));	
 
 	for(int i = 0; i<dim[0]	; i++){
 		for(int j = 0; j<dim[1]; j++){
@@ -3397,7 +2680,7 @@ void algo_rohsa::go_up_level(std::vector<std::vector<std::vector<double>>> &fit_
 	}
 }
 
-void algo_rohsa::upgrade(parameters &M, std::vector<std::vector<std::vector<double>>> &cube, std::vector<std::vector<std::vector<double>>> &params, int power) {
+template <typename T> void algo_rohsa::upgrade(parameters &M, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<std::vector<T>>> &params, int power) {
         int i,j;
 //        int nb_threads = omp_get_max_threads();
 //        printf(">> omp_get_max_thread()\n>> %i\n", nb_threads);
@@ -3405,10 +2688,10 @@ void algo_rohsa::upgrade(parameters &M, std::vector<std::vector<std::vector<doub
 //      #pragma omp parallel shared(cube,params) shared(power) shared(M)
 //       {
 //        printf("thread:%d\n", omp_get_thread_num());
-        std::vector<double> line(dim_v,0.);
-        std::vector<double> x(3*M.n_gauss,0.);
-        std::vector<double> lb(3*M.n_gauss,0.);
-        std::vector<double> ub(3*M.n_gauss,0.);
+        std::vector<T> line(dim_v,0.);
+        std::vector<T> x(3*M.n_gauss,0.);
+        std::vector<T> lb(3*M.n_gauss,0.);
+        std::vector<T> ub(3*M.n_gauss,0.);
         for(i=0;i<power; i++){ //dim_x
                 for(j=0;j<power; j++){ //dim_y
                         int p;
@@ -3418,7 +2701,7 @@ void algo_rohsa::upgrade(parameters &M, std::vector<std::vector<std::vector<doub
                         for(p=0; p<params.size(); p++){
                                 x[p]=params[p][i][j]; //cache
                         }
-                        init_bounds(M, line, M.n_gauss, lb, ub, false); //bool _init = false;
+                        init_bounds<T>(M, line, M.n_gauss, lb, ub, false); //bool _init = false;
                         minimize_spec(M,3*M.n_gauss ,M.m ,x ,lb , M.n_gauss, ub ,line);
                         for(p=0; p<params.size();p++){
                                 params[p][i][j]=x[p]; //cache
@@ -3429,11 +2712,9 @@ void algo_rohsa::upgrade(parameters &M, std::vector<std::vector<std::vector<doub
         }
 }
 
+template <typename T> void algo_rohsa::init_bounds(parameters &M, std::vector<T> &line, int n_gauss_local, std::vector<T> &lb, std::vector<T> &ub, bool _init) {
 
-
-void algo_rohsa::init_bounds(parameters &M, std::vector<double> line, int n_gauss_local, std::vector<double> &lb, std::vector<double> &ub, bool _init) {
-
-	double max_line = *std::max_element(line.begin(), line.end());
+	T max_line = *std::max_element(line.begin(), line.end());
 //	std::cout<<"max_line = "<<max_line<<std::endl;
 //	std::cout<<"dim_v = "<<dim_v<<std::endl;
 	for(int i(0); i<n_gauss_local; i++) {
@@ -3452,13 +2733,11 @@ void algo_rohsa::init_bounds(parameters &M, std::vector<double> line, int n_gaus
 	}
 }
 
-double algo_rohsa::model_function(int x, double a, double m, double s) {
-
-	return a*exp(-pow((double(x)-m),2.) / (2.*pow(s,2.)));
-
+template <typename T> T algo_rohsa::model_function(int x, T a, T m, T s) {
+	return a*exp(-pow(T(x)-m,2.) / (2.*pow(s,2.)));
 }
 
-int algo_rohsa::minloc(std::vector<double> &tab) {
+template <typename T> int algo_rohsa::minloc(std::vector<T> &tab) {
 	return std::distance(tab.begin(), std::min_element( tab.begin(), tab.end() ));
 }
 
@@ -3533,9 +2812,9 @@ L111:
             &M.iprint, csave, lsave, isave, dsave);
 
 		if ( IS_FG(*task) ) {
-			myresidual(x, line, _residual_, n_gauss_i);
-			f = myfunc_spec(_residual_);
-			mygrad_spec(g, _residual_, x, n_gauss_i);
+			myresidual<double>(x, line, _residual_, n_gauss_i);
+			f = myfunc_spec<double>(_residual_);
+			mygrad_spec<double>(g, _residual_, x, n_gauss_i);
 //			printf("f = %f\n", f);
 		}
 
@@ -3627,9 +2906,9 @@ L111:
 //ùù
 /*     if (s_cmp(task, "FG", (ftnlen)2, (ftnlen)2) == 0) { */
 		if ( IS_FG(*task) ) {
-			myresidual(x, line, _residual_, n_gauss_i);
-			f = myfunc_spec(_residual_);
-			mygrad_spec(g, _residual_, x, n_gauss_i);
+			myresidual<double>(x, line, _residual_, n_gauss_i);
+			f = myfunc_spec<double>(_residual_);
+			mygrad_spec<double>(g, _residual_, x, n_gauss_i);
 		}
 
 
@@ -3658,24 +2937,25 @@ L111:
 
 }
 
-double algo_rohsa::myfunc_spec(std::vector<double> &residual) {
-	double S(0.);
+template <typename T> T algo_rohsa::myfunc_spec(std::vector<T> &residual) {
+	T S(0.);
 	for(int p(0); p<residual.size(); p++) {
 		S+=pow(residual[p],2);
 	}
 	return 0.5*S;
 }
 
-void algo_rohsa::myresidual(double params[], double line[], std::vector<double> &residual, int n_gauss_i) {
+
+template <typename T> void algo_rohsa::myresidual(T* params, T* line, std::vector<T> &residual, int n_gauss_i) {
 	int i,k;
-	std::vector<double> model(residual.size(),0.);
+	std::vector<T> model(residual.size(),0.);
 //	#pragma omp parallel private(i,k) shared(params)
 //	{
 //	#pragma omp for
 	for(i=0; i<n_gauss_i; i++) {
 		for(k=0; k<residual.size(); k++) {
 			int nu = k+1;
-			model[k]+= model_function(nu, params[0+3*i], params[1+3*i], params[2+3*i]);
+			model[k]+= model_function<T>(nu, params[0+3*i], params[1+3*i], params[2+3*i]);
 		}
 	}
 //	}
@@ -3684,26 +2964,25 @@ void algo_rohsa::myresidual(double params[], double line[], std::vector<double> 
 	}
 }
 
-void algo_rohsa::myresidual(std::vector<double> &params, std::vector<double> &line, std::vector<double> &residual, int n_gauss_i) {
-	int k;
-	std::vector<double> model(residual.size(),0.);
 
+template <typename T> void algo_rohsa::myresidual(std::vector<T> &params, std::vector<T> &line, std::vector<T> &residual, int n_gauss_i) {
+	int k;
+	std::vector<T> model(residual.size(),0.);
 	for(int i(0); i<n_gauss_i; i++) {
 		for(k=0; k<residual.size(); k++) {
 			int nu = k+1;
-			model[k]+= model_function(k+1, params[3*i], params[1+3*i], params[2+3*i]);
+			model[k]+= model_function<T>(nu, params[3*i], params[1+3*i], params[2+3*i]);
 		}
 	}
-
 	for(int p=0; p<residual.size(); p++) {
 		residual[p]=model[p]-line[p]; 
 	}
-
 }
-void algo_rohsa::mygrad_spec(double gradient[], std::vector<double> &residual, double params[], int n_gauss_i) {
 
-	std::vector<std::vector<double>> dF_over_dB(3*n_gauss_i, std::vector<double>(dim_v,0.));
-	double g(0.);
+template <typename T> void algo_rohsa::mygrad_spec(T gradient[], std::vector<T> &residual, T params[], int n_gauss_i) {
+
+	std::vector<std::vector<T>> dF_over_dB(3*n_gauss_i, std::vector<T>(dim_v,0.));
+	T g(0.);
 	int i,k;
 	for(int p(0); p<3*n_gauss_i; p++) {
 		gradient[p]=0.;
@@ -3714,7 +2993,7 @@ void algo_rohsa::mygrad_spec(double gradient[], std::vector<double> &residual, d
 //	#pragma omp for private(i)
 	for(i=0; i<n_gauss_i; i++) {
 		for(int k(0); k<dim_v; k++) {
-			double nu = double(k+1);
+			T nu = T(k+1);
 			dF_over_dB[0+3*i][k] += exp(-pow( nu-params[1+3*i],2.)/(2*pow(params[2+3*i],2.)) );
 
 			dF_over_dB[1+3*i][k] +=  params[3*i]*( nu - params[1+3*i])/pow(params[2+3*i],2.) * exp(-pow( nu-params[1+3*i],2.)/(2*pow(params[2+3*i],2.)) );
@@ -3745,12 +3024,12 @@ void algo_rohsa::init_spectrum(parameters &M, std::vector<double> &line, std::ve
 		std::vector<double> lb(3*i,0.);
 		std::vector<double> ub(3*i,0.);
 
-		init_bounds(M, line,i,lb,ub, true); //we consider {bool _init = true;} since we want to initialize the boundaries
+		init_bounds<double>(M, line,i,lb,ub, true); //we consider {bool _init = true;} since we want to initialize the boundaries
 
 		for(int j=0; j<i; j++) {
 
 			for(int k=0; k<dim_v; k++) {			
-				model_tab[k] += model_function(k+1,params[3*j], params[1+3*j], params[2+3*j]);
+				model_tab[k] += model_function<double>(k+1,params[3*j], params[1+3*j], params[2+3*j]);
 			}
 		}
 		
@@ -3769,7 +3048,7 @@ void algo_rohsa::init_spectrum(parameters &M, std::vector<double> &line, std::ve
 			std::cout<<"x["<<c<<"] = "<<x[c]<<std::endl;
 		}
 */
-		double argmin_res = minloc(residual);
+		double argmin_res = minloc<double>(residual);
 		x[0+3*(i-1)] = line[int(argmin_res)]*M.amp_fact_init;
 		x[1+3*(i-1)] = argmin_res+1;
 		x[2+3*(i-1)] = M.sig_init;
@@ -3809,10 +3088,9 @@ void algo_rohsa::init_spectrum(parameters &M, std::vector<double> &line, std::ve
 
 
 
-
-void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<double>>> &cube_mean)
+template <typename T> void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<T>>> &cube_mean)
 {
-	std::vector<double> spectrum(file.dim_cube[2],0.);
+	std::vector<T> spectrum(file.dim_cube[2],0.);
 	int n = file.dim_cube[1]/power;
 	for(int i(0); i<cube_mean[0].size(); i++)
 	{
@@ -3824,10 +3102,7 @@ void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<doubl
 				{
 					for(int m(0); m<file.dim_cube[2]; m++)
 					{
-
-//						std::cout<< "  test __  i,j,k,l,m,n ="<<i<<","<<j<<","<<k <<","<<l<<","<<m<<","<<n<< std::endl;
-//						std::cout << "  test__ "<<k+j*n<<std::endl;
-						spectrum[m] += file.cube[l+i*n][k+j*n][m];
+						spectrum[m] += file.cube[l+j*n][k+i*n][m];
 					}
 				}
 			}
@@ -3835,38 +3110,24 @@ void algo_rohsa::mean_array(int power, std::vector<std::vector<std::vector<doubl
 			{
 				cube_mean[j][i][m] = spectrum[m]/pow(n,2);
 			}
-			for(int p(0); p<file.dim_cube[2	]; p++)
+			for(int p(0); p<file.dim_cube[2]; p++)
 			{
 				spectrum[p] = 0.;
 			}
 		}
 	}
-
-
 }
 
-void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, double* image, double* &conv, int dim_y, int dim_x, int dim_k, float temps_transfert, float temps_mirroirs)
+
+//template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){	
+
+template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, T* image, T* conv, int dim_y, int dim_x, int dim_k)
 {
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
 
-	std::vector <std::vector<double>> ext_conv(dim_y+4, std::vector<double>(dim_x+4,0.));
-	std::vector <std::vector<double>> extended(dim_y+4, std::vector<double>(dim_x+4,0.));
+	std::vector <std::vector<T>> ext_conv(dim_y+4, std::vector<T>(dim_x+4,0.));
+	std::vector <std::vector<T>> extended(dim_y+4, std::vector<T>(dim_x+4,0.));
 
-	float temps_temp = omp_get_wtime();
-
-/*
-	if(dim_x >=128){
-	printf("print image :\n");
-	for(int i=0; i<5; i++)
-	{
-		for(int j=0; j<dim_x+4; j++)
-		{
-			printf("image[%d] = %.16f\n",j+(dim_x)*i,image[j+(dim_x)*i]);
-		}
-	}
-    std::cin.ignore();
-	}
-*/
 
 	for(int j(0); j<dim_y; j++)
 	{
@@ -3876,19 +3137,6 @@ void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, double* image, 
 		}
 	}
 
-/*
-	if(dim_x >=128){
-	printf("print ext image avant mirroir :\n");
-	for(int i=0; i<5; i++)
-	{
-		for(int j=0; j<dim_x+4; j++)
-		{
-			printf("extended[%d] = %.16f\n",j+(dim_x+4)*i,extended[i][j]);
-		}
-	}
-	std::cin.ignore();
-	}
-*/
 
 	for(int j(0); j<2; j++)
 	{
@@ -3921,21 +3169,6 @@ void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, double* image, 
 			extended[2+i][2+j]=image[dim_x*(i-2)+j];
 		}
 	}
-	temps_mirroirs += omp_get_wtime() - temps_temp;
-
-/*
-	if(dim_x >=128){
-	printf("print ext image :\n");
-	for(int i=0; i<5; i++)
-	{
-		for(int j=0; j<dim_x+4; j++)
-		{
-			printf("extended[%d] = %.16f\n",j+(dim_x+4)*i,extended[i][j]);
-		}
-	}
-	exit(0);
-	}
-*/
 
 	kCenterY = dim_k/2+1;
 	kCenterX = kCenterY;
@@ -3973,90 +3206,7 @@ void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, double* image, 
 	}
 }
 
-void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, float* image, float* &conv, int dim_y, int dim_x, int dim_k, float temps_transfert, float temps_mirroirs)
-{
-	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
-
-	std::vector <std::vector<double>> ext_conv(dim_y+4, std::vector<double>(dim_x+4,0.));
-	std::vector <std::vector<double>> extended(dim_y+4, std::vector<double>(dim_x+4,0.));
-
-	for(int i(0); i<dim_y; i++)
-	{
-		for(int j(0); j<dim_x; j++)
-		{
-			extended[2+i][2+j]=image[i*dim_x+j];
-		}
-	}
-
-	for(int i(0); i<dim_y; i++)
-	{
-		for(int j(0); j<2; j++)
-		{
-			extended[2+i][j] = image[i*dim_x+j];
-		}
-	}
-
-	for(int i(0); i<2; i++)
-	{
-		for(int j(0); j<dim_x; j++)
-		{
-			extended[i][2+j] = image[i*dim_x+j];
-		}
-	}
-
-	for(int i=0; i<dim_y; i++)
-	{
-		for(int j=dim_x; j<dim_x+2; j++)
-		{
-			extended[2+i][2+j]=image[i*dim_x+j-2];
-		}
-	}
-
-	for(int i(dim_y); i<dim_y+2; i++)
-	{
-		for(int j(0); j<dim_x; j++)
-		{
-			extended[2+i][2+j]=image[(i-2)*dim_x+j];
-		}
-	}
-	kCenterY = dim_k/2+1;
-	kCenterX = kCenterY;
-
-	for(int j(1);j<=dim_x+4;j++)
-	{
-		for(int i(1); i<=dim_y+4; i++)
-		{
-			for(int m(1); m<=dim_k ; m++)
-			{
-				mm = dim_k - m + 1;
-
-				for(int n(1);n<=dim_k;n++)
-				{
-					nn = dim_k - n + 1;
-
-					ii = i + (m - kCenterY);
-					jj = j + (n - kCenterX);
-
-					if( ii >= 1 && ii < dim_y+4 && jj>=1 && jj< dim_x+4 )
-					{
-						ext_conv[i-1][j-1] += extended[ii-1][jj-1]*M.kernel[mm-1][nn-1];
-					}
-				}
-			}
-		}
-	}
-
-	for(int i(0); i<dim_y; i++)
-	{
-		for(int j(0);j<dim_x;j++)
-		{
-			conv[i*dim_x+j] = ext_conv[2+i][2+j];
-		}
-	}
-}
-
-
-void algo_rohsa::convolution_2D_mirror(const parameters &M, const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k)
+template <typename T> void algo_rohsa::convolution_2D_mirror(const parameters &M, const std::vector<std::vector<T>> &image, std::vector<std::vector<T>> &conv, int dim_y, int dim_x, int dim_k)
 {
 
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
@@ -4141,8 +3291,7 @@ void algo_rohsa::convolution_2D_mirror(const parameters &M, const std::vector<st
 // // L'ordre x,y,lambda est celui du code fortran : lambda,y,x      pk?
 
 // It transforms a 1D vector into a contiguous flattened 1D array from a 2D array, like a valarray
-
-void algo_rohsa::ravel_2D(const std::vector<std::vector<double>> &map, std::vector<double> &vector, int dim_y, int dim_x)
+template <typename T> void algo_rohsa::ravel_2D(const std::vector<std::vector<T>> &map, std::vector<T> &vector, int dim_y, int dim_x)
 {
 	int i__=0;
 
@@ -4157,24 +3306,8 @@ void algo_rohsa::ravel_2D(const std::vector<std::vector<double>> &map, std::vect
 
 }
 
-// It transforms a 1D vector into a contiguous flattened 1D array from a 3D array, the interest is close to the valarray's one
 
-void algo_rohsa::ravel_3D_bis(const std::vector<std::vector<std::vector<double>>> &cube, double vector[], int dim_v, int dim_y, int dim_x)
-{
-	for(int i(0); i<dim_x; i++)
-		{
-        for(int j(0); j<dim_y; j++)
-            {
-	        for(int k(0); k<dim_v; k++)
-    		    {
-                vector[i*dim_y*dim_v+j*dim_v+k] = cube[i][j][k];
-				}
-            }
-	    }
-}
-
-
-void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube_3D, std::vector<double> &vector, int dim_v, int dim_y, int dim_x)
+template <typename T> void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<T>>> &cube_3D, std::vector<T> &vector, int dim_v, int dim_y, int dim_x)
 {
         int i__ = 0;
 	std::cout << "dim_v : " << dim_v <<  std::endl;
@@ -4199,7 +3332,7 @@ void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &c
 //	std::cout << "avant cube[v][y][x] " <<  std::endl;
 }
 
-void algo_rohsa::initialize_array(double* array, int size, double value)
+template <typename T> void algo_rohsa::initialize_array(T* array, int size, T value)
 {
     for(int k=0; k<size; k++)
 	{
@@ -4207,26 +3340,7 @@ void algo_rohsa::initialize_array(double* array, int size, double value)
     }
 }
 
-void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<double>>> &cube_3D, std::vector<double> &vector, int dim_x, int dim_y, int dim_v)
-{
-	int k,j;
-	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
-	{
-	#pragma omp for
-    for(k=0; k<dim_x; k++)
-	    {
-        for(j=0; j<dim_y; j++)
-	        {
-			for(int i(0); i<dim_v; i++)
-				{
-	            vector[k*dim_y*dim_v+j*dim_v+i] = cube_3D[i][j][k];
-				}
-			}
-	    }
-	}
-}
-
-void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<double>>> &cube_3D, double* vector, int dim_x, int dim_y, int dim_v)
+template <typename T> void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<T>>> &cube_3D, std::vector<T> &vector, int dim_x, int dim_y, int dim_v)
 {
 	int k,j;
 	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
@@ -4246,12 +3360,34 @@ void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<doub
 }
 
 
-void algo_rohsa::one_D_to_three_D_same_dimensions(double* vector, std::vector<std::vector<std::vector<double>>> &cube_3D, int dim_x, int dim_y, int dim_v)
+template <typename T> void algo_rohsa::three_D_to_one_D(const std::vector<std::vector<std::vector<T>>> &cube_3D, T* vector, int dim_x, int dim_y, int dim_v)
 {
 	int k,j;
 	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
 	{
 	#pragma omp for
+    for(k=0; k<dim_x; k++)
+	    {
+        for(j=0; j<dim_y; j++)
+	        {
+			for(int i(0); i<dim_v; i++)
+				{
+	            vector[k*dim_y*dim_v+j*dim_v+i] = cube_3D[i][j][k];
+				}
+			}
+	    }
+	}
+}
+
+
+template <typename T> void algo_rohsa::one_D_to_three_D_same_dimensions(T* vector, std::vector<std::vector<std::vector<T>>> &cube_3D, int dim_x, int dim_y, int dim_v)
+{
+	int k,j;
+
+	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
+	{
+	#pragma omp for
+
     for(k=0; k<dim_x; k++)
 	    {
         for(j=0; j<dim_y; j++)
@@ -4264,29 +3400,35 @@ void algo_rohsa::one_D_to_three_D_same_dimensions(double* vector, std::vector<st
 	    }
 	}
 }
+//		one_D_to_three_D_inverted_dimensions<T>(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
-/*
-void algo_rohsa::three_D_to_one_D_same_dimensions_omp(const std::vector<std::vector<std::vector<double>>> &cube_3D, double* vector, int dim_x, int dim_y, int dim_v)
+template <typename T> void algo_rohsa::one_D_to_three_D_inverted_dimensions(T* vector, std::vector<std::vector<std::vector<T>>> &cube_3D, int dim_x, int dim_y, int dim_v)
 {
-	#pragma omp parallel for private(k) shared(params,deriv,std_map,residual,indice_v,indice_y,indice_x)
-    for(int k(0); k<dim_x; k++)
+	int k,j;
+
+	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
+	{
+	#pragma omp for
+    for(k=0; k<dim_x; k++)
 	    {
-        for(int j(0); j<dim_y; j++)
+        for(j=0; j<dim_y; j++)
 	        {
 			for(int i(0); i<dim_v; i++)
 				{
-	            vector[k*dim_y*dim_v+j*dim_v+i] = cube_3D[k][j][i];
+	            cube_3D[k][j][i] = vector[i*dim_y*dim_x+j*dim_x+k];
 				}
 			}
 	    }
+	}
 }
-*/
-void algo_rohsa::three_D_to_one_D_same_dimensions(const std::vector<std::vector<std::vector<double>>> &cube_3D, double* vector, int dim_x, int dim_y, int dim_v)
+
+template <typename T> void algo_rohsa::three_D_to_one_D_same_dimensions(const std::vector<std::vector<std::vector<T>>> &cube_3D, T* vector, int dim_x, int dim_y, int dim_v)
 {
 	int k,j;
 	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
 	{
 	#pragma omp for
+
     for(k=0; k<dim_x; k++)
 	    {
         for(j=0; j<dim_y; j++)
@@ -4300,26 +3442,29 @@ void algo_rohsa::three_D_to_one_D_same_dimensions(const std::vector<std::vector<
 	}
 }
 
-void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &cube, double vector[], int dim_v, int dim_y, int dim_x)
+//		three_D_to_one_D_inverted_dimensions<T>(lb_3D, lb, 3*M.n_gauss, indice_y, indice_x);
+template <typename T> void algo_rohsa::three_D_to_one_D_inverted_dimensions(const std::vector<std::vector<std::vector<T>>> &cube_3D, T* vector, int dim_x, int dim_y, int dim_v)
 {
+	int k,j;
+	#pragma omp parallel private(k,j) shared(vector,cube_3D,dim_x,dim_y,dim_v)
+	{
+	#pragma omp for
 
-
-//	code ok
-/*
-    int i__=0;
-    for(int k(0); k<dim_x; k++)
-        {
-        for(int j(0); j<dim_y; j++)
-            {
+    for(k=0; k<dim_x; k++)
+	    {
+        for(j=0; j<dim_y; j++)
+	        {
 			for(int i(0); i<dim_v; i++)
 				{
-	            vector[i__] = cube[i][j][k];
-        	    i__++;
+	            vector[i*dim_x*dim_y+j*dim_x+k] = cube_3D[k][j][i];
 				}
-            }
-    	}
-*/
+			}
+	    }
+	}
+}
 
+template <typename T> void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<T>>> &cube, T* vector, int dim_v, int dim_y, int dim_x)
+{
     for(int k(0); k<dim_x; k++)
         {
         for(int j(0); j<dim_y; j++)
@@ -4333,55 +3478,10 @@ void algo_rohsa::ravel_3D(const std::vector<std::vector<std::vector<double>>> &c
 }
 
 
-void algo_rohsa::ravel_3D_abs(const std::vector<std::vector<std::vector<double>>> &cube, const std::vector<std::vector<std::vector<double>>> &cube_abs, std::vector<double> &vector, int dim_v, int dim_y, int dim_x)
-{
-        int i__(1);
-
-        for(int k(0); k<dim_x; k++)
-        {
-                for(int j(0); j<dim_y; j++)
-                {
-                        for(int i(0); i<dim_v; i++)
-                        {
-                                vector[i__] = cube[i][j][k];
-                                i__++;
-                        }
-                }
-        }
-
-	for(int k(0); k<dim_x; k++)
-        {
-                for(int j(0); j<dim_y; j++)
-                {
-                        for(int i(0); i<dim_v; i++)
-                   	{
-                                vector[i__] = cube_abs[i][j][k];
-                                i__++;
-                        }
-                }
-        }
-}
-
-
 // It transforms a 1D vector into a 3D array, like the step we went through when analysing data from CCfits which returns a valarray that needs to be expended into a 3D array (it's the data cube)
-
-void algo_rohsa::unravel_3D(const std::vector<double> &vector, std::vector<std::vector<std::vector<double>>> &cube, int dim_v, int dim_y, int dim_x)
+template <typename T> void algo_rohsa::unravel_3D(const std::vector<T> &vector, std::vector<std::vector<std::vector<T>>> &cube, int dim_v, int dim_y, int dim_x)
 {
 	int k,j,i;
-/*
-	int i__(0);
-	for(k=0; k<dim_x; k++)
-	{
-		for(j=0; j<dim_y; j++)
-		{
-			for(i=0; i<dim_v; i++)
-			{
-				cube[i][j][k] = vector[i__];
-				i__++;
-			}
-		}
-	}
-*/
 	for(k=0; k<dim_x; k++)
 	{
 		for(j=0; j<dim_y; j++)
@@ -4394,23 +3494,10 @@ void algo_rohsa::unravel_3D(const std::vector<double> &vector, std::vector<std::
 	}
 
 }
-//°
-void algo_rohsa::unravel_3D(double vector[], std::vector<std::vector<std::vector<double>>> &cube, int dim_v, int dim_y, int dim_x)
+
+
+template <typename T> void algo_rohsa::unravel_3D(T* vector, std::vector<std::vector<std::vector<T>>> &cube, int dim_v, int dim_y, int dim_x)
 {
-/*
-	int i__=0;
-	for(int k=0; k<dim_x; k++)
-	{
-		for(int j=0; j<dim_y; j++)
-		{
-			for(int i=0; i<dim_v; i++)
-			{
-				cube[i][j][k] = vector[i__];
-				i__++;
-			}
-		}
-	}
-*/
 	for(int k=0; k<dim_x; k++)
 	{
 		for(int j=0; j<dim_y; j++)
@@ -4421,119 +3508,38 @@ void algo_rohsa::unravel_3D(double vector[], std::vector<std::vector<std::vector
 			}
 		}
 	}
-
-
-}
-//°°
-// transposes i and j
-// I wanted to solve cache default in dF_over_dB routine, I needed to transpose params
-void algo_rohsa::unravel_3D_with_formula_transpose_xy(double vector[], std::vector<std::vector<std::vector<double>>> &cube, int dim_x, int dim_y, int dim_z)
-{
-int i,j,k;
-#pragma omp parallel private(j,i,k) shared(cube, vector,dim_x,dim_y,dim_z)
-{
-#pragma omp for
-	for(j=0; j<dim_y; j++)
-		{
-	for(i=0; i<dim_x; i++)
-		{
-	for(k=0; k<dim_z; k++)
-	{
-					cube[j][i][k] = vector[k+dim_z*j+dim_y*dim_z*i];
-			}
-		}
-	}
-}
-/* //utilisé juste avant
-	int i__=0;
-
-	for(int i=0; i<dim_v; i++)
-		{
-	for(int j=0; j<dim_y; j++)
-		{
-	for(int k=0; k<dim_x; k++)
-	{
-					cube[i][j][k] = vector[i__];
-				i__++;
-			}
-		}
-	}
-*/
 }
 
-void algo_rohsa::unravel_3D_T(double vector[], std::vector<std::vector<std::vector<double>>> &cube, int dim_x, int dim_y, int dim_z)
+
+template <typename T> void algo_rohsa::unravel_3D_T(T* vector, std::vector<std::vector<std::vector<T>>> &cube, int dim_x, int dim_y, int dim_z)
 {
 	for(int i=0; i<dim_z; i++)
-		{
-	for(int j=0; j<dim_y; j++)
-		{
-	for(int k=0; k<dim_x; k++)
 	{
-					cube[j][i][k] = vector[i*dim_x*dim_y+j*dim_x+k];
+		for(int j=0; j<dim_y; j++)
+		{
+			for(int k=0; k<dim_x; k++)
+			{
+				cube[j][i][k] = vector[i*dim_x*dim_y+j*dim_x+k];
 			}
 		}
 	}
-
-/*
-	int i__=0;
-	for(int i=0; i<dim_z; i++)
-		{
-	for(int j=0; j<dim_y; j++)
-		{
-	for(int k=0; k<dim_x; k++)
-	{
-					cube[j][i][k] = vector[i__];
-				i__++;
-			}
-		}
-	}
-*/
-
-}
-void algo_rohsa::unravel_3D_abs(const std::vector<double> &vector, std::vector<std::vector<std::vector<double>>> &cube_abs,std::vector<std::vector<std::vector<double>>> &cube, int dim_v, int dim_y, int dim_x)
-{
-        int i__(0);
-
-        for(int k(0); k<dim_x; k++)
-        {
-                for(int j(0); j<dim_y; j++)
-                {
-                        for(int i(0); i<dim_v; i++)
-                        {
-                                cube[i][j][k] = vector[i__];
-                                i__++;
-                        }
-                }
-        }
-
-        for(int k(0); k<dim_x; k++)
-        {
-                for(int j(0); j<dim_y; j++)
-                {
-                        for(int i(0); i<dim_v; i++)
-                        {
-                                cube_abs[i][j][k] = vector[i__];
-                                i__++;
-                        }
-                }
-        }
 }
 
 // It returns the mean value of a 1D vector
-double algo_rohsa::mean(const std::vector<double> &array)
+template <typename T> T algo_rohsa::mean(const std::vector<T> &array)
 {
- 	return std::accumulate(array.begin(), array.end(), 0.)/std::max(1.,double(array.size()));
+ 	return std::accumulate(array.begin(), array.end(), 0.)/std::max(1.,T(array.size()));
 }
 
 // It returns the standard deviation value of a 1D vector
 // BEWARE THE STD LIBRARY 
 // "Std" rather than "std"
 
-double algo_rohsa::Std(const std::vector<double> &array)
+template <typename T> T algo_rohsa::Std(const std::vector<T> &array)
 {
-	double mean_(0.), var(0.);
+	T mean_(0.), var(0.);
 	int n = array.size();
-	mean_ = mean(array);
+	mean_ = mean<T>(array);
 
 	for(int i(0); i<n; i++)
 	{
@@ -4542,20 +3548,19 @@ double algo_rohsa::Std(const std::vector<double> &array)
 	return sqrt(var/(n-1));
 }
 
-double algo_rohsa::std_2D(const std::vector<std::vector<double>> &map, int dim_y, int dim_x)
+template <typename T> T algo_rohsa::std_2D(const std::vector<std::vector<T>> &map, int dim_y, int dim_x)
 {
 
-	std::vector<double> vector(dim_x*dim_y, 0.);
+	std::vector<T> vector(dim_x*dim_y, 0.);
 	ravel_2D(map, vector, dim_y, dim_x);
-	return Std(vector);
+	return Std<T>(vector);
 }
 
-
-double algo_rohsa::max_2D(const std::vector<std::vector<double>> &map, int dim_y, int dim_x)
+template <typename T> T algo_rohsa::max_2D(const std::vector<std::vector<T>> &map, int dim_y, int dim_x)
 {
-	std::vector<double> vector(dim_x*dim_y,0.);
+	std::vector<T> vector(dim_x*dim_y,0.);
 	ravel_2D(map, vector, dim_y, dim_x);
-	double val_max = vector[0];
+	T val_max = vector[0];
 	for (unsigned int i = 0; i < vector.size(); i++)
 		if (vector[i] > val_max)
     			val_max = vector[i];
@@ -4563,22 +3568,21 @@ double algo_rohsa::max_2D(const std::vector<std::vector<double>> &map, int dim_y
 	return val_max;
 }
 
-double algo_rohsa::mean_2D(const std::vector<std::vector<double>> &map, int dim_y, int dim_x)
+template <typename T> T algo_rohsa::mean_2D(const std::vector<std::vector<T>> &map, int dim_y, int dim_x)
 {
-	std::vector<double> vector(dim_y*dim_x, 0.);
+	std::vector<T> vector(dim_y*dim_x, 0.);
 	ravel_2D(map, vector, dim_y, dim_x);
-	double mean_2D = mean(vector);
+	T mean_2D = mean<T>(vector);
 	vector.clear();
 	return mean_2D;
 }
 
-void algo_rohsa::std_spectrum(int dim_x, int dim_y, int dim_v)
+
+template <typename T> void algo_rohsa::std_spectrum(int dim_x, int dim_y, int dim_v)
 {
 	for(int i(0); i<dim_v; i++)
 	{
-
-		std::vector<std::vector<double>> map(dim_x, std::vector<double>(dim_y,0.));
-
+		std::vector<std::vector<T>> map(dim_x, std::vector<T>(dim_y,0.));
 		for(int j(0); j< dim_y; j++)
 		{
 			for( int k(0); k<dim_x; k++)
@@ -4586,17 +3590,16 @@ void algo_rohsa::std_spectrum(int dim_x, int dim_y, int dim_v)
 				map[k][j] = file.data[k][j][i];
 			}
 		}
-		std_spect.vector::push_back(std_2D(map, dim_y, dim_x));
-		
+		std_spect.vector::push_back(std_2D<T>(map, dim_y, dim_x));
 	}
 }
 
-void algo_rohsa::mean_spectrum(int dim_x, int dim_y, int dim_v)
-{
 
+template <typename T> void algo_rohsa::mean_spectrum(int dim_x, int dim_y, int dim_v)
+{
 	for(int i(0);i<dim_v;i++)
 	{
-		std::vector<std::vector<double>> map(dim_x, std::vector<double>(dim_y, 0.));
+		std::vector<std::vector<T>> map(dim_x, std::vector<T>(dim_y, 0.));
 		for(int j(0); j<dim_y ; j++)
 		{
 			for(int k(0); k<dim_x ; k++)
@@ -4604,17 +3607,17 @@ void algo_rohsa::mean_spectrum(int dim_x, int dim_y, int dim_v)
 				map[k][j] = file.data[k][j][i];
 			}
 		}
-
-		mean_spect.vector::push_back(mean_2D(map, dim_y, dim_x));
+		mean_spect.vector::push_back(mean_2D<T>(map, dim_y, dim_x));
 		map.clear();
 	}
 }
 
-void algo_rohsa::max_spectrum(int dim_x, int dim_y, int dim_v)
+
+template <typename T> void algo_rohsa::max_spectrum(int dim_x, int dim_y, int dim_v)
 {
 	for(int i(0); i<dim_v; i++)
 	{
-		std::vector<std::vector<double>> map(dim_x, std::vector<double>(dim_y,0.));
+		std::vector<std::vector<T>> map(dim_x, std::vector<T>(dim_y,0.));
 		for(int j(0); j< dim_y; j++)
 		{
 			for( int k(0); k<dim_x; k++)
@@ -4622,16 +3625,16 @@ void algo_rohsa::max_spectrum(int dim_x, int dim_y, int dim_v)
 				map[k][j] = file.data[k][j][i];
 			}
 		}
-		max_spect.vector::push_back(max_2D(map, dim_y, dim_x));
+		max_spect.vector::push_back(max_2D<T>(map, dim_y, dim_x));
 		map.clear();
 	}
 }
 
-void algo_rohsa::max_spectrum_norm(int dim_x, int dim_y, int dim_v, double norm_value)
+template <typename T> void algo_rohsa::max_spectrum_norm(int dim_x, int dim_y, int dim_v, T norm_value)
 {
 	for(int i(0); i<dim_v; i++)
 	{
-		std::vector<std::vector<double>> map(dim_x, std::vector<double>(dim_y));
+		std::vector<std::vector<T>> map(dim_x, std::vector<T>(dim_y));
 		for(int j(0); j< dim_y; j++)
 		{
 			for( int k(0); k<dim_x; k++)
@@ -4639,11 +3642,11 @@ void algo_rohsa::max_spectrum_norm(int dim_x, int dim_y, int dim_v, double norm_
 				map[k][j] = file.data[k][j][i];
 			}
 		}
-		max_spect_norm.vector::push_back(max_2D(map, dim_y, dim_x));
+		max_spect_norm.vector::push_back(max_2D<T>(map, dim_y, dim_x));
 		map.clear();
 	}
 
-	double val_max = max_spect_norm[0];
+	T val_max = max_spect_norm[0];
 	for (unsigned int i = 0; i < max_spect_norm.size(); i++)
 		if (max_spect_norm[i] > val_max)
     			val_max = max_spect_norm[i];
@@ -4654,15 +3657,14 @@ void algo_rohsa::max_spectrum_norm(int dim_x, int dim_y, int dim_v, double norm_
 	}
 }
 
-
-void algo_rohsa::mean_parameters(std::vector<std::vector<std::vector<double>>> &params)
+template <typename T> void algo_rohsa::mean_parameters(std::vector<std::vector<std::vector<T>>> &params)
 {
 	int dim1 = params.size();
 	int dim2 = params[0].size();
 	int dim3 = params[0][0].size();
 	
 	for(int p=0; p<dim1;p++){
-		double mean = 0.;
+		T mean = 0.;
 		for(int i=0;i<dim2;i++){
 			for(int j=0;j<dim3;j++){
 				mean += params[p][j][i];
@@ -4681,8 +3683,7 @@ void algo_rohsa::mean_parameters(std::vector<std::vector<std::vector<double>>> &
 
 
 void algo_rohsa::descente_sans_regu(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
-	
-}
+	}
 
 
 template void algo_rohsa::descente<double>(parameters&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&);
@@ -4695,17 +3696,50 @@ template void algo_rohsa::minimize_clean<double>(parameters&, long, long, double
 template void algo_rohsa::minimize_clean_cpu<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
 template void algo_rohsa::minimize_clean_gpu<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
 
-template void algo_rohsa::f_g_cube_fast<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_fast_unidimensional<double>(parameters&, double&, double*, int, double*, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, double*);
 template void algo_rohsa::f_g_cube_fast_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
-template void algo_rohsa::f_g_cube_fast_clean_optim_CPU<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_not_very_fast_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
 template void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double** assist_buffer);
 template void algo_rohsa::f_g_cube_fast_without_regul<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
-template void algo_rohsa::f_g_cube_vector<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
 
-template void algo_rohsa::f_g_cube_cuda_L<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double*);
 template void algo_rohsa::f_g_cube_cuda_L_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double*);
-template void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters&, double&, double*, int, double*, int, int, int, std::vector<std::vector<double>>&, double*);
-template void algo_rohsa::f_g_cube_cuda_L_clean_lib_device_fg(parameters&, double&, double*, int, double*, int, int, int, std::vector<std::vector<double>>&, double*);
-template void algo_rohsa::f_g_cube_omp_without_regul<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_cuda_L_clean_lib<double>(parameters&, double&, double*, int, double*, int, int, int, std::vector<std::vector<double>>&, double*);
 
-//template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<T>> &std_map, std::vector<std::vector<std::vector<T>>> &cube, int lb, int ub){
+template void algo_rohsa::convolution_2D_mirror_flat<double>(const parameters&, double*, double*, int, int, int);
+template void algo_rohsa::convolution_2D_mirror<double>(const parameters&, const std::vector<std::vector<double>>&, std::vector<std::vector<double>>&, int, int, int);
+template void algo_rohsa::go_up_level<double>(std::vector<std::vector<std::vector<double>>>&);
+template void algo_rohsa::upgrade<double>(parameters&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&, int);
+template void algo_rohsa::init_bounds<double>(parameters&, std::vector<double>&, int, std::vector<double>&, std::vector<double>&, bool);
+template double algo_rohsa::model_function<double>(int, double, double, double);
+template int algo_rohsa::minloc<double>(std::vector<double>&);
+template double algo_rohsa::myfunc_spec<double>(std::vector<double>&);
+template void algo_rohsa::myresidual<double>(double*, double*, std::vector<double>&, int);
+template void algo_rohsa::myresidual<double>(std::vector<double>&, std::vector<double>&, std::vector<double>&, int);
+template void algo_rohsa::mygrad_spec<double>(double*, std::vector<double>&, double*, int);
+template void algo_rohsa::mean_array<double>(int, std::vector<std::vector<std::vector<double>>>&);
+template void algo_rohsa::ravel_2D<double>(const std::vector<std::vector<double>>&, std::vector<double>&, int, int);
+template void algo_rohsa::ravel_3D<double>(const std::vector<std::vector<std::vector<double>>>&, std::vector<double>&, int, int, int);
+template void algo_rohsa::initialize_array<double>(double*, int, double);
+template void algo_rohsa::three_D_to_one_D<double>(const std::vector<std::vector<std::vector<double>>>&, std::vector<double>&, int, int, int);
+template void algo_rohsa::three_D_to_one_D<double>(const std::vector<std::vector<std::vector<double>>>&, double*, int, int, int);
+template void algo_rohsa::one_D_to_three_D_same_dimensions<double>(double*, std::vector<std::vector<std::vector<double>>>&, int, int, int);
+template void algo_rohsa::one_D_to_three_D_inverted_dimensions<double>(double*, std::vector<std::vector<std::vector<double>>>&, int, int, int);
+
+template void algo_rohsa::three_D_to_one_D_same_dimensions<double>(const std::vector<std::vector<std::vector<double>>>&, double*, int, int, int);
+template void algo_rohsa::three_D_to_one_D_inverted_dimensions<double>(const std::vector<std::vector<std::vector<double>>>&, double*, int, int, int);
+template void algo_rohsa::ravel_3D<double>(const std::vector<std::vector<std::vector<double>>>&, double*, int, int, int);
+template void algo_rohsa::unravel_3D<double>(const std::vector<double>&, std::vector<std::vector<std::vector<double>>>&, int, int, int);
+template void algo_rohsa::unravel_3D<double>(double*, std::vector<std::vector<std::vector<double>>>&, int, int, int);
+template void algo_rohsa::unravel_3D_T<double>(double* vector, std::vector<std::vector<std::vector<double>>> &cube, int dim_x, int dim_y, int dim_z);
+template double algo_rohsa::mean<double>(const std::vector<double>&);
+template double algo_rohsa::Std<double>(const std::vector<double>&);
+template double algo_rohsa::std_2D<double>(const std::vector<std::vector<double>>&, int, int);
+template double algo_rohsa::max_2D<double>(const std::vector<std::vector<double>>&, int, int);
+template double algo_rohsa::mean_2D<double>(const std::vector<std::vector<double>>&, int, int);
+template void algo_rohsa::std_spectrum<double>(int, int, int);
+template void algo_rohsa::mean_spectrum<double>(int, int, int);
+template void algo_rohsa::max_spectrum<double>(int, int, int);
+template void algo_rohsa::max_spectrum_norm<double>(int, int, int, double);
+template void algo_rohsa::mean_parameters<double>(std::vector<std::vector<std::vector<double>>>&);
+
+//template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<T>> &std_map, std::vector<std::vector<std::vector<T>>> &cube, int lb, int ub){template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, T* image, T* conv, int dim_y, int dim_x, int dim_k)
