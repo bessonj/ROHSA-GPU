@@ -25,23 +25,18 @@
  *
  */
 
+template<typename T>
 class parameters
 {
 	public:
-
-	parameters();
-	parameters(std::string str, std::string str2);
-	void write_in_binary();
-
-	std::vector<std::vector<double>> kernel;
-	std::vector<int> dim_data; //inutile : file.dim_data
-	int dim_x;
-	int dim_y;
-	int dim_v;
-
-	int n_gauss_add; 
+		parameters();
+		parameters(std::string str, std::string str2);
+		std::vector<int> dim_data; //inutile : file.dim_data
+		int dim_x;
+		int dim_y;
+		int dim_v;
+		int n_gauss_add; 
 	
-
 //	parameters
 	int select_version; 
 	std::string filename_dat; //!< Name of the DAT file to be used as hypercube input file.
@@ -55,14 +50,14 @@ class parameters
 	std::string fileout; //!< Name of the output file.
 	std::string filename_noise; 
 	int n_gauss; //!< Number of gaussians.
-	double lambda_amp;
-	double lambda_mu;
-	double lambda_sig;
-	double lambda_var_amp;
-	double lambda_var_mu;
-	double lambda_var_sig;
-	double amp_fact_init;
-	double sig_init;
+	T lambda_amp;
+	T lambda_mu;
+	T lambda_sig;
+	T lambda_var_amp;
+	T lambda_var_mu;
+	T lambda_var_sig;
+	T amp_fact_init;
+	T sig_init;
 	std::string init_option;	
 	int maxiter_init;
 	int maxiter;
@@ -79,28 +74,200 @@ class parameters
 	int iprint_init;
 	std::string check_save_grid;
 	bool save_grid;
-	double ub_sig;
-	double lb_sig;
-	double ub_sig_init;
-	double lb_sig_init;
+	T ub_sig;
+	T lb_sig;
+	T ub_sig_init;
+	T lb_sig_init;
 	bool jump_to_last_level;
 	bool save_second_to_last_level;
 	std::string second_to_last_level_grid_name;
 
-	std::vector<double> std_spect, mean_spect, max_spect, max_spect_norm;
+	std::vector<T> std_spect, mean_spect, max_spect, max_spect_norm;
 
 /*
 	int n_gauss_add;
 	int nside;
 	int n;
 	int power;
-	double ub_sig_init;
-	double ub_sig;
+	T ub_sig_init;
+	T ub_sig;
 
 	std::vector<int> dim_data;
 	std::vector<int> dim_cube; 
 
 */
 };
+
+#include "parameters.hpp"
+#include <omp.h>
+using namespace std;
+
+template<typename T>
+parameters<T>::parameters()
+{
+	n_gauss_add = 0;
+
+	std::string txt, egal;
+        std::ifstream fichier("parameters.txt", std::ios::in);  // on ouvre en lecture
+ 
+        if(fichier)  // si l'ouverture a fonctionné
+        {
+		fichier >> txt >> egal >> filename_dat;
+		fichier >> txt >> egal >> filename_fits;
+		fichier >> txt >> egal >> file_type_dat_check;
+		fichier >> txt >> egal >> file_type_fits_check;
+		fichier >> txt >> egal >> slice_index_min;
+		fichier >> txt >> egal >> slice_index_max;
+		fichier >> txt >> egal >> fileout;
+		fichier >> txt >> egal >> filename_noise;
+		fichier >> txt >> egal >> n_gauss;
+		fichier >> txt >> egal >> lambda_amp;
+		fichier >> txt >> egal >> lambda_mu;
+		fichier >> txt >> egal >> lambda_sig;
+		fichier >> txt >> egal >> lambda_var_amp;
+		fichier >> txt >> egal >> lambda_var_mu;
+		fichier >> txt >> egal >> lambda_var_sig;
+		fichier >> txt >> egal >> amp_fact_init;
+		fichier >> txt >> egal >> sig_init;
+		fichier >> txt >> egal >> init_option;
+		fichier >> txt >> egal >> maxiter_init;
+		fichier >> txt >> egal >> maxiter;
+		fichier >> txt >> egal >> m;
+		fichier >> txt >> egal >> check_noise;
+		fichier >> txt >> egal >> check_regul;
+		fichier >> txt >> egal >> check_descent;
+		fichier >> txt >> egal >> lstd;
+		fichier >> txt >> egal >> ustd;
+		fichier >> txt >> egal >> iprint;
+		fichier >> txt >> egal >> iprint_init;
+		fichier >> txt >> egal >> check_save_grid;
+		fichier >> txt >> egal >> ub_sig;
+		fichier >> txt >> egal >> lb_sig;
+		fichier >> txt >> egal >> ub_sig_init;
+		fichier >> txt >> egal >> lb_sig_init;
+		if(file_type_dat_check == "true")
+			file_type_dat = true;
+		else 
+			file_type_dat = false;
+		if(file_type_fits_check == "true")
+			file_type_fits = true;
+		else 
+			file_type_fits = false;
+		if(check_save_grid == "true")
+			save_grid = true;
+		else 
+			save_grid = false;		
+		if(check_noise == "true")
+			noise = true;
+		else
+			noise = false;
+		if(check_regul == "true")
+			regul = true;
+		else
+			regul = false;
+		if(check_descent == "true")
+			descent = true;
+		else
+			descent = false;
+
+                fichier.close();
+        }
+        else
+                std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
+
+}
+
+template<typename T>
+parameters<T>::parameters(std::string str, std::string str2)
+{
+	n_gauss_add = 0;
+
+	std::string txt, egal;
+        std::ifstream fichier(str, std::ios::in);  // on ouvre en lecture
+ 
+        if(fichier)  // si l'ouverture a fonctionné
+        {
+		fichier >> txt >> egal >> filename_dat;
+		fichier >> txt >> egal >> filename_fits;
+		fichier >> txt >> egal >> file_type_dat_check;
+		fichier >> txt >> egal >> file_type_fits_check;
+		fichier >> txt >> egal >> slice_index_min;
+		fichier >> txt >> egal >> slice_index_max;
+		fichier >> txt >> egal >> fileout;
+		fichier >> txt >> egal >> filename_noise;
+		fichier >> txt >> egal >> n_gauss;
+		fichier >> txt >> egal >> lambda_amp;
+		fichier >> txt >> egal >> lambda_mu;
+		fichier >> txt >> egal >> lambda_sig;
+		fichier >> txt >> egal >> lambda_var_amp;
+		fichier >> txt >> egal >> lambda_var_mu;
+		fichier >> txt >> egal >> lambda_var_sig;
+		fichier >> txt >> egal >> amp_fact_init;
+		fichier >> txt >> egal >> sig_init;
+		fichier >> txt >> egal >> init_option;
+		fichier >> txt >> egal >> maxiter_init;
+		fichier >> txt >> egal >> maxiter;
+		fichier >> txt >> egal >> m;
+		fichier >> txt >> egal >> check_noise;
+		fichier >> txt >> egal >> check_regul;
+		fichier >> txt >> egal >> check_descent;
+		fichier >> txt >> egal >> lstd;
+		fichier >> txt >> egal >> ustd;
+		fichier >> txt >> egal >> iprint;
+		fichier >> txt >> egal >> iprint_init;
+		fichier >> txt >> egal >> check_save_grid;
+		fichier >> txt >> egal >> ub_sig;
+		fichier >> txt >> egal >> lb_sig;
+		fichier >> txt >> egal >> ub_sig_init;
+		fichier >> txt >> egal >> lb_sig_init;
+		if(file_type_dat_check == "true")
+			file_type_dat = true;
+		else 
+			file_type_dat = false;
+		if(file_type_fits_check == "true")
+			file_type_fits = true;
+		else 
+			file_type_fits = false;
+		if(check_save_grid == "true")
+			save_grid = true;
+		else 
+			save_grid = false;		
+		if(check_noise == "true")
+			noise = true;
+		else
+			noise = false;
+		if(check_regul == "true")
+			regul = true;
+		else
+			regul = false;
+		if(check_descent == "true")
+			descent = true;
+		else
+			descent = false;
+		if(str2 == "-cpu" || str2 == "-CPU" || str2 == "-Cpu" || str2 == "-c" || str2 == "-C")
+			select_version = 0;
+		else if (str2 == "-gpu" || str2 == "-GPU" || str2 == "-Gpu" || str2 == "-G" || str2 == "-g")
+			select_version = 1;
+		else 
+			select_version = 2;
+
+        fichier.close();
+        }
+        else
+        std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
+
+	if(true){
+//	if(true){
+		this->jump_to_last_level = true;
+		this->save_second_to_last_level = false;
+		this->second_to_last_level_grid_name = "second_to_last_level_grid_name";
+	}else{
+		this->jump_to_last_level = false;
+		this->save_second_to_last_level = true;
+		this->second_to_last_level_grid_name = "second_to_last_level_grid_name";
+	}
+}
+
+
 
 #endif

@@ -238,7 +238,7 @@ template <typename T> void update_array_f_dev_sort(T lambda, T* array_f_dev, T* 
 //beta_modif_dev
 //
 //
-template <typename T> void conv2D_GPU_all_sort(const parameters &M, T* d_g, const int n_beta, T lambda_var_sig, T* b_params_dev, T* deriv_dev, T* beta_modif_dev, T* array_f_dev, const int image_x, const int image_y, const int n_gauss, float temps_transfert, float temps_mirroirs)
+template <typename T> void conv2D_GPU_all_sort(const parameters<T> &M, T* d_g, const int n_beta, T lambda_var_sig, T* b_params_dev, T* deriv_dev, T* beta_modif_dev, T* array_f_dev, const int image_x, const int image_y, const int n_gauss, float temps_transfert, float temps_mirroirs)
 {
     bool print = false;
 //    printf("\n beta_modif_dev below \n");
@@ -798,7 +798,7 @@ template <typename T> void compute_residual_and_f_parallel(T* array_f_dev, T* be
 
 
 
-void f_g_cube_parallel(parameters &M, double &f, double* g, int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened, double temps_conv, double temps_deriv, double temps_tableaux, double temps_res_f)   
+void f_g_cube_parallel(parameters<double> &M, double &f, double* g, int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened, double temps_conv, double temps_deriv, double temps_tableaux, double temps_res_f)   
   {
     int i,k,j,l,p;
 
@@ -1061,7 +1061,7 @@ void f_g_cube_parallel(parameters &M, double &f, double* g, int n, std::vector<s
 
 
 
-template <typename T> void f_g_cube_parallel_lib(const parameters &M, T &f, T* d_g, const int n, T* beta_dev, const int indice_v, const int indice_y, const int indice_x, T* std_map_dev, T* cube_flattened_dev, T* temps)   
+template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T* d_g, const int n, T* beta_dev, const int indice_v, const int indice_y, const int indice_x, T* std_map_dev, T* cube_flattened_dev, T* temps)   
   {
     bool print = false;
 //    bool print = true;
@@ -1269,11 +1269,11 @@ template <typename T> void f_g_cube_parallel_lib(const parameters &M, T &f, T* d
 
 }
 
- 	template void f_g_cube_parallel_lib<double>(const parameters&, double&, double*, const int, double*, const int, const int, const int, double*, double*, double*);
+ 	template void f_g_cube_parallel_lib<double>(const parameters<double>&, double&, double*, const int, double*, const int, const int, const int, double*, double*, double*);
     template void compute_residual_and_f_parallel<double>(double*, double*, double*, double*, double*, int, int, int, int);
     template void reduction_loop_parallel<double>(double*, double*, int);
     template void gradient_L_2_beta_parallel<double>(double*, int*, int*, double*, int*, double*, int*, double*, int*, int);
-    template void conv2D_GPU_all_sort<double>(const parameters&, double*, const int, double, double*, double*, double*, double*, const int, const int, const int, float, float);
+    template void conv2D_GPU_all_sort<double>(const parameters<double>&, double*, const int, double, double*, double*, double*, double*, const int, const int, const int, float, float);
     template void update_array_f_dev_sort<double>(double,double, double*, double*, double*, int, int, int, double*);
     template void update_array_f_dev_sort<double>(double, double*, double*, int, int);
     template void conv_twice_and_copy_sort<double>(double*, double*, double*, int, int, dim3, dim3, dim3, dim3, dim3, dim3);

@@ -1,6 +1,6 @@
 #include "callback_cpu.h"
 
-void callback_test(parameters &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int* dim, std::vector<std::vector<double>> &std_map, double** assist_buffer){
+void callback_test(parameters<double> &M, double &f, double g[], int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int* dim, std::vector<std::vector<double>> &std_map, double** assist_buffer){
 
     int indice_x = dim[2];
     int indice_y = dim[1];
@@ -208,9 +208,9 @@ double model_function(int x, double a, double m, double s) {
 
 }
 
-void convolution_2D_mirror(const parameters &M, const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k)
+void convolution_2D_mirror(const parameters<double> &M, const std::vector<std::vector<double>> &image, std::vector<std::vector<double>> &conv, int dim_y, int dim_x, int dim_k)
 {
-
+	double kernel[]= {0.,-0.25,0.,-0.25,1.,-0.25,0.,-0.25,0.}; 
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
 
 	std::vector <std::vector<double>> ext_conv(dim_y+4, std::vector<double>(dim_x+4,0.));
@@ -275,7 +275,7 @@ void convolution_2D_mirror(const parameters &M, const std::vector<std::vector<do
 
 					if( ii >= 1 && ii < dim_y+4 && jj>=1 && jj< dim_x+4 )
 					{
-						ext_conv[i-1][j-1] += extended[ii-1][jj-1]*M.kernel[mm-1][nn-1];
+						ext_conv[i-1][j-1] += extended[ii-1][jj-1]*kernel[(mm-1)*3+nn-1];
 					}
 				}
 			}

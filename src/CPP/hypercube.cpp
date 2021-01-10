@@ -10,7 +10,7 @@ namespace plt = matplotlibcpp;
 //using namespace std;
 using namespace CCfits;
 
-hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole_data_in_cube, bool last_level_power_of_two)
+hypercube::hypercube(parameters<double> &M, int indice_debut, int indice_fin, bool whole_data_in_cube, bool last_level_power_of_two)
 {
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
@@ -125,7 +125,7 @@ hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole
 */
 }
 
-hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole_data_in_cube)
+hypercube::hypercube(parameters<double> &M, int indice_debut, int indice_fin, bool whole_data_in_cube)
 {
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
@@ -188,7 +188,7 @@ hypercube::hypercube(parameters &M, int indice_debut, int indice_fin, bool whole
 }
 
 
-hypercube::hypercube(parameters &M, int indice_debut, int indice_fin)
+hypercube::hypercube(parameters<double> &M, int indice_debut, int indice_fin)
 {
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
@@ -234,7 +234,7 @@ hypercube::hypercube(parameters &M, int indice_debut, int indice_fin)
 */
 }
 
-hypercube::hypercube(parameters &M)
+hypercube::hypercube(parameters<double> &M)
 {
 	if(M.file_type_fits){
 		get_array_from_fits(M);
@@ -279,7 +279,7 @@ hypercube::hypercube() //dummy constructor for initialization of an hypercube ob
 
 }
 
-std::vector<std::vector<std::vector<double>>> hypercube::use_dat_file(parameters &M)
+std::vector<std::vector<std::vector<double>>> hypercube::use_dat_file(parameters<double> &M)
 {
    	int x,y,z;
 	double v;
@@ -414,7 +414,7 @@ void hypercube::brute_show(const std::vector<std::vector<std::vector<double>>> &
 }
 
 // grid_params is written into a binary after the process in algo_rohsa
-void hypercube::write_into_binary(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params){
+void hypercube::write_into_binary(parameters<double> &M, std::vector<std::vector<std::vector<double>>> &grid_params){
 
 	std::ofstream objetfichier;
 
@@ -543,7 +543,7 @@ std::vector<double> hypercube::read_vector_from_file(std::string filename)
     return newVector;
 }
 
-void hypercube::get_array_from_fits(parameters &M){
+void hypercube::get_array_from_fits(parameters<double> &M){
 	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
 
         PHDU& image = pInfile->pHDU();
@@ -1538,7 +1538,7 @@ void hypercube::simple_plot_through_regu(std::vector<std::vector<std::vector<dou
 
 }
 
-template <typename T> void hypercube::save_result(std::vector<std::vector<std::vector<T>>>& grid_params, parameters& M) {
+template <typename T> void hypercube::save_result(std::vector<std::vector<std::vector<T>>>& grid_params, parameters<T>& M) {
 
   std::cout<<"dim_data[0] = "<<dim_data[0]<<std::endl;
   std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
@@ -1596,7 +1596,7 @@ template <typename T> void hypercube::save_result(std::vector<std::vector<std::v
 }
 
 
-template <typename T> void hypercube::save_result_multires(std::vector<std::vector<std::vector<T>>>& grid_params, parameters& M, int num) {
+template <typename T> void hypercube::save_result_multires(std::vector<std::vector<std::vector<T>>>& grid_params, parameters<T>& M, int num) {
 
 	std::string s = std::to_string(num);//"plot_through_regu_level_num_");
 	char const *pchar = s.c_str();
@@ -1663,8 +1663,8 @@ template <typename T> void hypercube::save_result_multires(std::vector<std::vect
 
 
 
-template void hypercube::save_result<double>(std::vector<std::vector<std::vector<double>>>&, parameters&);
-template void hypercube::save_result_multires<double>(std::vector<std::vector<std::vector<double>>>&, parameters&, int);
+template void hypercube::save_result<double>(std::vector<std::vector<std::vector<double>>>&, parameters<double>&);
+template void hypercube::save_result_multires<double>(std::vector<std::vector<std::vector<double>>>&, parameters<double>&, int);
 
 /*	
 void hypercube::print_regulation_on_cube() {

@@ -36,10 +36,10 @@ class hypercube
 	public:
 
 	hypercube();
-	hypercube(parameters &M);
-	hypercube(parameters &M,int indice_debut, int indice_fin); // assuming whole_data_in_cube = false (faster and better provided the dimensions are close)
-	hypercube(parameters &M,int indice_debut, int indice_fin, bool whole_data_in_cube);
-	hypercube(parameters &M,int indice_debut, int indice_fin, bool whole_data_in_cube, bool one_level);
+	hypercube(parameters<double> &M);
+	hypercube(parameters<double> &M,int indice_debut, int indice_fin); // assuming whole_data_in_cube = false (faster and better provided the dimensions are close)
+	hypercube(parameters<double> &M,int indice_debut, int indice_fin, bool whole_data_in_cube);
+	hypercube(parameters<double> &M,int indice_debut, int indice_fin, bool whole_data_in_cube, bool one_level);
 
 	void display_cube(int rang);
 	void display_data(int rang);
@@ -64,26 +64,26 @@ class hypercube
 	void brute_show(const std::vector<std::vector<std::vector<double>>> &z, int depth, int length1, int length2);
 	void multiresolution(int nside); 
 	int get_binary_from_fits();
-	void get_array_from_fits(parameters &M);
+	void get_array_from_fits(parameters<double> &M);
 	void get_vector_from_binary(std::vector<std::vector<std::vector<double>>> &z);
 	void show_data(); 
 	std::vector<int> get_dim_data();
 	std::vector<int> get_dim_cube();
 	int get_nside() const;
-	std::vector<std::vector<std::vector<double>>> use_dat_file(parameters &M);
+	std::vector<std::vector<std::vector<double>>> use_dat_file(parameters<double> &M);
 	std::vector<std::vector<std::vector<double>>> reshape_up();
 	std::vector<std::vector<std::vector<double>>> reshape_up(int borne_inf, int borne_sup);
 	std::vector<std::vector<std::vector<double>>> reshape_up_for_last_level(int borne_inf, int borne_sup);
 
-	void write_into_binary(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params);
+	void write_into_binary(parameters<double> &M, std::vector<std::vector<std::vector<double>>> &grid_params);
 	void get_from_file(std::vector<std::vector<std::vector<double>>> &file_out, int dim_0, int dim_1, int dim_2);
 	void write_in_file(std::vector<std::vector<std::vector<double>>> &file_in);
 
 	void write_vector_to_file(const std::vector<double>& myVector, std::string filename);
 	std::vector<double> read_vector_from_file(std::string filename);
 
-	template <typename T> void save_result(std::vector<std::vector<std::vector<T>>>&, parameters&);
-	template <typename T> void save_result_multires(std::vector<std::vector<std::vector<T>>>&, parameters&, int);
+	template <typename T> void save_result(std::vector<std::vector<std::vector<T>>>&, parameters<T>&);
+	template <typename T> void save_result_multires(std::vector<std::vector<std::vector<T>>>&, parameters<T>&, int);
 
 
 	int indice_debut, indice_fin; //!< Only some spectral ranges of the hypercube are exploitable. We cut the hypercube, this will introduce an offset on the result values.

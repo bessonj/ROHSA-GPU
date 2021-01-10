@@ -109,7 +109,7 @@ int main(int argc, char * argv[])
 	}
 	exit(0);
 */
-	parameters user_parametres(argv[1], argv[2]);
+	parameters<double> user_parametres(argv[1], argv[2]);
 
 
 	if(user_parametres.file_type_fits){
@@ -126,13 +126,14 @@ int main(int argc, char * argv[])
 //	Hypercube_file.display(Hypercube_file.data, 100); //affiche une tranche du tableau data à l'indice i=100
 //	Hypercube_file.display_data(100); //affiche une tranche de data à l'indice 100
 //	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
-	
+
 		double temps2_lecture = omp_get_wtime();
 
 		algo_rohsa algo(user_parametres, Hypercube_file);
 
         double temps2 = omp_get_wtime();
 
+		Hypercube_file.save_result<double>(algo.grid_params, user_parametres);
 
 	std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
 	std::cout<<"Temps total (hors enregistrement): "<<temps2 - temps1 <<std::endl;

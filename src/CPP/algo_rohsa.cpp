@@ -12,9 +12,8 @@
 #include "culbfgsb.h"
 #include "callback_cpu.h"
 
-algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
+algo_rohsa::algo_rohsa(parameters<double> &M, hypercube &Hypercube)
 {
-
 // to be deleted
 	std::cout<<"hypercube[0][0][0] = "<<Hypercube.cube[0][0][0]<<std::endl;
 	std::cout<<"hypercube[1][0][0] = "<<Hypercube.cube[1][0][0]<<std::endl;
@@ -89,7 +88,7 @@ algo_rohsa::algo_rohsa(parameters &M, hypercube &Hypercube)
 }
 
 //void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){	
-template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){	
+template <typename T> void algo_rohsa::descente(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){	
 	std::vector<T> b_params(M.n_gauss,0.);
 	temps_global = 0.; 
 	temps_f_g_cube = 0.; 
@@ -505,7 +504,7 @@ template <typename T> void algo_rohsa::reshape_down(std::vector<std::vector<std:
 }
 
 
-template <typename T> void algo_rohsa::update_clean(parameters &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<T> &b_params) {
+template <typename T> void algo_rohsa::update_clean(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<T> &b_params) {
 
 	std::cout << "params.size() : " << params.size() << " , " << params[0].size() << " , " << params[0][0].size() <<  std::endl;
 
@@ -722,7 +721,7 @@ template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vec
 	}
 }
 
-template <typename T> void algo_rohsa::f_g_cube_fast_unidimensional(parameters &M, T &f, T* g, int n, T* cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* beta, int indice_v, int indice_y, int indice_x, T* std_map){
+template <typename T> void algo_rohsa::f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* beta, int indice_v, int indice_y, int indice_x, T* std_map){
 
     T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
 
@@ -849,13 +848,13 @@ template <typename T> void algo_rohsa::f_g_cube_fast_unidimensional(parameters &
 
 	for(j=0; j<indice_x; j++){
 		for(i=0; i<indice_y; i++){
-			if(std_map_[j*indice_x+i]>0.){
+			if(std_map_[j*indice_y+i]>0.){
 				T accu = 0.;
 				for (int p=0; p<indice_v; p++){
 					accu+=pow(residual[j*indice_y*indice_v+i*indice_v+p],2.);
 				}
 	//				printf("accu = %f\n",accu);
-				f += 0.5*accu/pow(std_map_[j*indice_x+i],2.); //std_map est arrondie... 
+				f += 0.5*accu/pow(std_map_[j*indice_y+i],2.); //std_map est arrondie... 
 			}
 		}
 	}
@@ -904,16 +903,16 @@ template <typename T> void algo_rohsa::f_g_cube_fast_unidimensional(parameters &
 
 	for(l=0; l<indice_x; l++){
 		for(j=0; j<indice_y; j++){
-			if(std_map_[l*indice_x+j]>0.){
+			if(std_map_[l*indice_y+j]>0.){
 				for(int i=0; i<M.n_gauss; i++){
 					T par0 = beta[l*indice_y*3*M.n_gauss +j*3*M.n_gauss +(0+3*i)];
 					T par1_ = beta[l*indice_y*3*M.n_gauss +j*3*M.n_gauss +(1+3*i)];
 					T par2 = beta[l*indice_y*3*M.n_gauss +j*3*M.n_gauss +(2+3*i)];							
 					for(int k=0; k<indice_v; k++){	
 					T par1 = T(k+1) - par1_;
-					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(0+3*i)] += exp(-pow( par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_x+j],2);
-					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(1+3*i)] += par0*par1/pow(par2,2.) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_x+j],2);
-					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(2+3*i)] += par0*pow(par1, 2.)/(pow(par2,3.)) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_x+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(0+3*i)] += exp(-pow( par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_y+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(1+3*i)] += par0*par1/pow(par2,2.) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_y+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(2+3*i)] += par0*pow(par1, 2.)/(pow(par2,3.)) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_y+j],2);
 				}
 			}
 		}
@@ -983,7 +982,7 @@ template <typename T> void algo_rohsa::f_g_cube_fast_unidimensional(parameters &
 }
 
 
-template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
+template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
 	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::vector<std::vector<std::vector<T>>> residual(indice_x,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_v,0.)));
 	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
@@ -1120,7 +1119,7 @@ template <typename T> void algo_rohsa::f_g_cube_fast_clean(parameters &M, T &f, 
 
 
 
-template <typename T> void algo_rohsa::f_g_cube_not_very_fast_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
+template <typename T> void algo_rohsa::f_g_cube_not_very_fast_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
 	bool print = false;
 
 	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
@@ -1319,7 +1318,7 @@ if(print){
 
 
 
-template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T** assist_buffer){
+template <typename T> void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T** assist_buffer){
 	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::vector<std::vector<std::vector<T>>> residual(indice_v,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::vector<std::vector<std::vector<T>>> params(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
@@ -1459,7 +1458,7 @@ double temps1_deriv = omp_get_wtime();
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 	}
 
-template <typename T> void algo_rohsa::f_g_cube_fast_without_regul(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
+template <typename T> void algo_rohsa::f_g_cube_fast_without_regul(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map){
 
 	std::vector<std::vector<std::vector<T>>> deriv(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::vector<std::vector<std::vector<T>>> g_3D(3*M.n_gauss,std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
@@ -1573,7 +1572,7 @@ int k,i,l,j;
 
 
 
-template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f, T* g, int n, std::vector<std::vector<std::vector<T>>> &cube, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
+template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std::vector<std::vector<T>>> &cube, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
 {
 	bool print = false;	
 	int lim = 100;
@@ -1663,10 +1662,13 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f
 
 
 //exit(0);
-	double temps_modification_beta1 = omp_get_wtime();
 
-	double temps_modification_beta2 = omp_get_wtime();
-
+/*
+	std::cout<< "	-> Temps d'exécution transfert données : " << this->temps_copy  <<std::endl;
+	std::cout<< "	-> Temps d'exécution attache aux données : " << this->temps_tableaux <<std::endl;
+	std::cout<< "	-> Temps d'exécution deriv : " << this->temps_deriv  <<std::endl;
+	std::cout<< "	-> Temps d'exécution régularisation : " << this->temps_conv <<std::endl;
+*/
 	double temps1_dF_dB = omp_get_wtime();
 	double temps2_dF_dB = omp_get_wtime();
 
@@ -1690,7 +1692,6 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f
     T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
 
 	double temps1_conv = omp_get_wtime();
-
 	for(int k=0; k<M.n_gauss; k++){
 		for(int p=0; p<indice_y; p++){
 			for(int q=0; q<indice_x; q++){
@@ -1699,13 +1700,6 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f
 				image_sig[indice_x*p+q]=beta[(2+3*k)*indice_x*indice_y + p*indice_x+q];
 			}
 		}
-/*
-		if(print){
-			for(int p=0; p<4; p++){
-				printf("image_sig[%d] = %.16f\n", p, image_sig[p]);
-			}
-		}
-*/
 		if(false){//indice_x>=128 || indice_y>=128){//true){//
 			conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert, temps_mirroirs);
 			conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert, temps_mirroirs);
@@ -1800,11 +1794,9 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f
 
 
 
-	temps_conv+= temps2_conv - temps1_conv;
-	temps_deriv+= temps2_deriv - temps1_deriv;
-	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
-	temps_modification_beta += temps_modification_beta2 - temps_modification_beta1;
+	this->temps_conv+= temps2_conv - temps1_conv;
+	this->temps_deriv+= temps2_deriv - temps1_deriv;
+	this->temps_tableaux += temps2_tableaux - temps1_tableaux;
 
 	temps_f_g_cube += temps2_dF_dB - temps1_dF_dB;
 
@@ -1826,7 +1818,7 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean(parameters &M, T& f
 
 
 
-template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters &M, T &f, T* g, int n, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
+template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters<T> &M, T &f, T* g, int n, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened) 
 {
 
 	std::vector<T> b_params(M.n_gauss,0.);
@@ -1990,7 +1982,7 @@ template <typename T> void algo_rohsa::f_g_cube_cuda_L_clean_lib(parameters &M, 
 
 
 
-template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
+template <typename T> void algo_rohsa::minimize_clean(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
     int i__1;
 	int  i__c = 0;
     double d__1, d__2;
@@ -2056,9 +2048,10 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 		}
 	}
 	T* std_map_dev = NULL;
+	T* cube_flattened_dev = NULL;
+	
 	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
 	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
-	T* cube_flattened_dev = NULL;
 	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
 	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
 
@@ -2105,7 +2098,7 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 		}
 */
 
-	if(true){//dim_x<64){
+	if(false){//dim_x<64){
 		f_g_cube_fast_unidimensional<T>(M, f, g, n, cube_flattened, cube, beta, dim_v, dim_y, dim_x, std_map_);
 //		f_g_cube_fast_clean<T>(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map);
 //		f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
@@ -2230,7 +2223,7 @@ template <typename T> void algo_rohsa::minimize_clean(parameters &M, long n, lon
 
 
 
-template <typename T> void algo_rohsa::minimize_clean_gpu(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
+template <typename T> void algo_rohsa::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
 
     T* cube_flattened_dev = NULL;
     checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
@@ -2414,7 +2407,7 @@ template <typename T> void algo_rohsa::minimize_clean_gpu(parameters &M, long n,
 
 
 
-template <typename T> void algo_rohsa::minimize_clean_cpu(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
+template <typename T> void algo_rohsa::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
 
     double* temps = NULL;
     temps = (double*)malloc(4*sizeof(double)); 
@@ -2461,19 +2454,19 @@ template <typename T> void algo_rohsa::minimize_clean_cpu(parameters &M, long n,
 
   	T minimal_f = std::numeric_limits<T>::max();
   	state.m_funcgrad_callback = [&assist_buffer_cpu, &minimal_f, this, &M, &n, &cube, &cube_flattened, &cube_flattened_dev,
-&std_map, &std_map_dev, dim_x, dim_y, dim_v, &temps](
+&std_map, &std_map_dev, &std_map_, dim_x, dim_y, dim_v, &temps](
                                   T* x, T& f, T* g,
                                   const cudaStream_t& stream,
                                   const LBFGSB_CUDA_SUMMARY<T>& summary) -> int {
 
-	if(true){//dim_x<64){
+	if(false){//dim_x<64){
 //		f_g_cube_fast_clean_optim_CPU<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map);
 		f_g_cube_fast_clean<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map);
 //		f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened); // expérimentation gradient
+//		f_g_cube_not_very_fast_clean<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map);
 	}else{
-
 		if(M.select_version == 0){ //-cpu
-			f_g_cube_not_very_fast_clean<T>(M, f, g, n, cube, x, dim_v, dim_y, dim_x, std_map);
+			f_g_cube_fast_unidimensional<T>(M, f, g, n, cube_flattened, cube, x, dim_v, dim_y, dim_x, std_map_);
 		}else if(M.select_version == 1){ //-gpu
 			T* x_dev = nullptr;
 			T* g_dev = nullptr;
@@ -2680,7 +2673,7 @@ template <typename T> void algo_rohsa::go_up_level(std::vector<std::vector<std::
 	}
 }
 
-template <typename T> void algo_rohsa::upgrade(parameters &M, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<std::vector<T>>> &params, int power) {
+template <typename T> void algo_rohsa::upgrade(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<std::vector<T>>> &params, int power) {
         int i,j;
 //        int nb_threads = omp_get_max_threads();
 //        printf(">> omp_get_max_thread()\n>> %i\n", nb_threads);
@@ -2712,7 +2705,7 @@ template <typename T> void algo_rohsa::upgrade(parameters &M, std::vector<std::v
         }
 }
 
-template <typename T> void algo_rohsa::init_bounds(parameters &M, std::vector<T> &line, int n_gauss_local, std::vector<T> &lb, std::vector<T> &ub, bool _init) {
+template <typename T> void algo_rohsa::init_bounds(parameters<T> &M, std::vector<T> &line, int n_gauss_local, std::vector<T> &lb, std::vector<T> &ub, bool _init) {
 
 	T max_line = *std::max_element(line.begin(), line.end());
 //	std::cout<<"max_line = "<<max_line<<std::endl;
@@ -2741,7 +2734,7 @@ template <typename T> int algo_rohsa::minloc(std::vector<T> &tab) {
 	return std::distance(tab.begin(), std::min_element( tab.begin(), tab.end() ));
 }
 
-void algo_rohsa::minimize_spec(parameters &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i, std::vector<double> &ub_v, std::vector<double> &line_v) {
+void algo_rohsa::minimize_spec(parameters<double> &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i, std::vector<double> &ub_v, std::vector<double> &line_v) {
 /* Minimize_spec */ 
 //int MAIN__(void)
     std::vector<double> _residual_(line_v.size(),0.);
@@ -2834,7 +2827,7 @@ L111:
 	}
 }
 
-void algo_rohsa::minimize_spec_save(parameters &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i, std::vector<double> &ub_v, std::vector<double> &line_v) {
+void algo_rohsa::minimize_spec_save(parameters<double> &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i, std::vector<double> &ub_v, std::vector<double> &line_v) {
 /* Minimize_spec */ 
 //int MAIN__(void)
     std::vector<double> _residual_(dim_v,0.);
@@ -3017,7 +3010,7 @@ template <typename T> void algo_rohsa::mygrad_spec(T gradient[], std::vector<T> 
 }
 
 
-void algo_rohsa::init_spectrum(parameters &M, std::vector<double> &line, std::vector<double> &params) {	
+void algo_rohsa::init_spectrum(parameters<double> &M, std::vector<double> &line, std::vector<double> &params) {	
 	for(int i=1; i<=M.n_gauss; i++) {
 		std::vector<double> model_tab(dim_v,0.);
 		std::vector<double> residual(dim_v,0.);
@@ -3119,10 +3112,11 @@ template <typename T> void algo_rohsa::mean_array(int power, std::vector<std::ve
 }
 
 
-//template <typename T> void algo_rohsa::descente(parameters &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){	
+//template <typename T> void algo_rohsa::descente(parameters<double> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){	
 
-template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, T* image, T* conv, int dim_y, int dim_x, int dim_k)
+template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const parameters<T> &M, T* image, T* conv, int dim_y, int dim_x, int dim_k)
 {
+	T kernel[]= {0.,-0.25,0.,-0.25,1.,-0.25,0.,-0.25,0.}; 
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
 
 	std::vector <std::vector<T>> ext_conv(dim_y+4, std::vector<T>(dim_x+4,0.));
@@ -3190,7 +3184,7 @@ template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const paramete
 
 					if( ii >= 1 && ii < dim_y+4 && jj>=1 && jj< dim_x+4 )
 					{
-						ext_conv[i-1][j-1] += extended[ii-1][jj-1]*M.kernel[mm-1][nn-1];
+						ext_conv[i-1][j-1] += extended[ii-1][jj-1]*kernel[(mm-1)*3+nn-1];
 					}
 				}
 			}
@@ -3206,9 +3200,9 @@ template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const paramete
 	}
 }
 
-template <typename T> void algo_rohsa::convolution_2D_mirror(const parameters &M, const std::vector<std::vector<T>> &image, std::vector<std::vector<T>> &conv, int dim_y, int dim_x, int dim_k)
+template <typename T> void algo_rohsa::convolution_2D_mirror(const parameters<T> &M, const std::vector<std::vector<T>> &image, std::vector<std::vector<T>> &conv, int dim_y, int dim_x, int dim_k)
 {
-
+	T kernel[]= {0.,-0.25,0.,-0.25,1.,-0.25,0.,-0.25,0.}; 
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
 
 	std::vector <std::vector<double>> ext_conv(dim_y+4, std::vector<double>(dim_x+4,0.));
@@ -3273,7 +3267,7 @@ template <typename T> void algo_rohsa::convolution_2D_mirror(const parameters &M
 
 					if( ii >= 1 && ii < dim_y+4 && jj>=1 && jj< dim_x+4 )
 					{
-						ext_conv[i-1][j-1] += extended[ii-1][jj-1]*M.kernel[mm-1][nn-1];
+						ext_conv[i-1][j-1] += extended[ii-1][jj-1]*kernel[(mm-1)*3+nn-1];
 					}
 				}
 			}
@@ -3682,34 +3676,33 @@ template <typename T> void algo_rohsa::mean_parameters(std::vector<std::vector<s
 }
 
 
-void algo_rohsa::descente_sans_regu(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
+void algo_rohsa::descente_sans_regu(parameters<double> &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params){
 	}
 
-
-template void algo_rohsa::descente<double>(parameters&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&);
+template void algo_rohsa::descente<double>(parameters<double>&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&);
 template void algo_rohsa::reshape_down<double>(std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&);
 template void algo_rohsa::set_stdmap<double>(std::vector<std::vector<double>>&, std::vector<std::vector<std::vector<double>>>&, int, int);
 template void algo_rohsa::set_stdmap_transpose<double>(std::vector<std::vector<double>>&, std::vector<std::vector<std::vector<double>>>&, int, int);
-template void algo_rohsa::update_clean<double>(parameters&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, std::vector<double>&);
+template void algo_rohsa::update_clean<double>(parameters<double>&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, std::vector<double>&);
 
-template void algo_rohsa::minimize_clean<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
-template void algo_rohsa::minimize_clean_cpu<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
-template void algo_rohsa::minimize_clean_gpu<double>(parameters&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
+template void algo_rohsa::minimize_clean<double>(parameters<double>&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
+template void algo_rohsa::minimize_clean_cpu<double>(parameters<double>&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
+template void algo_rohsa::minimize_clean_gpu<double>(parameters<double>&, long, long, double*, double*, double*, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<double>>&, int, int, int, double*);
 
-template void algo_rohsa::f_g_cube_fast_unidimensional<double>(parameters&, double&, double*, int, double*, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, double*);
-template void algo_rohsa::f_g_cube_fast_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
-template void algo_rohsa::f_g_cube_not_very_fast_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
-template void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double** assist_buffer);
-template void algo_rohsa::f_g_cube_fast_without_regul<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_fast_unidimensional<double>(parameters<double>&, double&, double*, int, double*, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, double*);
+template void algo_rohsa::f_g_cube_fast_clean<double>(parameters<double>&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_not_very_fast_clean<double>(parameters<double>&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
+template void algo_rohsa::f_g_cube_fast_clean_optim_CPU_lib<double>(parameters<double>&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double** assist_buffer);
+template void algo_rohsa::f_g_cube_fast_without_regul<double>(parameters<double>&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&);
 
-template void algo_rohsa::f_g_cube_cuda_L_clean<double>(parameters&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double*);
-template void algo_rohsa::f_g_cube_cuda_L_clean_lib<double>(parameters&, double&, double*, int, double*, int, int, int, std::vector<std::vector<double>>&, double*);
+template void algo_rohsa::f_g_cube_cuda_L_clean<double>(parameters<double>&, double&, double*, int, std::vector<std::vector<std::vector<double>>>&, double*, int, int, int, std::vector<std::vector<double>>&, double*);
+template void algo_rohsa::f_g_cube_cuda_L_clean_lib<double>(parameters<double>&, double&, double*, int, double*, int, int, int, std::vector<std::vector<double>>&, double*);
 
-template void algo_rohsa::convolution_2D_mirror_flat<double>(const parameters&, double*, double*, int, int, int);
-template void algo_rohsa::convolution_2D_mirror<double>(const parameters&, const std::vector<std::vector<double>>&, std::vector<std::vector<double>>&, int, int, int);
+template void algo_rohsa::convolution_2D_mirror_flat<double>(const parameters<double>&, double*, double*, int, int, int);
+template void algo_rohsa::convolution_2D_mirror<double>(const parameters<double>&, const std::vector<std::vector<double>>&, std::vector<std::vector<double>>&, int, int, int);
 template void algo_rohsa::go_up_level<double>(std::vector<std::vector<std::vector<double>>>&);
-template void algo_rohsa::upgrade<double>(parameters&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&, int);
-template void algo_rohsa::init_bounds<double>(parameters&, std::vector<double>&, int, std::vector<double>&, std::vector<double>&, bool);
+template void algo_rohsa::upgrade<double>(parameters<double>&, std::vector<std::vector<std::vector<double>>>&, std::vector<std::vector<std::vector<double>>>&, int);
+template void algo_rohsa::init_bounds<double>(parameters<double>&, std::vector<double>&, int, std::vector<double>&, std::vector<double>&, bool);
 template double algo_rohsa::model_function<double>(int, double, double, double);
 template int algo_rohsa::minloc<double>(std::vector<double>&);
 template double algo_rohsa::myfunc_spec<double>(std::vector<double>&);
@@ -3742,4 +3735,4 @@ template void algo_rohsa::max_spectrum<double>(int, int, int);
 template void algo_rohsa::max_spectrum_norm<double>(int, int, int, double);
 template void algo_rohsa::mean_parameters<double>(std::vector<std::vector<std::vector<double>>>&);
 
-//template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<T>> &std_map, std::vector<std::vector<std::vector<T>>> &cube, int lb, int ub){template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const parameters &M, T* image, T* conv, int dim_y, int dim_x, int dim_k)
+//template <typename T> void algo_rohsa::set_stdmap_transpose(std::vector<std::vector<T>> &std_map, std::vector<std::vector<std::vector<T>>> &cube, int lb, int ub){template <typename T> void algo_rohsa::convolution_2D_mirror_flat(const parameters<double> &M, T* image, T* conv, int dim_y, int dim_x, int dim_k)

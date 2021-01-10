@@ -63,7 +63,7 @@ class algo_rohsa
 {
 	public:
 
-	algo_rohsa(parameters &M, hypercube &Hypercube); //constructeur
+	algo_rohsa(parameters<double> &M, hypercube &Hypercube); //constructeur
 
 /**
  * @brief Each iteration into the main loop corresponds to a resolution. At each iteration, we compute a piecewise spatially averaged array from the data extracted from the FITS file, then we compute the standard deviation map along each spatial position, we set the upper and lower boundaries and we solve iteratively the problem using L-BFGS-B-C, finally, we project the result onto a higher resolution grid.      
@@ -78,33 +78,33 @@ class algo_rohsa
  * 
  */
 
-	template <typename T> void descente(parameters &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params); //!< main loop for the multiresolution process
+	template <typename T> void descente(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params); //!< main loop for the multiresolution process
 
-//	void descente(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //!< main loop for the multiresolution process
+//	void descente(parameters<T> &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //!< main loop for the multiresolution process
 /**
  * @brief Similar to descente() but without regularization.
  * 
  */
 
-	void descente_sans_regu(parameters &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //!<  main loop for the multiresolution without convolutions
+	void descente_sans_regu(parameters<double> &M, std::vector<std::vector<std::vector<double>>> &grid_params, std::vector<std::vector<std::vector<double>>> &fit_params); //!<  main loop for the multiresolution without convolutions
 
-	template <typename T> void convolution_2D_mirror_flat(const parameters &M, T* image, T* conv, int dim_y, int dim_x, int dim_k);
-	template <typename T> void convolution_2D_mirror(const parameters &M, const std::vector<std::vector<T>> &image, std::vector<std::vector<T>> &conv, int dim_y, int dim_x, int dim_k);
+	template <typename T> void convolution_2D_mirror_flat(const parameters<T> &M, T* image, T* conv, int dim_y, int dim_x, int dim_k);
+	template <typename T> void convolution_2D_mirror(const parameters<T> &M, const std::vector<std::vector<T>> &image, std::vector<std::vector<T>> &conv, int dim_y, int dim_x, int dim_k);
 
 	template <typename T> void ravel_2D(const std::vector<std::vector<T>> &map, std::vector<T> &vector, int dim_y, int dim_x);
 	template <typename T> void ravel_3D(const std::vector<std::vector<std::vector<T>>> &cube_3D, std::vector<T> &vector, int dim_v, int dim_y, int dim_x);
 
-	template <typename T> void init_bounds(parameters &M, std::vector<T>& line, int n_gauss_local, std::vector<T> &lb, std::vector<T> &ub, bool _init);
+	template <typename T> void init_bounds(parameters<T> &M, std::vector<T>& line, int n_gauss_local, std::vector<T> &lb, std::vector<T> &ub, bool _init);
 
 	template <typename T> void mean_array(int power, std::vector<std::vector<std::vector<T>>> &cube_mean);
 
-	void init_spectrum(parameters &M, std::vector<double> &line, std::vector<double> &params); //!< Initializes spectrum (called during first iteration) 
+	void init_spectrum(parameters<double> &M, std::vector<double> &line, std::vector<double> &params); //!< Initializes spectrum (called during first iteration) 
 
 	template <typename T> T model_function(int x, T a, T m, T s);
 
 	template <typename T> int minloc(std::vector<T> &tab);
-	void minimize_spec(parameters &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i,std::vector<double> &ub_v, std::vector<double> &line_v); //!< Solves the optimization problem during the first iteration, it calls the L-BFGS-B black box.
-	void minimize_spec_save(parameters &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i,std::vector<double> &ub_v, std::vector<double> &line_v); //!< Solves the optimization problem during the first iteration, it calls the L-BFGS-B black box.
+	void minimize_spec(parameters<double> &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i,std::vector<double> &ub_v, std::vector<double> &line_v); //!< Solves the optimization problem during the first iteration, it calls the L-BFGS-B black box.
+	void minimize_spec_save(parameters<double> &M, long n, long m, std::vector<double> &x_v, std::vector<double> &lb_v, int n_gauss_i,std::vector<double> &ub_v, std::vector<double> &line_v); //!< Solves the optimization problem during the first iteration, it calls the L-BFGS-B black box.
 
 /**
  * @brief Routine solving the optimization problem.        
@@ -258,7 +258,7 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
 
 	template <typename T> void mygrad_spec(T* gradient, std::vector<T> &residual, T* params, int n_gauss_i);
 
-	template <typename T> void upgrade(parameters &M, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<std::vector<T>>> &params, int power);
+	template <typename T> void upgrade(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<std::vector<T>>> &params, int power);
 
 	template <typename T> void go_up_level(std::vector<std::vector<std::vector<T>>> &fit_params);
 
@@ -286,20 +286,20 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
  * 
  * 
  */
-	template <typename T> void update_clean(parameters &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v,std::vector<T> &b_params);//!< Prepares boundary conditions and calls the minimize function.
+	template <typename T> void update_clean(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v,std::vector<T> &b_params);//!< Prepares boundary conditions and calls the minimize function.
 
-	template <typename T> void minimize_clean(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
-	template <typename T> void minimize_clean_cpu(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
-	template <typename T> void minimize_clean_gpu(parameters &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
+	template <typename T> void minimize_clean(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
+	template <typename T> void minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
+	template <typename T> void minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
 	
-	template <typename T> void f_g_cube_fast_unidimensional(parameters &M, T &f, T* g, int n, T* cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* beta, int indice_v, int indice_y, int indice_x, T* std_map);	
-	template <typename T> void f_g_cube_fast_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map);
-	template <typename T> void f_g_cube_not_very_fast_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map);
-	template <typename T> void f_g_cube_fast_clean_optim_CPU_lib(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T** assist_buffer);
-	template <typename T> void f_g_cube_fast_without_regul(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map);
+	template <typename T> void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* beta, int indice_v, int indice_y, int indice_x, T* std_map);	
+	template <typename T> void f_g_cube_fast_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map);
+	template <typename T> void f_g_cube_not_very_fast_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map);
+	template <typename T> void f_g_cube_fast_clean_optim_CPU_lib(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T** assist_buffer);
+	template <typename T> void f_g_cube_fast_without_regul(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map);
 
-	template <typename T> void f_g_cube_cuda_L_clean(parameters &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened);
-	template <typename T> void f_g_cube_cuda_L_clean_lib(parameters &M, T &f, T* g, int n, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened);
+	template <typename T> void f_g_cube_cuda_L_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened);
+	template <typename T> void f_g_cube_cuda_L_clean_lib(parameters<T> &M, T &f, T* g, int n, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened);
 
 	template <typename T> void reshape_down(std::vector<std::vector<std::vector<T>>> &tab1, std::vector<std::vector<std::vector<T>>>&tab2);
 
