@@ -115,7 +115,7 @@ int main(int argc, char * argv[])
 	if(user_parametres.file_type_fits){
 
 		//Pour un FITS :
-        hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube, false); //true for reshaping, false for whole data
+        hypercube<double> Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube, false); //true for reshaping, false for whole data
 //        hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube); 
 
 //		Hypercube_file.display_cube(0);
@@ -133,7 +133,7 @@ int main(int argc, char * argv[])
 
         double temps2 = omp_get_wtime();
 
-		Hypercube_file.save_result<double>(algo.grid_params, user_parametres);
+		Hypercube_file.save_result(algo.grid_params, user_parametres);
 
 	std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
 	std::cout<<"Temps total (hors enregistrement): "<<temps2 - temps1 <<std::endl;
@@ -233,7 +233,7 @@ exit(0);
 	if(user_parametres.file_type_dat){
 
 	//Pour un DAT :
-    hypercube Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube); 
+    hypercube<double> Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max, whole_data_in_cube); 
 
 //	        hypercube Hypercube_file(user_parametres); 
 	//utilise le fichier dat sans couper les données
@@ -261,7 +261,7 @@ exit(0);
 		int i_max = 4;
 		int j_max = 5;
 
-		Hypercube_file.save_result<double>(algo.grid_params, user_parametres);
+		Hypercube_file.save_result(algo.grid_params, user_parametres);
 
 	for(int num_gauss = 0; num_gauss < user_parametres.n_gauss; num_gauss ++){
 		for (int num_par = 0; num_par < 3; num_par++)

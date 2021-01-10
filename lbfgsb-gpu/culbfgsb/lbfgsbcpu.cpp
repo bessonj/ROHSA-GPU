@@ -21,7 +21,8 @@ quote at least one of the references given below:
       (1997), ACM Transactions on Mathematical Software,  Vol 23,  Num. 4,
       pp. 550 - 560.
 *************************************************************************/
-
+#include "../../inc/gradient.hpp"
+#include "../../inc/callback_cpu.h"
 #include "culbfgsb/lbfgsbcpu.h"
 
 /*************************************************************************
@@ -119,6 +120,7 @@ void lbfgsbminimize(const int& n, const LBFGSB_CUDA_STATE<real>& state,
                     const LBFGSB_CUDA_OPTION<real>& option, real* x_,
                     const int* nbd_, const real* l_, const real* u_,
                     LBFGSB_CUDA_SUMMARY<real>& summary) {
+
   ap::template_1d_array<real, true> x;
   ap::integer_1d_array nbd;
   ap::template_1d_array<real, true> l;
@@ -206,6 +208,7 @@ void lbfgsbminimize(const int& n, const LBFGSB_CUDA_STATE<real>& state,
   ap::template_2d_array<real, true> workmat;
   ap::integer_1d_array isave2;
 
+
   int m = std::min(option.hessian_approximate_dimension, 8);
 
   workvec.setbounds(1, m);
@@ -232,7 +235,9 @@ void lbfgsbminimize(const int& n, const LBFGSB_CUDA_STATE<real>& state,
   r.setbounds(1, n);
   d.setbounds(1, n);
   t.setbounds(1, n);
+  //2*M.m*n+5*n+11*M.m*M.m+8*M.m
   wa.setbounds(1, 8 * m);
+//  wa.setbounds(1, 2*m*n+5*n+11*m*m+8*m);
   sg.setbounds(1, m);
   sgo.setbounds(1, m);
   yg.setbounds(1, m);
@@ -256,6 +261,7 @@ void lbfgsbminimize(const int& n, const LBFGSB_CUDA_STATE<real>& state,
   nfree = n;
   internalinfo = 0;
   lbfgsberrclb<real>(n, m, option.eps_f, l, u, nbd, task, internalinfo, k);
+
   if (task == 2 || option.max_iteration < 0 || option.eps_g < 0 ||
       option.eps_x < 0) {
     summary.info = -1;
@@ -268,9 +274,13 @@ void lbfgsbminimize(const int& n, const LBFGSB_CUDA_STATE<real>& state,
   if (state.m_funcgrad_callback)
     state.m_funcgrad_callback(x.getcontent(), f, g.getcontent(), cunullptr,
                               summary);
+////  printf("TEST 1\n");
+////  std::cin.ignore();
+
   nfgv = 1;
   lbfgsbprojgr<real>(n, l, u, nbd, x, g, sbgnrm);
   summary.residual_g = sbgnrm;
+
   if (sbgnrm <= option.eps_g) {
     summary.info = 4;
     memcpy(x_, x.getcontent(), n * sizeof(real));
@@ -349,12 +359,16 @@ void lbfgsbminimize(const int& n, const LBFGSB_CUDA_STATE<real>& state,
                          stp, dnrm, dtd, xstep, stpmx, iter, ifun, iback, nfgv,
                          internalinfo, task, boxed, cnstnd, csave, isave2,
                          dsave13);
+
+//      if (internalinfo != 0 || iback >= 20 || task != 1) {
       if (internalinfo != 0 || iback >= 20 || task != 1) {
         break;
       }
       if (state.m_funcgrad_callback)
         state.m_funcgrad_callback(x.getcontent(), f, g.getcontent(), cunullptr,
                                   summary);
+////      printf("TEST 2\n");
+////      std::cin.ignore();
     }
     if (internalinfo != 0) {
       ap::vmove(&x(1), &t(1), ap::vlen(1, n));
@@ -389,8 +403,10 @@ void lbfgsbminimize(const int& n, const LBFGSB_CUDA_STATE<real>& state,
     summary.num_iteration = iter;
     cudaStream_t cudanullptr = NULL;
     if (state.m_after_iteration_callback)
-      state.m_after_iteration_callback(x.getcontent(), f, g.getcontent(),
-                                       cudanullptr, summary);
+      state.m_after_iteration_callback(x.getcontent(), f, g.getcontent(), cudanullptr, summary);
+////  printf("TEST 3\n");
+////  std::cin.ignore();
+         
     lbfgsbprojgr<real>(n, l, u, nbd, x, g, sbgnrm);
     summary.residual_g = sbgnrm;
     if (sbgnrm <= option.eps_g) {
@@ -888,6 +904,7 @@ void lbfgsberrclb(const int& n, const int& m, const real& factr,
   if (factr < 0) {
     task = 2;
   }
+
   for (i = 1; i <= n; i++) {
     if (nbd(i) < 0 || nbd(i) > 3) {
       task = 2;

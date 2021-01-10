@@ -256,15 +256,15 @@ parameters<T>::parameters(std::string str, std::string str2)
         else
         std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
 
-	if(true){
+	if(false){
 //	if(true){
 		this->jump_to_last_level = true;
 		this->save_second_to_last_level = false;
-		this->second_to_last_level_grid_name = "second_to_last_level_grid_name";
+		this->second_to_last_level_grid_name = "right_before_last_level";
 	}else{
 		this->jump_to_last_level = false;
 		this->save_second_to_last_level = true;
-		this->second_to_last_level_grid_name = "second_to_last_level_grid_name";
+		this->second_to_last_level_grid_name = "right_before_last_level";
 	}
 }
 

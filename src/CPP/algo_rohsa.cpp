@@ -12,7 +12,7 @@
 #include "culbfgsb.h"
 #include "callback_cpu.h"
 
-algo_rohsa::algo_rohsa(parameters<double> &M, hypercube &Hypercube)
+algo_rohsa::algo_rohsa(parameters<double> &M, hypercube<double> &Hypercube)
 {
 // to be deleted
 	std::cout<<"hypercube[0][0][0] = "<<Hypercube.cube[0][0][0]<<std::endl;
@@ -672,7 +672,7 @@ if(cube_avgd_or_data[0].size() == 35){
 		this->file.simple_plot_through_regu(params, 0,0,number_plot_2D);
 		this->file.simple_plot_through_regu(params, 0,1,number_plot_2D);
 		this->file.simple_plot_through_regu(params, 0,2,number_plot_2D);
-		this->file.save_result_multires<double>(params, M, number_plot_2D);
+		this->file.save_result_multires(params, M, number_plot_2D);
 	}
 
 	for(int i=0; i<M.n_gauss; i++){

@@ -63,7 +63,7 @@ class algo_rohsa
 {
 	public:
 
-	algo_rohsa(parameters<double> &M, hypercube &Hypercube); //constructeur
+	algo_rohsa(parameters<double> &M, hypercube<double> &Hypercube); //constructeur
 
 /**
  * @brief Each iteration into the main loop corresponds to a resolution. At each iteration, we compute a piecewise spatially averaged array from the data extracted from the FITS file, then we compute the standard deviation map along each spatial position, we set the upper and lower boundaries and we solve iteratively the problem using L-BFGS-B-C, finally, we project the result onto a higher resolution grid.      
@@ -341,7 +341,7 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
 	int dim_x;
 	int dim_y;
 	int dim_v;
-	hypercube file; //!< Dummy 
+	hypercube<double> file; //!< Dummy 
 
 	double temps_global;
 	double temps_modification_beta;
