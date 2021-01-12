@@ -30,7 +30,8 @@ class parameters
 {
 	public:
 		parameters();
-		parameters(std::string str, std::string str2);
+		parameters(std::string str, std::string str2, std::string str3, std::string str4);
+//		copy_double_T(parameters<double> &M_d, parameters<T> &M);
 		std::vector<int> dim_data; //inutile : file.dim_data
 		int dim_x;
 		int dim_y;
@@ -81,21 +82,13 @@ class parameters
 	bool jump_to_last_level;
 	bool save_second_to_last_level;
 	std::string second_to_last_level_grid_name;
-
+	std::string double_or_float;
+	bool float_mode, double_mode;
+	std::string is_wrapper;
+	bool wrapper;
+	
 	std::vector<T> std_spect, mean_spect, max_spect, max_spect_norm;
 
-/*
-	int n_gauss_add;
-	int nside;
-	int n;
-	int power;
-	T ub_sig_init;
-	T ub_sig;
-
-	std::vector<int> dim_data;
-	std::vector<int> dim_cube; 
-
-*/
 };
 
 #include "parameters.hpp"
@@ -145,6 +138,8 @@ parameters<T>::parameters()
 		fichier >> txt >> egal >> lb_sig;
 		fichier >> txt >> egal >> ub_sig_init;
 		fichier >> txt >> egal >> lb_sig_init;
+		fichier >> txt >> egal >> double_or_float;
+		fichier >> txt >> egal >> is_wrapper;
 		if(file_type_dat_check == "true")
 			file_type_dat = true;
 		else 
@@ -169,16 +164,25 @@ parameters<T>::parameters()
 			descent = true;
 		else
 			descent = false;
-
-                fichier.close();
-        }
-        else
-                std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
+		if(double_or_float == "double" || double_or_float == "Double" || double_or_float == "d" || double_or_float == "D"){
+			double_mode = true;
+			float_mode = false;
+		}else{
+			double_mode = false;
+			float_mode = true;
+		}if(is_wrapper == "wrapper" || is_wrapper == "w" || is_wrapper == "Wrapper"){
+			wrapper = true;
+		}else{
+			wrapper = false;
+		}
+        }else	
+            std::cerr << "Can't open the parameters.txt file !" << std::endl;
+		fichier.close();
 
 }
 
 template<typename T>
-parameters<T>::parameters(std::string str, std::string str2)
+parameters<T>::parameters(std::string str, std::string str2, std::string str3, std::string str4)
 {
 	n_gauss_add = 0;
 
@@ -220,6 +224,8 @@ parameters<T>::parameters(std::string str, std::string str2)
 		fichier >> txt >> egal >> lb_sig;
 		fichier >> txt >> egal >> ub_sig_init;
 		fichier >> txt >> egal >> lb_sig_init;
+		fichier >> txt >> egal >> double_or_float;
+		fichier >> txt >> egal >> is_wrapper;
 		if(file_type_dat_check == "true")
 			file_type_dat = true;
 		else 
@@ -250,11 +256,20 @@ parameters<T>::parameters(std::string str, std::string str2)
 			select_version = 1;
 		else 
 			select_version = 2;
-
-        fichier.close();
-        }
-        else
-        std::cerr << "Impossible d'ouvrir le fichier !" << std::endl;
+		if(str4 == "-double" || str4 == "-Double" || str4 == "-d" || str4 == "-D"){
+			double_mode = true;
+			float_mode = false;
+		}else{
+			double_mode = false;
+			float_mode = true;
+		}if(str3 == "-wrapper" || str3 == "-w" || str3 == "-Wrapper"){
+			wrapper = true;
+		}else{
+			wrapper = false;
+		}
+        }else
+            std::cerr << "Can't open the parameters.txt file !" << std::endl;
+		fichier.close();
 
 	if(false){
 //	if(true){
@@ -267,7 +282,44 @@ parameters<T>::parameters(std::string str, std::string str2)
 		this->second_to_last_level_grid_name = "right_before_last_level";
 	}
 }
-
-
+/*
+template<typename T>
+parameters<T>::copy_double_T(parameters<double> &M_d, parameters<T> &M)
+{
+	M_d.filename_dat = M.filename_dat;
+	M_d.filename_fits = M.filename_fits;
+	M_d.file_type_dat_check = M.file_type_dat_check;
+	M_d.file_type_fits_check = M.file_type_fits_check;
+	M_d.slice_index_min = M.slice_index_min;
+	M_d.fileout = M.fileout;
+	M_d.filename_noise = M.filename_noise;
+	M_d.n_gauss = M.n_gauss;
+	M_d.lambda_amp = double(M.lambda_amp);
+	M_d.lambda_mu = double(M.lambda_mu);
+	M_d.lambda_sig = double(M.lambda_sig);
+	M_d.lambda_var_amp = double(M.lambda_var_amp);
+	M_d.lambda_var_mu = double(M.lambda_var_mu);
+	M_d.lambda_var_sig = double(M.lambda_var_sig);
+	M_d.amp_fact_init = double(M.amp_fact_init);
+	M_d.sig_init = double(M.sig_init);
+	M_d.init_option = M.init_option;
+	M_d.maxiter_init = M.maxiter_init;
+	M_d.maxiter = M.maxiter;
+	M_d.m = M.m;
+	M_d.check_noise = M.check_noise;
+	M_d.check_regul = M.check_regul;
+	M_d.check_descent = M.check_descent;
+	M_d.lstd = M.lstd;
+	M_d.ustd = M.ustd;
+	M_d.iprint = M.iprint;
+	M_d.iprint_init = M.iprint_init;
+	M_d.check_save_grid = M.check_save_grid;
+	M_d.ub_sig = double(M.ub_sig);
+	M_d.lb_sig = double(M.lb_sig);
+	M_d.ub_sig_init = double(M.ub_sig_init);
+	M_d.lb_sig_init = double(M.lb_sig_init);
+	M_d.double_or_float = M.double_or_float;
+}
+*/
 
 #endif

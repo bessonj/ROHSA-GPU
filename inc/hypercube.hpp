@@ -250,9 +250,10 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, bool
 //	std::cout << "	DEBUG " << std::endl;
 //	std::cout<<dim_data[2]<<std::endl;
 //	exit(0);
+	std::cout<<"nside = "<<nside<<std::endl;
 	
-	dim_cube[0] =pow(2.0,nside);
-	dim_cube[1] =pow(2.0,nside);
+	dim_cube[0] =pow(2,nside);
+	dim_cube[1] =pow(2,nside);
 	if(M.file_type_fits){
 		dim_cube[2] = indice_fin-indice_debut+1;
 	}
@@ -442,7 +443,7 @@ Parse::~Parse()
 template<typename T>
 int hypercube<T>::dim2nside()
 {
-	return std::max( 0, std::min(int(ceil( log(T(dim_data[0]))/log(2.))), int(ceil( log(T(dim_data[1]))/log(2.))))  ) ;  
+	return std::max( 0, std::min(int(ceil( log(double(dim_data[0]))/log(2.))), int(ceil( log(double(dim_data[1]))/log(2.))))  ) ;  
 }
 
 //assuming the cube has been reshaped before through the python tool

@@ -4,22 +4,23 @@
 #include <helper_cuda.h>
 #include <cuda.h>
 
-void conv_twice_and_copy(double* d_IMAGE_amp, double* d_IMAGE_amp_ext, double* d_conv_amp, double* d_conv_conv_amp, int image_x, int image_y, dim3 BlocksParGrille_init, dim3 ThreadsParBlock_init, dim3 BlocksParGrille, dim3 ThreadsParBlock)
+template <typename T> 
+void conv_twice_and_copy(T* d_IMAGE_amp, T* d_IMAGE_amp_ext, T* d_conv_amp, T* d_conv_conv_amp, int image_x, int image_y, dim3 BlocksParGrille_init, dim3 ThreadsParBlock_init, dim3 BlocksParGrille, dim3 ThreadsParBlock)
 {
     unsigned long int size_i = (image_x+4)  * (image_y+4)  * sizeof(double);
 
-    double* d_RESULTAT_first_conv;        
+    T* d_RESULTAT_first_conv;        
     cudaMalloc((void**)&d_RESULTAT_first_conv, size_i);
     cudaMemset ( d_RESULTAT_first_conv, 0 , size_i) ;
 
-    double* d_RESULTAT_second_conv;        
+    T* d_RESULTAT_second_conv;        
     cudaMalloc((void**)&d_RESULTAT_second_conv, size_i);
     cudaMemset ( d_RESULTAT_second_conv, 0 , size_i) ;
 
-    ConvKernel<double><<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT_first_conv,  d_IMAGE_amp_ext, image_x+4, image_y+4);
-    ConvKernel<double><<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT_second_conv,  d_conv_amp, image_x+4, image_y+4);
-    copy_gpu<double><<<BlocksParGrille, ThreadsParBlock>>>(d_conv_amp, d_RESULTAT_first_conv, image_x, image_y);
-    copy_gpu<double><<<BlocksParGrille, ThreadsParBlock>>>(d_conv_conv_amp, d_RESULTAT_second_conv, image_x, image_y);
+    ConvKernel<T><<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT_first_conv,  d_IMAGE_amp_ext, image_x+4, image_y+4);
+    ConvKernel<T><<<BlocksParGrille, ThreadsParBlock>>>(d_RESULTAT_second_conv,  d_conv_amp, image_x+4, image_y+4);
+    copy_gpu<T><<<BlocksParGrille, ThreadsParBlock>>>(d_conv_amp, d_RESULTAT_first_conv, image_x, image_y);
+    copy_gpu<T><<<BlocksParGrille, ThreadsParBlock>>>(d_conv_conv_amp, d_RESULTAT_second_conv, image_x, image_y);
 }
 
 

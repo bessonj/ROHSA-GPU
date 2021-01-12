@@ -1061,7 +1061,7 @@ void f_g_cube_parallel(parameters<double> &M, double &f, double* g, int n, std::
 
 
 
-template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T* d_g, const int n, T* beta_dev, const int indice_v, const int indice_y, const int indice_x, T* std_map_dev, T* cube_flattened_dev, T* temps)   
+template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T* d_g, const int n, T* beta_dev, const int indice_v, const int indice_y, const int indice_x, T* std_map_dev, T* cube_flattened_dev, double* temps)   
   {
     bool print = false;
 //    bool print = true;

@@ -103,14 +103,23 @@ int main(int argc, char * argv[])
 
 	double temps1 = omp_get_wtime();
 	double temps1_lecture = omp_get_wtime();
+
 /*
 	for(int i = 0; i<argc; i++){
 		std::cout<<"argv["<<i<<"] = "<<argv[i]<<std::endl;
 	}
 	exit(0);
 */
-	parameters<double> user_parametres(argv[1], argv[2]);
 
+//	parameters<double> user_parametres(argv[1], argv[2]);
+
+
+	parameters<double> user_parametres_float(argv[1], argv[2], argv[3], argv[4]);
+    hypercube<double> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max, whole_data_in_cube); 
+	algo_rohsa<double> algo_float(user_parametres_float, Hypercube_file_float);
+	Hypercube_file_float.save_result(algo_float.grid_params, user_parametres_float);
+	exit(0);
+/*
 
 	if(user_parametres.file_type_fits){
 
@@ -129,7 +138,7 @@ int main(int argc, char * argv[])
 
 		double temps2_lecture = omp_get_wtime();
 
-		algo_rohsa algo(user_parametres, Hypercube_file);
+		algo_rohsa<double> algo(user_parametres, Hypercube_file);
 
         double temps2 = omp_get_wtime();
 
@@ -141,22 +150,6 @@ int main(int argc, char * argv[])
 		Hypercube_file.mean_parameters(algo.grid_params, user_parametres.n_gauss);
 
 
-/*
-			for(int i=0;i<std::min(Hypercube_file.data[0].size(),Hypercube_file.data.size());i++){
-				for(int j=0;j<std::min(Hypercube_file.data[0].size(),Hypercube_file.data.size());j++){
-					if(i==j){
-			Hypercube_file.plot_line(algo.grid_params, i, j, user_parametres.n_gauss);
-				}
-				}
-			}
-
-		//	Hypercube_file.display_result(user_parametres.grid_params, 100, user_parametres.n_gauss); //affiche une tranche du cube reconstitué du modèle à l'indice 100
-		//	Hypercube_file.display_cube(100); //affiche une tranche de cube à l'indice 100
-
-			for(int p = 0; p<user_parametres.slice_index_max-user_parametres.slice_index_min-1; p++){
-				Hypercube_file.display_result_and_data(algo.grid_params, p, user_parametres.n_gauss, false); //affiche cote à cote les données et le modèle
-			}
-*/
 		//	for(int p = 40; p<70; p++){
 		//		Hypercube_file.display_2_gaussiennes(user_parametres.grid_params, p, 0*3+1, 0, 1);
 		//	}
@@ -218,16 +211,7 @@ exit(0);
 	}
 //		Hypercube_file.display_2_gaussiennes(user_parametres.grid_params, p, p, 0,2); //affiche cote à cote les données et le modèle
 
-/*
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,0,1 , 2);
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,0,2 , 3);
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,1,0 , 4);
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,1,1 , 5);
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,1,2 , 6);
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,2,0 , 7);
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,2,1 , 8);
-	Hypercube_file.display_avec_et_sans_regu(user_parametres.grid_params,2,2 , 9);
-*/
+
 	}
 
 	if(user_parametres.file_type_dat){
@@ -251,7 +235,7 @@ exit(0);
 
 		double temps2_lecture = omp_get_wtime();
 
-		algo_rohsa algo(user_parametres, Hypercube_file);
+		algo_rohsa<double> algo(user_parametres, Hypercube_file);
 
         double temps2 = omp_get_wtime();
         std::cout<<"Temps de lecture : "<<temps2_lecture - temps1_lecture <<std::endl;
@@ -300,7 +284,7 @@ exit(0);
 		Hypercube_file.mean_parameters(algo.grid_params, user_parametres.n_gauss);
 
 		}
-
+*/
 
 
 

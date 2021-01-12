@@ -1,3 +1,6 @@
+#ifndef DEF_CONVO
+#define DEF_CONVO
+
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
 #include <helper_functions.h>
@@ -202,3 +205,5 @@ checkCudaErrors(cudaEventElapsedTime(time_msec+0, record_event[0], record_event[
         free(h_IMAGE_extended);
 }
 */
+
+#endif

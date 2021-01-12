@@ -58,7 +58,7 @@
 void gradient_L_3_parallel(double* deriv, int* taille_deriv, int product_taille_deriv, double* params, int* taille_params, int product_taille_params, double* residual, int* taille_residual, int product_residual, double* std_map, int* taille_std_map, int product_std_map, int n_gauss);
 void f_g_cube_parallel(parameters<double> &M, double &f, double* g, int n, std::vector<std::vector<std::vector<double>>> &cube, double beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<double>> &std_map, std::vector<double> &mean_amp, std::vector<double> &mean_mu, std::vector<double> &mean_sig, double* cube_flattened, double temp_conv, double temps_deriv, double temps_tableaux, double temps_res_f);
 //void f_g_cube_parallel_lib(const parameters<double> &M, double &f, double* d_g, const int n, double* beta_dev, const int indice_v, const int indice_y, const int indice_x, double* std_map_dev, double* cube_flattened_dev, double* temps);
-template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T* g_dev, const int n, T* beta_dev, const int indice_v, const int indice_y, const int indice_x, T* std_map, T* cube_flattened, T* temps);
+template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T* g_dev, const int n, T* beta_dev, const int indice_v, const int indice_y, const int indice_x, T* std_map, T* cube_flattened, double* temps);
 
 void conv2D_GPU_sort(double* h_IMAGE, double* h_KERNEL, double* h_RESULTAT_GPU, long int image_x, long int image_y);
 void dummyInstantiator_sort(); //!< Initialize the template functions
