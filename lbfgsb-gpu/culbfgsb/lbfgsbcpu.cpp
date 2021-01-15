@@ -21,8 +21,8 @@ quote at least one of the references given below:
       (1997), ACM Transactions on Mathematical Software,  Vol 23,  Num. 4,
       pp. 550 - 560.
 *************************************************************************/
-#include "../../inc/gradient.hpp"
-#include "../../inc/callback_cpu.h"
+//#include "../../inc/gradient.hpp"
+//#include "../../inc/callback_cpu.h"
 #include "culbfgsb/lbfgsbcpu.h"
 
 /*************************************************************************

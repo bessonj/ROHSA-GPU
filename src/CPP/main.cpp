@@ -73,11 +73,6 @@
 
 int main(int argc, char * argv[])
 {
-
-	//to truncate or not to truncate, that's the question
-	bool whole_data_in_cube = true; //spatially
-// test index tableaux
-//-----------------------------------------------------------
 	int tableau2D_SHAPE[] = {2,2};
 	int tableau2D_SHAPE0 = 2;
 	int tableau2D_SHAPE1 = 2;
@@ -99,25 +94,45 @@ int main(int argc, char * argv[])
 	std::cout<<INDEXING_2D(tableau2D, 1, 1)<<std::endl;
 	std::cout<<INDEXING_3D(tableau3D, 0, 1, 1)<<std::endl;
 
-//-----------------------------------------------------------
-
 	double temps1 = omp_get_wtime();
 	double temps1_lecture = omp_get_wtime();
-
-/*
-	for(int i = 0; i<argc; i++){
-		std::cout<<"argv["<<i<<"] = "<<argv[i]<<std::endl;
-	}
-	exit(0);
-*/
 
 //	parameters<double> user_parametres(argv[1], argv[2]);
 
 
-	parameters<double> user_parametres_float(argv[1], argv[2], argv[3], argv[4]);
-    hypercube<double> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max, whole_data_in_cube); 
-	algo_rohsa<double> algo_float(user_parametres_float, Hypercube_file_float);
+	parameters<float> user_parametres_float(argv[1], argv[2], argv[3], argv[4]);
+//    hypercube<double> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max, 540, 375, 256); 
+    hypercube<float> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max); 
+
+	Hypercube_file_float.get_noise_map_from_fits(user_parametres_float);
+
+//    hypercube<float> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max); 
+/*
+	for(int ind = 0; ind<100; ind++){
+		Hypercube_file_float.display_data(ind);
+	}
+*/
+	algo_rohsa<float> algo_float(user_parametres_float, Hypercube_file_float);
 	Hypercube_file_float.save_result(algo_float.grid_params, user_parametres_float);
+
+	printf("result saved !\n");
+	Hypercube_file_float.plot_line(algo_float.grid_params,127,127,12);
+	Hypercube_file_float.plot_line(algo_float.grid_params,128,127,12);
+	Hypercube_file_float.plot_line(algo_float.grid_params,127,128,12);
+	Hypercube_file_float.plot_line(algo_float.grid_params,128,128,12);
+	Hypercube_file_float.plot_line(algo_float.grid_params,129,128,12);
+	Hypercube_file_float.plot_line(algo_float.grid_params,129,129,12);
+	Hypercube_file_float.plot_line(algo_float.grid_params,127,128,12);
+	Hypercube_file_float.plot_line(algo_float.grid_params,128,129,12);
+
+
+	for(int num_gauss = 0; num_gauss < user_parametres_float.n_gauss; num_gauss ++){
+		for (int num_par = 0; num_par < 3; num_par++)
+		{
+			Hypercube_file_float.display_avec_et_sans_regu(algo_float.grid_params, num_gauss, num_par , num_par+num_gauss*3);
+		}
+	}
+
 	exit(0);
 /*
 

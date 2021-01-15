@@ -60,7 +60,14 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 	temps_copy+=omp_get_wtime()-temps1_ravel;
 
 	double temps1_tableaux = omp_get_wtime();
-
+/*
+	for(int i = 0; i<M.n_gauss; i++){
+		printf("b_params[%d]= %.16f\n",i, b_params[i]);
+	}
+	for(int i = 0; i<n_beta; i++){
+		printf("beta[%d]= %.16f\n",i, beta[i]);
+	}
+*/
 	int i,j,l;
 
 
@@ -82,7 +89,7 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 					par[0]= beta[j*3*M.n_gauss*indice_y+i*3*M.n_gauss+(3*p_par+0)];
 					par[1]= beta[j*3*M.n_gauss*indice_y+i*3*M.n_gauss+(3*p_par+1)];
 					par[2]= beta[j*3*M.n_gauss*indice_y+i*3*M.n_gauss+(3*p_par+2)];
-					accu+= par[0]*exp(-pow(T(p+1)-par[1],2)/(2*pow(par[2],2.)));
+					accu+= par[0]*exp(-powf(T(p+1)-par[1],2)/(2*powf(par[2],2.)));
 				}
 			residual[j*indice_y*indice_v+i*indice_v+p] = accu-cube_for_cache[j][i][p];
 //				hypercube_tilde[j*indice_y*indice_v+i*indice_v+p] = accu;	
@@ -98,13 +105,22 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 			if(std_map_[j*indice_y+i]>0.){
 				T accu = 0.;
 				for (int p=0; p<indice_v; p++){
-					accu+=pow(residual[j*indice_y*indice_v+i*indice_v+p],2.);
+					accu+=powf(residual[j*indice_y*indice_v+i*indice_v+p],2.);
 				}
 	//				printf("accu = %f\n",accu);
-				f += 0.5*accu/pow(std_map_[j*indice_y+i],2.); //std_map est arrondie... 
+				f += 0.5*accu/powf(std_map_[j*indice_y+i],2.); //std_map est arrondie... 
 			}
 		}
 	}
+/*
+	printf("M.lambda_var_sig = %.16f\n",M.lambda_var_sig);
+	printf("M.lambda_var_sig = %.16f\n",M.lambda_var_sig);
+	printf("M.lambda_amp = %.16f\n",M.lambda_amp);
+	printf("M.lambda_mu = %.16f\n",M.lambda_mu);
+	printf("M.lambda_sig = %.16f\n",M.lambda_sig);
+	printf("M.n_gauss = %d\n",M.n_gauss);
+	std::cin.ignore();
+*/
 
 	temps_tableaux+=omp_get_wtime()-temps1_tableaux;
 
@@ -117,6 +133,13 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 				image_sig[indice_x*p+q]=beta[q*indice_y*3*M.n_gauss + p*3*M.n_gauss+(2+3*i)];
 			}
 		}
+/*
+		for(int q=0; q<indice_x; q++){
+			for(int p=0; p<indice_y; p++){
+				printf("image_sig[%d] = %.16f\n",indice_x*p+q,image_sig[indice_x*p+q]);
+			}
+		}
+*/
 		convolution_2D_mirror_flat<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
 		convolution_2D_mirror_flat<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
 		convolution_2D_mirror_flat<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
@@ -126,10 +149,11 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 
 		for(int j=0; j<indice_y; j++){
 			for(int l=0; l<indice_x; l++){
-				f+= 0.5*M.lambda_amp*pow(conv_amp[j*indice_x+l],2);
-				f+= 0.5*M.lambda_mu*pow(conv_mu[j*indice_x+l],2);
-				f+= 0.5*M.lambda_sig*pow(conv_sig[j*indice_x+l],2) + 0.5*M.lambda_var_sig*pow(image_sig[j*indice_x+l]-b_params[i],2);
-
+				f+= 0.5*M.lambda_amp*powf(conv_amp[j*indice_x+l],2);
+				f+= 0.5*M.lambda_mu*powf(conv_mu[j*indice_x+l],2);
+				f+= 0.5*M.lambda_sig*powf(conv_sig[j*indice_x+l],2) + 0.5*M.lambda_var_sig*powf(image_sig[j*indice_x+l]-b_params[i],2);
+//				printf("b_params[i] = %.16f\n",b_params[i]);
+//				printf("image_sig[j*indice_x+l] = %.16f\n",image_sig[j*indice_x+l]);
 				g[n_beta-M.n_gauss+i] += M.lambda_var_sig*(b_params[i]-image_sig[j*indice_x+l]);
 				g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss+(0+3*i)] += M.lambda_amp*conv_conv_amp[j*indice_x+l];
 				g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss+(1+3*i)] += M.lambda_mu*conv_conv_mu[j*indice_x+l];
@@ -137,15 +161,20 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 			}
 		}
 		temps_conv+=omp_get_wtime()-temps1_conv;
+
 	}
 
+/*
+	for(int i = 0; i<n_beta; i++){
+		printf("g[%d]= %.16f\n",i, g[i]);
+	}
+	std::cin.ignore();
+*/
+
 	double temps1_deriv = omp_get_wtime();
-
-
 	#pragma omp parallel private(j,l) shared(g,M,beta,std_map_,residual,indice_v,indice_y,indice_x)
 	{
 	#pragma omp for
-
 	for(l=0; l<indice_x; l++){
 		for(j=0; j<indice_y; j++){
 			if(std_map_[l*indice_y+j]>0.){
@@ -155,9 +184,9 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 					T par2 = beta[l*indice_y*3*M.n_gauss +j*3*M.n_gauss +(2+3*i)];							
 					for(int k=0; k<indice_v; k++){	
 					T par1 = T(k+1) - par1_;
-					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(0+3*i)] += exp(-pow( par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_y+j],2);
-					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(1+3*i)] += par0*par1/pow(par2,2.) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_y+j],2);
-					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(2+3*i)] += par0*pow(par1, 2.)/(pow(par2,3.)) * exp(-pow(par1,2.)/(2*pow(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/pow(std_map_[l*indice_y+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(0+3*i)] += exp(-powf( par1,2.)/(2*powf(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/powf(std_map_[l*indice_y+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(1+3*i)] += par0*par1/powf(par2,2.) * exp(-powf(par1,2.)/(2*powf(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/powf(std_map_[l*indice_y+j],2);
+					g[l*indice_y*3*M.n_gauss + j*3*M.n_gauss +(2+3*i)] += par0*powf(par1, 2.)/(pow(par2,3.)) * exp(-powf(par1,2.)/(2*powf(par2,2.)) )*residual[l*indice_y*indice_v + j*indice_v + k]/powf(std_map_[l*indice_y+j],2);
 				}
 			}
 		}
@@ -171,9 +200,15 @@ void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, 
 	temps[1]+=1000*temps_tableaux;
 	temps[0]+=1000*temps_copy;
 	for(int i = 0; i<4; i++){
-		temps[4]+=1000*temps[i];
+		temps[4]+=temps[i];
 	}
-
+/*
+	for(int i = 0; i<n_beta; i++){
+		printf("g[%d]= %.16f\n",i, g[i]);
+	}
+	printf("f = %.16f\n",f);
+	std::cin.ignore();
+*/
 
 	free(residual);
 	free(std_map_);
@@ -313,7 +348,7 @@ void f_g_cube_fast_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::
 	temps[1]+=1000*temps_tableaux;
 	temps[0]+=1000*temps_copy;
 	for(int i = 0; i<4; i++){
-		temps[4]+=1000*temps[i];
+		temps[4]+=temps[i];
 	}
 
 	}
@@ -481,7 +516,7 @@ if(print){
 	temps[1]+=1000*temps_tableaux;
 	temps[0]+=1000*temps_copy;
 	for(int i = 0; i<4; i++){
-		temps[4]+=1000*temps[i];
+		temps[4]+=temps[i];
 	}
 
 if(print){
@@ -635,7 +670,7 @@ double temps1_deriv = omp_get_wtime();
 	temps[1]+=1000*temps_tableaux;
 	temps[0]+=1000*temps_copy;
 	for(int i = 0; i<4; i++){
-		temps[4]+=1000*temps[i];
+		temps[4]+=temps[i];
 	}
 }
 
@@ -865,7 +900,7 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 	temps[1]+=1000*temps_tableaux;
 	temps[0]+=1000*temps_copy;
 	for(int i = 0; i<4; i++){
-		temps[4]+=1000*temps[i];
+		temps[4]+=temps[i];
 	}
 
 	free(deriv);
@@ -1023,7 +1058,7 @@ void f_g_cube_cuda_L_clean_lib(parameters<T> &M, T &f, T* g, int n, T* beta, int
 	temps[1]+=1000*temps_tableaux;
 	temps[0]+=1000*temps_copy;
 	for(int i = 0; i<4; i++){
-		temps[4]+=1000*temps[i];
+		temps[4]+=temps[i];
 	}
 	free(deriv);
 	free(residual);
@@ -1046,8 +1081,8 @@ void convolution_2D_mirror_flat(const parameters<T> &M, T* image, T* conv, int d
 	T kernel[]= {0.,-0.25,0.,-0.25,1.,-0.25,0.,-0.25,0.}; 
 	int ii(0),jj(0),mm(0),nn(0),kCenterY(0), kCenterX(0);
 
-	std::vector <std::vector<T>> ext_conv(dim_y+4, std::vector<T>(dim_x+4,0.));
-	std::vector <std::vector<T>> extended(dim_y+4, std::vector<T>(dim_x+4,0.));
+	std::vector<std::vector<T>> ext_conv(dim_y+4, std::vector<T>(dim_x+4,0.));
+	std::vector<std::vector<T>> extended(dim_y+4, std::vector<T>(dim_x+4,0.));
 
 
 	for(int j(0); j<dim_y; j++)
@@ -1306,8 +1341,11 @@ template void myresidual(std::vector<double>&, std::vector<double>&, std::vector
 
 
 
-/*
+
+
+
 template float model_function(int x, float a, float m, float s);
+template void f_g_cube_fast_unidimensional(parameters<float>&, float&, float*, int, float*, std::vector<std::vector<std::vector<float>>>&, float*, int, int, int, float*, double*);	
 
 template void convolution_2D_mirror_flat(const parameters<float> &M, float* image, float* conv, int dim_y, int dim_x, int dim_k);
 template void convolution_2D_mirror(const parameters<float> &M, const std::vector<std::vector<float>> &image, std::vector<std::vector<float>> &conv, int dim_y, int dim_x, int dim_k);
@@ -1315,8 +1353,8 @@ template void convolution_2D_mirror(const parameters<float> &M, const std::vecto
 template void f_g_cube_fast_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, double*);
 template void f_g_cube_not_very_fast_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, double*);
 template void f_g_cube_fast_clean_optim_CPU_lib(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, float**, double*);
-template void f_g_cube_cuda_L_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, float*, double*, double temps_transfert, double temps_mirroirs);
-template void f_g_cube_cuda_L_clean_lib(parameters<float>&, float &, float*, int, float*, int , int , int , std::vector<std::vector<float>>&, float*, double*, double temps_transfert, double temps_mirroirs);
+template void f_g_cube_cuda_L_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, float*, double*, double, double);
+template void f_g_cube_cuda_L_clean_lib(parameters<float>&, float &, float*, int, float*, int , int , int , std::vector<std::vector<float>>&, float*, double*, double, double);
 
 template void one_D_to_three_D_same_dimensions(float*, std::vector<std::vector<std::vector<float>>>&, int, int, int);
 template void three_D_to_one_D_same_dimensions(const std::vector<std::vector<std::vector<float>>>&, float*, int, int, int);
@@ -1324,4 +1362,5 @@ template void three_D_to_one_D_same_dimensions(const std::vector<std::vector<std
 template float myfunc_spec(std::vector<float>&);
 template void myresidual(std::vector<float>&, std::vector<float>&, std::vector<float>&, int);
 
-*/
+
+

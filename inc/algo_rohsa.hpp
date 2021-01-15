@@ -478,9 +478,7 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 
 			std::vector<std::vector<std::vector<T>>> cube_mean(power, std::vector<std::vector<T>>(power,std::vector<T>(dim_v,1.)));
 
-			std::cout << " TEST !!!!!!!!!!!!! " << std::endl;
 			mean_array(power, cube_mean);
-			std::cout << " TEST !!!!!!!!!!!!! " << std::endl;
 
 			std::vector<T> cube_mean_flat(cube_mean[0][0].size());
 
@@ -490,10 +488,10 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 				for(int e(0); e<cube_mean[0][0].size(); e++) {
 					cube_mean_flat_init_double[e] = double(cube_mean[0][0][e]); //cache ok
 				}
-
 				for(int e(0); e<fit_params_flat_init_double.size(); e++) {
 					fit_params_flat_init_double[e] = double(fit_params[e][0][0]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
 				}
+
 
 				//assume option "mean"
 				std::cout<<"Init mean spectrum"<<std::endl;
@@ -503,6 +501,11 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 	//				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
 	//				init_spectrum(M, cube_mean_flat, max_spect_norm); //option norme spectre
 
+				for(int e(0); e<fit_params_flat_init_double.size(); e++) {
+					printf("fit_params_flat_init_double[%d] = %.16f\n",e,fit_params_flat_init_double[e]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
+				}
+//				exit(0);
+				std::cin.ignore();
 
 				for(int i(0); i<M.n_gauss; i++) {
 						b_params[i]= T(fit_params_flat_init_double[2+3*i]);
@@ -533,11 +536,48 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 						upgrade(M ,cube_mean, fit_params, power);
 						double temps2_upgrade = omp_get_wtime();
 						temps_upgrade+=temps2_upgrade-temps1_upgrade;
+
+fit_params[0][0][0] = 2.0050162089404973;
+fit_params[1][0][0] = 34.8209155748459693;
+fit_params[2][0][0] = 11.4670363365702190;
+fit_params[3][0][0] = 1.6013485980614408;
+fit_params[4][0][0] = 103.6737248113834653;
+fit_params[5][0][0] = 10.5077433796586632;
+fit_params[6][0][0] = 1.7215169479274277;
+fit_params[7][0][0] = 37.5691112042946287;
+fit_params[8][0][0] = 1.6390353288355533;
+fit_params[9][0][0] = 7.1863201795084928;
+fit_params[10][0][0] = 34.5595485571460301;
+fit_params[11][0][0] = 1.8297352300393890;
+fit_params[12][0][0] = 2.7476664912880673;
+fit_params[13][0][0] = 101.0331758355382021;
+fit_params[14][0][0] = 3.5603237833754138;
+fit_params[15][0][0] = 0.2752223659412244;
+fit_params[16][0][0] = 68.4359932735529952;
+fit_params[17][0][0] = 10.7975758827606487;
+fit_params[18][0][0] = 1.2960773402025128;
+fit_params[19][0][0] = 30.2952212742054812;
+fit_params[20][0][0] = 1.2837584049698683;
+fit_params[21][0][0] = 0.3547003275216601;
+fit_params[22][0][0] = 108.5435787843823050;
+fit_params[23][0][0] = 2.7916331327471609;
+fit_params[24][0][0] = 14.1474872742121605;
+fit_params[25][0][0] = 35.8097720768966497;
+fit_params[26][0][0] = 4.0796185552538837;
+fit_params[27][0][0] = 0.0507513970882115;
+fit_params[28][0][0] = 1.4801271879387774;
+fit_params[29][0][0] = 3.4379646715313328;
+fit_params[30][0][0] = 0.4073933955858907;
+fit_params[31][0][0] = 21.8262737831335834;
+fit_params[32][0][0] = 2.9227478705517469;
+fit_params[33][0][0] = 0.1039070910971688;
+fit_params[34][0][0] = 47.0012069960593806;
+fit_params[35][0][0] = 2.1412268676013992;
+
 					}
 					if (n>0 and n<file.nside){
 
 						if (power ==2){
-
 						}
 						std::vector<std::vector<T>> std_map(power, std::vector<T>(power,0.));
 						double temps_std_map1=omp_get_wtime();
@@ -735,13 +775,13 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 
 	double temps1_tableau_update = omp_get_wtime();
 
-		std::vector<T> cube_flat(cube_avgd_or_data[0][0].size(),0.);
-		std::vector<std::vector<std::vector<T>>> lb_3D(3*M.n_gauss, std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-		std::vector<std::vector<std::vector<T>>> ub_3D(3*M.n_gauss, std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
-		std::vector<T> lb_3D_flat(lb_3D.size(),0.);
-		std::vector<T> ub_3D_flat(ub_3D.size(),0.);
-		std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
-		std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " , " << ub_3D[0][0].size() <<  std::endl;
+	std::vector<T> cube_flat(cube_avgd_or_data[0][0].size(),0.);
+	std::vector<std::vector<std::vector<T>>> lb_3D(3*M.n_gauss, std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<std::vector<std::vector<T>>> ub_3D(3*M.n_gauss, std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
+	std::vector<T> lb_3D_flat(lb_3D.size(),0.);
+	std::vector<T> ub_3D_flat(ub_3D.size(),0.);
+	std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
+	std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " , " << ub_3D[0][0].size() <<  std::endl;
 
 	bool print = false;
 
@@ -921,7 +961,19 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 			ub[n_beta-M.n_gauss+i] = M.ub_sig;
 			beta[n_beta-M.n_gauss+i] = b_params[i];
 		}
-	//	minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+
+		printf("M.lambda_amp = %f\n",M.lambda_amp);
+		printf("M.lambda_mu = %f\n",M.lambda_mu);
+		printf("M.lambda_sig = %f\n",M.lambda_sig);
+		printf("M.lambda_var_amp = %f\n",M.lambda_var_amp);
+		printf("M.lambda_var_mu = %f\n",M.lambda_var_mu);
+		printf("M.lambda_var_sig = %f\n",M.lambda_var_sig);
+		printf("M.amp_fact_init = %f\n",M.amp_fact_init);
+		printf("M.sig_init = %f\n",M.sig_init);
+		printf("M.n_gauss = %d\n",M.n_gauss);
+		std::cin.ignore();
+
+//		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
 		minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
 		if(M.select_version == 0){ //-cpu
 			one_D_to_three_D_inverted_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
@@ -1089,25 +1141,6 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 		setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
 				&M.iprint, csave, lsave, isave, dsave);
 		temps_setulb += omp_get_wtime() - temps_temp;
-
-		// CPU
-//		f_g_cube_fast_clean(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map); //OK
-//		f_g_cube_fast_clean_optim_CPU(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map); //OK
-//		this->f_g_cube_fast_clean_optim_CPU_lib(M, f, g, n, cube, beta, dim_v, dim_y, dim_x, std_map, NULL);
-
-		// GPU
-/*
-		if(dim_x >128){
-			for(int i = 0; i<300; i++){
-				printf("beta[%d] = %f\n", i, beta[i]);
-			}
-		if(beta[0] ==  0.){
-			for(int i = 0; i<300; i++){
-				printf("cube_flattened[%d] = %f\n", i, cube_flattened[i]);
-			}
-		}
-		}
-*/
 
 	if(false){//dim_x<64){
 		f_g_cube_fast_unidimensional<double>(M, f, g, n, cube_flattened, cube, beta, dim_v, dim_y, dim_x, std_map_, temps);
@@ -1450,13 +1483,13 @@ void algo_rohsa<T>::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta
 
 	lbfgsbcuda::lbfgsbdefaultoption<T>(lbfgsb_options);
 	lbfgsb_options.mode = LCM_NO_ACCELERATION;
-	lbfgsb_options.eps_f = static_cast<T>(1e-15);
-	lbfgsb_options.eps_g = static_cast<T>(1e-15);
-	lbfgsb_options.eps_x = static_cast<T>(1e-15);
+	lbfgsb_options.eps_f = static_cast<T>(1e-10);
+	lbfgsb_options.eps_g = static_cast<T>(1e-10);
+	lbfgsb_options.eps_x = static_cast<T>(1e-10);
 	lbfgsb_options.max_iteration = M.maxiter;
     lbfgsb_options.step_scaling = 1.0;
-	lbfgsb_options.hessian_approximate_dimension = 8;
-  	lbfgsb_options.machine_epsilon = 1e-15;
+	lbfgsb_options.hessian_approximate_dimension = M.m;
+  	lbfgsb_options.machine_epsilon = 1e-10;
   	lbfgsb_options.machine_maximum = std::numeric_limits<T>::max();
 
 	// initialize LBFGSB state
@@ -1489,7 +1522,7 @@ void algo_rohsa<T>::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta
 			checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
 			checkCudaErrors(cudaMemcpy(x_dev, x, n*sizeof(T), cudaMemcpyHostToDevice));
 			checkCudaErrors(cudaDeviceSynchronize());
-			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
+//			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
 			checkCudaErrors(cudaDeviceSynchronize());
 			checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
 			checkCudaErrors(cudaFree(x_dev));
@@ -1683,8 +1716,17 @@ void algo_rohsa<T>::upgrade(parameters<T> &M, std::vector<std::vector<std::vecto
             for(p=0; p<params.size(); p++){
             	x[p]=double(params[p][i][j]); //cache
             }
+            for(p=0; p<params.size();p++){
+				printf("x[%d] = %.16f\n", p, x[p]);
+            }
+			printf("--------------------------------\n");
             init_bounds_double(M, line, M.n_gauss, lb, ub, false); //bool _init = false;
             minimize_spec(M,3*M.n_gauss ,M.m ,x ,lb , M.n_gauss, ub ,line);
+            for(p=0; p<params.size();p++){
+				printf("x[%d] = %.16f\n", p, x[p]);
+            }
+			std::cin.ignore();			
+
             for(p=0; p<params.size();p++){
             	params[p][i][j]=T(x[p]); //cache
             }
@@ -1780,7 +1822,6 @@ void algo_rohsa<T>::minimize_spec(parameters<T> &M, long n, long m, std::vector<
     double pgtol;
 
 // converts the vectors into a regular list
-    double tampon(0.);
     double x[x_v.size()];
     double lb[lb_v.size()];
     double ub[ub_v.size()];
@@ -1788,6 +1829,9 @@ void algo_rohsa<T>::minimize_spec(parameters<T> &M, long n, long m, std::vector<
 
     for(int i(0); i<line_v.size(); i++) {
 	line[i]=line_v[i];
+    } 
+    for(int i(0); i<n; i++) {
+	g[i]=0.;
     } 
 
     for(int i(0); i<x_v.size(); i++) {
@@ -1817,20 +1861,26 @@ void algo_rohsa<T>::minimize_spec(parameters<T> &M, long n, long m, std::vector<
     /*        ------- the beginning of the loop ---------- */
 L111:
     while(IS_FG(*task) or *task==NEW_X or *task==START){ 
+
     /*     This is the call to the L-BFGS-B code. */
 //    std::cout<<" Début appel BFGS "<<std::endl;
 	    setulb(&n, &m, x, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
             &M.iprint, csave, lsave, isave, dsave);
+
 
 		if ( IS_FG(*task) ) {
 			myresidual_double(x, line, _residual_, n_gauss_i);
 			f = myfunc_spec_double(_residual_);
 			mygrad_spec_double(g, _residual_, x, n_gauss_i);
 //			printf("f = %f\n", f);
+//			printf("g[0] = %f\n", g[0]);
+//			printf("g[1] = %f\n", g[1]);
+//			printf("g[2] = %f\n", g[2]);
+//			printf("g[3] = %f\n", g[3]);
 		}
 
 		if (*task==NEW_X ) {
-			if (isave[33] >= M.maxiter) {
+			if (isave[33] >= M.maxiter_init) {
 				*task = STOP_ITER;
 				}
 			
@@ -2094,13 +2144,22 @@ void algo_rohsa<T>::init_spectrum(parameters<T> &M, std::vector<double> &line, s
 		for(int p(0); p<3*(i-1); p++){	
 			x[p]=params[p];
 		}
-
+		
 		double argmin_res = minloc_double(residual);
-		x[0+3*(i-1)] = double(line[int(argmin_res)]*M.amp_fact_init);
-		x[1+3*(i-1)] = argmin_res+1.;
+		x[0+3*(i-1)] = double(line[int(argmin_res)])*double(M.amp_fact_init);
+		x[1+3*(i-1)] = double(argmin_res+1);
 		x[2+3*(i-1)] = double(M.sig_init);
+		printf("--------------------------------\n");
+		for(int p(0); p<3*(i-1); p++){	
+			printf("x[%d] = %.16f\n",p,x[p]);
+		}
+		printf("--------------------------------\n");
 
 		minimize_spec(M, 3*i, M.m, x, lb, i, ub, line);
+
+		for(int p(0); p<3*(i-1); p++){	
+			printf("x[%d] = %.16f\n",p,x[p]);
+		}
 
 		for(int p(0); p<3*(i); p++){	
 			params[p]=x[p];

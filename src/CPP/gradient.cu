@@ -238,3 +238,7 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
 template double compute_residual_and_f<double>(double*, int*, int, double*, int*, int, double*, int*, int, double*, int*, int, int, int, int, int);
 template void gradient_L_2_beta<double>(double*, int*, int, double*, int*, int, double*, int*, int, double*, int*, int, int);
 template void reduction_loop<double>(double*, double*, int);
+
+template float compute_residual_and_f<float>(float*, int*, int, float*, int*, int, float*, int*, int, float*, int*, int, int, int, int, int);
+template void gradient_L_2_beta<float>(float*, int*, int, float*, int*, int, float*, int*, int, float*, int*, int, int);
+template void reduction_loop<float>(float*, float*, int);
