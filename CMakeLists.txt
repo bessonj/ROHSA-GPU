@@ -33,8 +33,8 @@ add_library(BFGS ${CPP_FILES_BFGS})
 ##add_library(BFGSGPU STATIC IMPORTED)
 ##set_property(TARGET BFGSGPU PROPERTY     IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-GPU/libcuLBFGSB.a")
 
-  find_package(CudaLBFGS REQUIRED)
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/CudaLBFGS/)
+find_package(CudaLBFGS REQUIRED)
+####include_directories(${CMAKE_CURRENT_SOURCE_DIR}/CudaLBFGS/)
 #  target_link_libraries(YourExecutable ${CUDALBFGS_LIBRARIES})
 
 set(LIBS ${LIBS} cfitsio CCfits BFGS cuLBFGSB lbfgs)
