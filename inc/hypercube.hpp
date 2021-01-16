@@ -59,7 +59,7 @@ class hypercube
 	void display_2_gaussiennes(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, int n1, int n2);
 	void display_2_gaussiennes_par_par_par(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, int n1, int n2);
 	void mean_parameters(std::vector<std::vector<std::vector<T>>> &params, int num_gauss);
-	void simple_plot_through_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par, int plot_numero);
+	void simple_plot_through_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par, int plot_numero, std::string name_bis);
 
 
 
@@ -394,9 +394,9 @@ std::vector<std::vector<std::vector<T>>> hypercube<T>::use_dat_file(parameters<T
 	this->dim_data[1]=y;
 	this->dim_data[0]=x;
 
-	printf("dim_data[0] = %d\n",this->dim_data[0]);
-	printf("dim_data[1] = %d\n",this->dim_data[1]);
-	printf("dim_data[2] = %d\n",this->dim_data[2]);
+//	printf("dim_data[0] = %d\n",this->dim_data[0]);
+//	printf("dim_data[1] = %d\n",this->dim_data[1]);
+//	printf("dim_data[2] = %d\n",this->dim_data[2]);
 
 	std::vector<std::vector<std::vector<T>>> data_(this->dim_data[0],std::vector<std::vector<T>>(this->dim_data[1],std::vector<T>(this->dim_data[2], 0.)));
 
@@ -585,24 +585,11 @@ int hypercube<T>::get_binary_from_fits(){
 
 template<typename T>
 void hypercube<T>::write_in_file(std::vector<std::vector<std::vector<T>>> &file_in){
-/*
-	std::ofstream objetfichier;
- 	objetfichier.open("./right_before_last_level.raw", std::ios::out | std::ofstream::binary ); //on ouvre le fichier en ecriture
-	if (objetfichier.bad()) //permet de tester si le fichier s'est ouvert sans probleme
-		std::cout<<"ERREUR À L'OUVERTURE DU FICHIER RAW AVANT ÉCRITURE"<< std::endl;
-*/
 	int dim_0 = file_in.size();
 	int dim_1 = file_in[0].size();
 	int dim_2 = file_in[0][0].size();
 
-	printf("dim_0 = %d , dim_1 = %d , dim_1 = %d\n",dim_0, dim_1, dim_1);
-
 	std::vector<T> file_in_flat(dim_0*dim_1*dim_2,0.);
-/*
-	T* file_in_flat = NULL;
-	size_t size = dim_0*dim_1*dim_2*sizeof(T);
-	file_in_flat = (T*)malloc(size);
-*/
 
 	for(int k=0; k<dim_0; k++)
 	{
@@ -1721,7 +1708,7 @@ void hypercube<T>::display_avec_et_sans_regu(std::vector<std::vector<std::vector
 }
 
 template<typename T>
-void hypercube<T>::simple_plot_through_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par,int plot_numero)
+void hypercube<T>::simple_plot_through_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par,int plot_numero, std::string name_bis)
 {
 	int dim_0 = params[0][0].size();
 	int dim_1 = params[0].size();
@@ -1741,6 +1728,7 @@ void hypercube<T>::simple_plot_through_regu(std::vector<std::vector<std::vector<
 	char const *pchar_1 = s_1.c_str();
 	std::string s_2 = std::to_string(plot_numero);
 	char const *pchar_2 = s_2.c_str();
+	char const *pchar_name_bis = name_bis.c_str();
 
 
 	char str[220];
@@ -1748,9 +1736,10 @@ void hypercube<T>::simple_plot_through_regu(std::vector<std::vector<std::vector<
 	strcat (str,pchar_2);
 	strcat (str,"_param_numero_");
 	strcat (str,pchar_1);
+	strcat (str,"_");
+	strcat (str,pchar_name_bis);
 	strcat (str,".png");
 	puts (str);
-
 
 	plt::clf();
 

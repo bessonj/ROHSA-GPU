@@ -86,7 +86,8 @@ class parameters
 	bool float_mode, double_mode;
 	std::string is_wrapper;
 	bool wrapper;
-	
+	bool print_mean_parameters;
+
 	std::vector<T> std_spect, mean_spect, max_spect, max_spect_norm;
 
 };
@@ -98,6 +99,7 @@ using namespace std;
 template<typename T>
 parameters<T>::parameters()
 {
+/*
 	n_gauss_add = 0;
 
 	std::string txt, egal;
@@ -178,7 +180,7 @@ parameters<T>::parameters()
         }else	
             std::cerr << "Can't open the parameters.txt file !" << std::endl;
 		fichier.close();
-
+*/
 }
 
 template<typename T>
@@ -224,8 +226,8 @@ parameters<T>::parameters(std::string str, std::string str2, std::string str3, s
 		fichier >> txt >> egal >> lb_sig;
 		fichier >> txt >> egal >> ub_sig_init;
 		fichier >> txt >> egal >> lb_sig_init;
-		fichier >> txt >> egal >> double_or_float;
-		fichier >> txt >> egal >> is_wrapper;
+		fichier >> txt >> egal >> print_mean_parameters;
+		
 		if(file_type_dat_check == "true")
 			file_type_dat = true;
 		else 

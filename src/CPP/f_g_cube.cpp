@@ -1,5 +1,7 @@
 #include "f_g_cube.hpp"
 
+#define print false
+
 template <typename T> 
 void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* g, int n, T* cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* beta, int indice_v, int indice_y, int indice_x, T* std_map, double* temps){
 
@@ -357,8 +359,6 @@ void f_g_cube_fast_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::
 template <typename T> 
 void f_g_cube_not_very_fast_clean(parameters<T> &M, T &f, T g[], int n, std::vector<std::vector<std::vector<T>>> &cube, T beta[], int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, double* temps)
 {
-	bool print = false;
-
 	double temps_conv;
 	double temps_deriv;
 	double temps_tableaux;
@@ -560,13 +560,13 @@ void f_g_cube_fast_clean_optim_CPU_lib(parameters<T> &M, T &f, T g[], int n, std
 		g[i]=0.;
 	}
 	f=0.;
-
+/*
 	for(int i = 0; i<n_beta; i++){
 		printf("beta[%d] = %f\n",i,beta[i]);
 	}
+*/
 	one_D_to_three_D_same_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
 	temps_copy += omp_get_wtime()-temps1_copy;
-
 	//unravel_3D(beta, params, 3*M.n_gauss, indice_y, indice_x);
 
 	double temps1_tableaux = omp_get_wtime();
@@ -595,6 +595,7 @@ void f_g_cube_fast_clean_optim_CPU_lib(parameters<T> &M, T &f, T g[], int n, std
 
 		}
 	}
+
 double temps2_tableaux = omp_get_wtime();
 
 double temps1_dF_dB = omp_get_wtime();
@@ -659,7 +660,6 @@ double temps1_deriv = omp_get_wtime();
 	}
 	double temps2_conv = omp_get_wtime();
 	temps_tableaux += temps2_tableaux - temps1_tableaux;
-
 	three_D_to_one_D_same_dimensions(deriv, g, 3*M.n_gauss, indice_y, indice_x);
 
 	temps_conv+= temps2_conv - temps1_conv;
@@ -669,6 +669,7 @@ double temps1_deriv = omp_get_wtime();
 	temps[2]+=1000*temps_deriv;
 	temps[1]+=1000*temps_tableaux;
 	temps[0]+=1000*temps_copy;
+
 	for(int i = 0; i<4; i++){
 		temps[4]+=temps[i];
 	}
@@ -685,8 +686,7 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 	double temps_copy;
 	double temps_f_g_cube;
 
-//	init_templates();
-	bool print = false;	
+//	bool print = false;	
 	int lim = 100;
 /*
     if(indice_x>=256){

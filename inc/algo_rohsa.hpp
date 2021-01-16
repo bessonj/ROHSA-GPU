@@ -26,7 +26,7 @@
 //#include "callback_cpu.h"
 #include "f_g_cube.hpp"
 
-
+#define print false
 
 /**
  * @brief This class concerns the ROHSA algorithm and the optimization algorithm.
@@ -441,7 +441,6 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 	temps_mirroirs = 0.;
 	this->temps_transfert_d = 0.;
 	temps_copy = 0.; 
-	temps_f_g_cube = 0.;
 	for(int i=0;i<M.n_gauss; i++){
 		fit_params[0+3*i][0][0] = 0.;
 		fit_params[1+3*i][0][0] = 1.;
@@ -492,6 +491,7 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 
 			std::vector<T> cube_mean_flat(cube_mean[0][0].size());
 
+
 			if (n==0) {
 				std::vector<double> cube_mean_flat_init_double(cube_mean[0][0].size());
 				std::vector<double> fit_params_flat_init_double(fit_params.size(),0.); //used below
@@ -510,12 +510,13 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 	//				init_spectrum(M, cube_mean_flat, std_spect); //option spectre
 	//				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
 	//				init_spectrum(M, cube_mean_flat, max_spect_norm); //option norme spectre
-
-//				for(int e(0); e<fit_params_flat_init_double.size(); e++) {
-//					printf("fit_params_flat_init_double[%d] = %.16f\n",e,fit_params_flat_init_double[e]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
-//				}
+/*
+				for(int e(0); e<fit_params_flat_init_double.size(); e++) {
+					printf("fit_params_flat_init_double[%d] = %.16f\n",e,fit_params_flat_init_double[e]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
+				}
+				std::cin.ignore();
+*/
 //				exit(0);
-//				std::cin.ignore();
 
 				for(int i(0); i<M.n_gauss; i++) {
 						b_params[i]= T(fit_params_flat_init_double[2+3*i]);
@@ -544,6 +545,15 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 					if (n==0){
 						double temps1_upgrade = omp_get_wtime();
 						upgrade(M ,cube_mean, fit_params, power);
+
+/*
+				for(int e(0); e<fit_params.size(); e++) {
+					printf("fit_params[%d][0][0] = %.16f\n",e,fit_params[e][0][0]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
+				}
+				std::cin.ignore();
+*/
+
+
 						double temps2_upgrade = omp_get_wtime();
 						temps_upgrade+=temps2_upgrade-temps1_upgrade;
 /*
@@ -586,8 +596,25 @@ fit_params[35][0][0] = 2.1412268676013992;
 */
 					}
 					if (n>0 and n<file.nside){
+/*
+			std::cout<<"cube_mean[0][0][0] = "<<cube_mean[0][0][0]<<std::endl;
+			std::cout<<"cube_mean[1][0][0] = "<<cube_mean[1][0][0]<<std::endl;
+			std::cout<<"cube_mean[0][1][0] = "<<cube_mean[0][1][0]<<std::endl;
+			std::cout<<"cube_mean[0][0][1] = "<<cube_mean[0][0][1]<<std::endl;
+*/
 
-						if (power ==2){
+						if (power >=2){
+/*			std::cout<<"fit_params[0][0][0] = "<<fit_params[0][0][0]<<std::endl;
+			std::cout<<"fit_params[0][0][1] = "<<fit_params[0][0][1]<<std::endl;
+			std::cout<<"fit_params[0][1][0] = "<<fit_params[0][1][0]<<std::endl;
+			std::cout<<"fit_params[0][1][1] = "<<fit_params[0][1][1]<<std::endl;
+			std::cout<<"fit_params[0][0][2] = "<<fit_params[0][0][2]<<std::endl;
+			std::cout<<"fit_params[0][2][0] = "<<fit_params[0][2][0]<<std::endl;
+			std::cout<<"fit_params[0][2][2] = "<<fit_params[0][2][2]<<std::endl;
+			std::cout<<"fit_params[0][0][3] = "<<fit_params[0][0][3]<<std::endl;
+			std::cout<<"fit_params[0][3][0] = "<<fit_params[0][3][0]<<std::endl;
+			std::cout<<"fit_params[0][3][3] = "<<fit_params[0][3][3]<<std::endl;
+*/
 						}
 						std::vector<std::vector<T>> std_map(power, std::vector<T>(power,0.));
 						double temps_std_map1=omp_get_wtime();
@@ -616,7 +643,17 @@ fit_params[35][0][0] = 2.1412268676013992;
 						if (M.n_gauss_add != 0){
 							//Add new Gaussian if one reduced chi square > 1  
 						}
-						mean_parameters(fit_params);
+						if(M.print_mean_parameters){	
+							mean_parameters(fit_params);
+						}
+
+/*
+		std::cout<<"fit_params[0][0][0] = "<<fit_params[0][0][0]<<std::endl;
+		std::cout<<"fit_params[1][0][0] = "<<fit_params[1][0][0]<<std::endl;
+		std::cout<<"fit_params[0][1][0] = "<<fit_params[0][1][0]<<std::endl;
+		std::cout<<"fit_params[0][0][1] = "<<fit_params[0][0][1]<<std::endl;
+		std::cin.ignore();
+*/
 					}
 				}
 
@@ -627,6 +664,7 @@ fit_params[35][0][0] = 2.1412268676013992;
 
 		double temps_go_up_level1=omp_get_wtime();
 
+
 		go_up_level(fit_params);
 
 		this->fit_params = fit_params; //updating the model class
@@ -636,30 +674,30 @@ fit_params[35][0][0] = 2.1412268676013992;
 		}
 
 		temps2_before_nside = omp_get_wtime();
-
-		std::cout<<"            Milieu descente             "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"Temps écoulé jusque ici dans la descente : "<<omp_get_wtime() - temps1_descente <<std::endl;
-		std::cout<<"	-> Temps de calcul init_spectrum : "<< temps_init_spectrum <<std::endl;
-		std::cout<<"	-> Temps de calcul upgrade (update 1D) : "<< temps_upgrade <<std::endl;
-		std::cout<<"	-> Temps de calcul std_map : "<< temps_std_map_pp <<std::endl;
-		std::cout<<"	-> Temps de calcul update (update 1->n-1) : "<< temps_update_pp <<std::endl;
-		std::cout<<"	-> Temps de calcul go_up_level (grille k->k+1) : "<<temps_go_up_level <<std::endl;
 		std::cout<<"                                "<<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"            début détails             "<<std::endl;
+		std::cout<<"            Halfway through multiresolution             "<<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"Temps d'exécution setulb : "<<temps_setulb<<std::endl;
-		std::cout<<"Temps d'exécution f_g_cube : "<<this->temps_f_g_cube<<std::endl;
-		std::cout<< "	-> Temps d'exécution transfert données : " << this->temps_copy  <<std::endl;
-		std::cout<< "	-> Temps d'exécution attache aux données : " << this->temps_tableaux <<std::endl;
-		std::cout<< "	-> Temps d'exécution deriv : " << this->temps_deriv  <<std::endl;
-		std::cout<< "	-> Temps d'exécution régularisation : " << this->temps_conv <<std::endl;
+		std::cout<<"Time spent in the multiresolution process up to this point : "<<omp_get_wtime() - temps1_descente <<std::endl;
+		std::cout<<"	-> Computation time init_spectrum : "<< temps_init_spectrum <<std::endl;
+		std::cout<<"	-> Computation time upgrade function (update 1D) : "<< temps_upgrade <<std::endl;
+		std::cout<<"	-> Computation time std_map : "<< temps_std_map_pp <<std::endl;
+		std::cout<<"	-> Computation time update (update 1->n-1) : "<< temps_update_pp <<std::endl;
+		std::cout<<"	-> Computation time go_up_level (grid k->k+1) : "<<temps_go_up_level <<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"           fin détails             "<<std::endl;
-
-
-
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"            Details             "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"Computation time setulb : "<<temps_setulb<<std::endl;
+		std::cout<<"Computation time f_g_cube : "<<this->temps_f_g_cube<<std::endl;
+		std::cout<< "	-> Computation time data transfer : " << this->temps_copy  <<std::endl;
+		std::cout<< "	-> Computation time residual and residual term of the cost function : " << this->temps_tableaux <<std::endl;
+		std::cout<< "	-> Computation time gradient (only data contribution to g) : " << this->temps_deriv  <<std::endl;
+		std::cout<< "	-> Computation time regularization (spatial coherence contribution to f and g) : " << this->temps_conv <<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"           End details             "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"                                "<<std::endl;
 		//nouvelle place de reshape_down
 		int offset_w = (this->dim_cube[0]-this->dim_data[0])/2;
 		int offset_h = (this->dim_cube[1]-this->dim_data[1])/2;
@@ -697,12 +735,26 @@ fit_params[35][0][0] = 2.1412268676013992;
 
 	double temps_update_dp1 = omp_get_wtime();
 
+	if(print){
+		int number_plot_2D = ceil(log(this->dim_data[1])/log(2));
+		this->file.simple_plot_through_regu(grid_params, 0,0,number_plot_2D, "début");
+	//	this->file.simple_plot_through_regu(grid_params, 0,1,number_plot_2D, "début");
+	//	this->file.simple_plot_through_regu(grid_params, 0,2,number_plot_2D, "début");
+		this->file.save_result_multires(grid_params, M, number_plot_2D);
+	}
 
 	if(M.regul){
 		std::cout<<"Updating last level"<<std::endl;
 		update_clean(M, this->file.data, grid_params, std_map, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
 	}
 
+	if(print){
+		int number_plot_2D = ceil(log(this->dim_data[1])/log(2));
+		this->file.simple_plot_through_regu(grid_params, 0,0,number_plot_2D, "fin");
+	//	this->file.simple_plot_through_regu(grid_params, 0,1,number_plot_2D, "fin");
+	//	this->file.simple_plot_through_regu(grid_params, 0,2,number_plot_2D, "fin");
+		this->file.save_result_multires(grid_params, M, number_plot_2D);
+	}
 
 		double temps_update_dp2 = omp_get_wtime();
 		temps_update_dp +=temps_update_dp2-temps_update_dp1;
@@ -715,34 +767,37 @@ fit_params[35][0][0] = 2.1412268676013992;
 		temps_dernier_niveau+=temps_dernier_niveau2-temps_dernier_niveau1;
 
 
-		std::cout<<"Temps de descente : "<<temps2_descente - temps1_descente <<std::endl;
-		std::cout<<"Temps de calcul niveaux 1 -> n-1 : "<<temps2_before_nside - temps1_before_nside <<std::endl;
-		std::cout<<"	-> Temps de calcul init_spectrum : "<< temps_init_spectrum <<std::endl;
-		std::cout<<"	-> Temps de calcul upgrade (update 1D) : "<< temps_upgrade <<std::endl;
-		std::cout<<"	-> Temps de calcul std_map : "<< temps_std_map_pp <<std::endl;
-		std::cout<<"	-> Temps de calcul update (update 1->n-1) : "<< temps_update_pp <<std::endl;
-		std::cout<<"	-> Temps de calcul go_up_level (grille k->k+1) : "<<temps_go_up_level <<std::endl;
-		std::cout<<"Temps de calcul reshape_down (n-1 -> n)"<<temps_reshape_down <<std::endl;
-		std::cout<<"Temps de calcul niveau n : "<< temps_dernier_niveau <<std::endl;
-		std::cout<<"	-> Temps de calcul std_map : "<< temps_std_map_dp <<std::endl;
-		std::cout<<"	-> Temps de calcul update : "<< temps_update_dp <<std::endl;
-
-
-		std::cout<<" "<<std::endl;
-		std::cout<<" "<<std::endl;
-		std::cout<<" "<<std::endl;
-		std::cout<<" "<<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"            début détails             "<<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"Temps d'exécution setulb : "<<temps_setulb<<std::endl;
-		std::cout<<"Temps d'exécution f_g_cube : "<<this->temps_f_g_cube<<std::endl;
-		std::cout<< "	-> Temps d'exécution transfert données : " << this->temps_copy  <<std::endl;
-		std::cout<< "	-> Temps d'exécution attache aux données : " << this->temps_tableaux <<std::endl;
-		std::cout<< "	-> Temps d'exécution deriv : " << this->temps_deriv  <<std::endl;
-		std::cout<< "	-> Temps d'exécution régularisation : " << this->temps_conv <<std::endl;
+		std::cout<<"            End of multiresolution             "<<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"           fin détails             "<<std::endl;
+		std::cout<<"Total multiresolution computation time : "<<temps2_descente - temps1_descente <<std::endl;
+		std::cout<<"	-> Computation time init_spectrum : "<< temps_init_spectrum <<std::endl;
+		std::cout<<"	-> Computation time upgrade function (update 1D) : "<< temps_upgrade <<std::endl;
+		std::cout<<"	-> Computation time std_map : "<< temps_std_map_pp <<std::endl;
+		std::cout<<"	-> Computation time update (update 1->n-1) : "<< temps_update_pp <<std::endl;
+		std::cout<<"	-> Computation time go_up_level (grid k->k+1) : "<<temps_go_up_level <<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"Computation time from levels 1 to n-1 : "<<temps2_before_nside - temps1_before_nside <<std::endl;
+		std::cout<<"Time spent on reshape_down function (n-1 -> n)"<<temps_reshape_down <<std::endl;
+		std::cout<<"Time spent on the last level n : "<< temps_dernier_niveau <<std::endl;
+		std::cout<<"	-> Computation time std_map : "<< temps_std_map_dp <<std::endl;
+		std::cout<<"	-> Computation time update : "<< temps_update_dp <<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"            Details             "<<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"Computation time setulb : "<<temps_setulb<<std::endl;
+		std::cout<<"Computation time f_g_cube : "<<this->temps_f_g_cube<<std::endl;
+		std::cout<< "	-> Computation time data transfer : " << this->temps_copy  <<std::endl;
+		std::cout<< "	-> Computation time residual and residual term of the cost function : " << this->temps_tableaux <<std::endl;
+		std::cout<< "	-> Computation time gradient (only data contribution to g) : " << this->temps_deriv  <<std::endl;
+		std::cout<< "	-> Computation time regularization (spatial coherence contribution to f and g) : " << this->temps_conv <<std::endl;
+		std::cout<<"                                "<<std::endl;
+		std::cout<<"           End of details section             "<<std::endl;
+		std::cout<<"                                "<<std::endl;
 		std::cout<<"                                "<<std::endl;
 	}
 
@@ -779,8 +834,6 @@ void algo_rohsa<T>::reshape_down(std::vector<std::vector<std::vector<T>>> &tab1,
 template <typename T> 
 void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<T> &b_params) {
 
-	std::cout<<"Taille params : "<<params.size()<<" , "<<params[0].size()<<" , "<<params[0][0].size()<<std::endl;
-	std::cout<<"Taille std_map : "<<std_map.size()<<" , "<<std_map[0].size()<<std::endl;
 	int n_beta = (3*M.n_gauss * indice_y * indice_x) +M.n_gauss;
 
 	double temps1_tableau_update = omp_get_wtime();
@@ -790,10 +843,8 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 	std::vector<std::vector<std::vector<T>>> ub_3D(3*M.n_gauss, std::vector<std::vector<T>>(indice_y, std::vector<T>(indice_x,0.)));
 	std::vector<T> lb_3D_flat(lb_3D.size(),0.);
 	std::vector<T> ub_3D_flat(ub_3D.size(),0.);
-	std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
-	std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " , " << ub_3D[0][0].size() <<  std::endl;
-
-	bool print = false;
+//	std::cout << "lb_3D.size() : " << lb_3D.size() << " , " << lb_3D[0].size() << " , " << lb_3D[0][0].size() <<  std::endl;
+//	std::cout << "ub_3D.size() : " << ub_3D.size() << " , " << ub_3D[0].size() << " , " << ub_3D[0][0].size() <<  std::endl;
 
 	if(M.wrapper){
 		double* cube_flattened = NULL;
@@ -897,6 +948,13 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 			ub[n_beta-M.n_gauss+i] = double(M.ub_sig);
 			beta[n_beta-M.n_gauss+i] = double(b_params[i]);
 		}
+		if(print){
+			int number_plot_2D = ceil(log(indice_x)/log(2));
+			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "début");
+//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "début");
+//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "début");
+			this->file.save_result_multires(params, M, number_plot_2D);
+		}
 		minimize_clean(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 		if(M.select_version == 0){ //-cpu
 			one_D_to_three_D_inverted_dimensions_double(beta, params, 3*M.n_gauss, indice_y, indice_x);
@@ -905,9 +963,9 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 		}
 		if(print){
 			int number_plot_2D = ceil(log(indice_x)/log(2));
-			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D);
-			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D);
-			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D);
+			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "fin");
+//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "fin");
+//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "fin");
 			this->file.save_result_multires(params, M, number_plot_2D);
 		}
 		for(int i=0; i<M.n_gauss; i++){
@@ -971,20 +1029,18 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 			ub[n_beta-M.n_gauss+i] = M.ub_sig;
 			beta[n_beta-M.n_gauss+i] = b_params[i];
 		}
-/*
-		printf("M.lambda_amp = %f\n",M.lambda_amp);
-		printf("M.lambda_mu = %f\n",M.lambda_mu);
-		printf("M.lambda_sig = %f\n",M.lambda_sig);
-		printf("M.lambda_var_amp = %f\n",M.lambda_var_amp);
-		printf("M.lambda_var_mu = %f\n",M.lambda_var_mu);
-		printf("M.lambda_var_sig = %f\n",M.lambda_var_sig);
-		printf("M.amp_fact_init = %f\n",M.amp_fact_init);
-		printf("M.sig_init = %f\n",M.sig_init);
-		printf("M.n_gauss = %d\n",M.n_gauss);
-		std::cin.ignore();
-*/
+		if(print){
+			int number_plot_2D = ceil(log(indice_x)/log(2));
+			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "début");
+//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "début");
+//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "début");
+			this->file.save_result_multires(params, M, number_plot_2D);
+		}
 //		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
 		minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
+
+//		void algo_rohsa<T>::minimize_clean_same_dim_test(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
+
 		if(M.select_version == 0){ //-cpu
 			one_D_to_three_D_inverted_dimensions(beta, params, 3*M.n_gauss, indice_y, indice_x);
 		}else if(M.select_version == 1 || M.select_version == 2){ //-gpu and -h
@@ -992,12 +1048,11 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 		}
 		if(print){
 			int number_plot_2D = ceil(log(indice_x)/log(2));
-			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D);
-			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D);
-			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D);
+			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "fin");
+//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "fin");
+//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "fin");
 			this->file.save_result_multires(params, M, number_plot_2D);
 		}
-
 		for(int i=0; i<M.n_gauss; i++){
 			b_params[i]=beta[n_beta-M.n_gauss+i];
 		}
@@ -1251,7 +1306,7 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 	this->temps_deriv += temps[2]/1000;
 	this->temps_tableaux += temps[1]/1000;
 	this->temps_copy += temps[0]/1000;
-	this->temps_f_g_cube +=  temps[4]/1000;
+	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
 
 	printf("this->temps_copy = %f\n", this->temps_copy);
 	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
@@ -1426,7 +1481,7 @@ void algo_rohsa<T>::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta
 	this->temps_deriv += temps[2]/1000;
 	this->temps_tableaux += temps[1]/1000;
 	this->temps_copy += temps[0]/1000;
-	this->temps_f_g_cube +=  temps[4]/1000;
+	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
 
 	printf("this->temps_copy = %f\n", this->temps_copy);
 	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
@@ -1453,10 +1508,6 @@ void algo_rohsa<T>::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta
 //	return minimal_f;
 
 	printf("TEST GPU _________________________________\n");
-
-/*
-	exit(0);
-*/
 }
 
 
@@ -1550,16 +1601,6 @@ void algo_rohsa<T>::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta
 		minimal_f = fmin(minimal_f, f);
 //        minimal_f = f;
 
-/*	
-	for(int i=0; i<n; i++){
-		printf("x[%d] = %.16f\n",i, x[i]);
-	}
-	for(int i=0; i<n; i++){
-		printf("g[%d] = %.16f\n",i, g[i]);
-	}
-        printf("LIB --> fin-chemin : f = %.16f\n", f);
-	    std::cin.ignore();
-*/
 		return 0;
 	};
 	// initialize CPU buffers
@@ -1643,7 +1684,7 @@ void algo_rohsa<T>::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta
 	this->temps_deriv += temps[2]/1000;
 	this->temps_tableaux += temps[1]/1000;
 	this->temps_copy += temps[0]/1000;
-	this->temps_f_g_cube +=  temps[4]/1000;
+	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
 
 	printf("this->temps_copy = %f\n", this->temps_copy);
 	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
@@ -1685,7 +1726,7 @@ void algo_rohsa<T>::go_up_level(std::vector<std::vector<std::vector<T>>> &fit_pa
 	}
 
 	std::cout << "fit_params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
-
+//	std::cout<<"Dimensions of std_map : "<<std_map.size()<<" , "<<std_map[0].size()<<std::endl;
 
 	for(int i = 0; i<dim[0]; i++){
 		for(int j = 0; j<2*dim[1]; j++){
@@ -1721,23 +1762,25 @@ void algo_rohsa<T>::upgrade(parameters<T> &M, std::vector<std::vector<std::vecto
     	for(j=0;j<power; j++){ //dim_y
         	int p;
             for(p=0; p<cube[0][0].size();p++){
-            	line[p]=double(cube[i][j][p]);
+            	line[p]=double(cube[i][j][p]); //???£
             }
-            for(p=0; p<params.size(); p++){
+            for(p=0; p<3*M.n_gauss; p++){
             	x[p]=double(params[p][i][j]); //cache
             }
-//            for(p=0; p<params.size();p++){
-//				printf("x[%d] = %.16f\n", p, x[p]);
-  //          }
-//			printf("--------------------------------\n");
+/*            for(p=0; p<params.size();p++){
+				printf("x[%d] = %.16f\n", p, x[p]);
+			}
+			printf("--------------------------------\n");
+*/
             init_bounds_double(M, line, M.n_gauss, lb, ub, false); //bool _init = false;
             minimize_spec(M,3*M.n_gauss ,M.m ,x ,lb , M.n_gauss, ub ,line);
-//            for(p=0; p<params.size();p++){
-//				printf("x[%d] = %.16f\n", p, x[p]);
-//            }
+/*            for(p=0; p<params.size();p++){
+				printf("x[%d] = %.16f\n", p, x[p]);
+            }
+*/
 //			std::cin.ignore();			
 
-            for(p=0; p<params.size();p++){
+            for(p=0; p<3*M.n_gauss;p++){
             	params[p][i][j]=T(x[p]); //cache
             }
         }
@@ -1882,6 +1925,13 @@ L111:
 			myresidual_double(x, line, _residual_, n_gauss_i);
 			f = myfunc_spec_double(_residual_);
 			mygrad_spec_double(g, _residual_, x, n_gauss_i);
+/*
+            for(int p=0; p<n;p++){
+				printf("g[%d] = %.16f\n", p, g[p]);
+			}
+			printf("f = %.16f\n", f);
+			std::cin.ignore();
+*/
 //			printf("f = %f\n", f);
 //			printf("g[0] = %f\n", g[0]);
 //			printf("g[1] = %f\n", g[1]);
@@ -1890,7 +1940,7 @@ L111:
 		}
 
 		if (*task==NEW_X ) {
-			if (isave[33] >= M.maxiter_init) {
+			if (isave[33] >= M.maxiter) {
 				*task = STOP_ITER;
 				}
 			
@@ -2712,16 +2762,16 @@ void algo_rohsa<T>::mean_parameters(std::vector<std::vector<std::vector<T>>> &pa
 		T mean = 0.;
 		for(int i=0;i<dim2;i++){
 			for(int j=0;j<dim3;j++){
-				mean += params[p][j][i];
+				mean += params[p][i][j];
 			}
 		}
 		mean = mean/(dim2*dim3);
 		if (p%3 ==0)
-			printf("Gaussienne n°%d, par n°%d, moyenne a     = %f \n", (p-p%3)/3, p, mean);
+			printf("Gaussian n°%d, parameter n°%d, mean a     = %f \n", (p-p%3)/3, p, mean);
 		if (p%3 ==1)
-			printf("Gaussienne n°%d, par n°%d, moyenne mu    = %f \n", (p-p%3)/3, p, mean);
+			printf("Gaussian n°%d, parameter n°%d, mean mu    = %f \n", (p-p%3)/3, p, mean);
 		if (p%3 ==2)
-			printf("Gaussienne n°%d, par n°%d, moyenne sigma = %f \n", (p-p%3)/3, p, mean);
+			printf("Gaussian n°%d, parameter n°%d, mean sigma = %f \n", (p-p%3)/3, p, mean);
 	}
 
 }

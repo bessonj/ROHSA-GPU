@@ -77,26 +77,19 @@ void main_routine(parameters<T> &user_parametres){
     hypercube<T> Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max); 
 	printf("Launching the ROHSA algorithm ...\n");
 	algo_rohsa<T> algo(user_parametres, Hypercube_file);
-	printf("Saving the result ...n");
+	printf("Saving the result ...\n");
 	Hypercube_file.save_result(algo.grid_params, user_parametres);
-
 	printf("Result saved in dat file !\n");
 
-	Hypercube_file.plot_line(algo.grid_params,127,127,12);
-	Hypercube_file.plot_line(algo.grid_params,128,127,12);
-	Hypercube_file.plot_line(algo.grid_params,127,128,12);
-	Hypercube_file.plot_line(algo.grid_params,128,128,12);
-	Hypercube_file.plot_line(algo.grid_params,129,128,12);
-	Hypercube_file.plot_line(algo.grid_params,129,129,12);
-	Hypercube_file.plot_line(algo.grid_params,127,128,12);
-	Hypercube_file.plot_line(algo.grid_params,128,129,12);
-
+//	Hypercube_file.plot_line(algo.grid_params, **pos_x**, **pos_y**, user_parametres.n_gauss);
+/*
 	for(int num_gauss = 0; num_gauss < user_parametres.n_gauss; num_gauss ++){
 		for (int num_par = 0; num_par < 3; num_par++)
 		{
 			Hypercube_file.display_avec_et_sans_regu(algo.grid_params, num_gauss, num_par , num_par+num_gauss*3);
 		}
 	}
+*/
 }
 
 template void main_routine<double>(parameters<double>&);
