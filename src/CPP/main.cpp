@@ -70,70 +70,50 @@
 /// 
 /// Details : 2 cases are distinguished : The data file is either a *.dat or a *.fits file.
 
+template <typename T> 
+void main_routine(parameters<T> &user_parametres){
+
+	printf("Reading the cube ...\n");
+    hypercube<T> Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max); 
+	printf("Launching the ROHSA algorithm ...\n");
+	algo_rohsa<T> algo(user_parametres, Hypercube_file);
+	printf("Saving the result ...n");
+	Hypercube_file.save_result(algo.grid_params, user_parametres);
+
+	printf("Result saved in dat file !\n");
+
+	Hypercube_file.plot_line(algo.grid_params,127,127,12);
+	Hypercube_file.plot_line(algo.grid_params,128,127,12);
+	Hypercube_file.plot_line(algo.grid_params,127,128,12);
+	Hypercube_file.plot_line(algo.grid_params,128,128,12);
+	Hypercube_file.plot_line(algo.grid_params,129,128,12);
+	Hypercube_file.plot_line(algo.grid_params,129,129,12);
+	Hypercube_file.plot_line(algo.grid_params,127,128,12);
+	Hypercube_file.plot_line(algo.grid_params,128,129,12);
+
+	for(int num_gauss = 0; num_gauss < user_parametres.n_gauss; num_gauss ++){
+		for (int num_par = 0; num_par < 3; num_par++)
+		{
+			Hypercube_file.display_avec_et_sans_regu(algo.grid_params, num_gauss, num_par , num_par+num_gauss*3);
+		}
+	}
+}
+
+template void main_routine<double>(parameters<double>&);
+template void main_routine<float>(parameters<float>&);
+
 
 int main(int argc, char * argv[])
 {
-	int tableau2D_SHAPE[] = {2,2};
-	int tableau2D_SHAPE0 = 2;
-	int tableau2D_SHAPE1 = 2;
-	int tableau2D_SHAPE_number = tableau2D_SHAPE[0]*tableau2D_SHAPE[1];
-	size_t tableau2D_size = tableau2D_SHAPE_number * sizeof(double);
-	double* tableau2D = (double*)malloc(tableau2D_size);
-
-	int tableau3D_SHAPE[] = {2,2,2};
-	int tableau3D_SHAPE0 = 2;
-	int tableau3D_SHAPE1 = 2;
-	int tableau3D_SHAPE2 = 2;
-	int tableau3D_SHAPE_number = tableau3D_SHAPE[0]*tableau3D_SHAPE[1];
-	size_t tableau3D_size = tableau3D_SHAPE_number * sizeof(double);
-	double* tableau3D = (double*)malloc(tableau3D_size);
-
-	tableau2D[3]=2;
-	tableau3D[1+2*1+0]=2;
-
-	std::cout<<INDEXING_2D(tableau2D, 1, 1)<<std::endl;
-	std::cout<<INDEXING_3D(tableau3D, 0, 1, 1)<<std::endl;
-
-	double temps1 = omp_get_wtime();
-	double temps1_lecture = omp_get_wtime();
-
-//	parameters<double> user_parametres(argv[1], argv[2]);
-
-
 	parameters<float> user_parametres_float(argv[1], argv[2], argv[3], argv[4]);
-//    hypercube<double> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max, 540, 375, 256); 
-    hypercube<float> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max); 
+	parameters<double> user_parametres_double(argv[1], argv[2], argv[3], argv[4]);
 
-//	Hypercube_file_float.get_noise_map_from_fits(user_parametres_float);
-
-//    hypercube<float> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max); 
-/*
-	for(int ind = 0; ind<100; ind++){
-		Hypercube_file_float.display_data(ind);
-	}
-*/
-	algo_rohsa<float> algo_float(user_parametres_float, Hypercube_file_float);
-	Hypercube_file_float.save_result(algo_float.grid_params, user_parametres_float);
-
-	printf("result saved !\n");
-	Hypercube_file_float.plot_line(algo_float.grid_params,127,127,12);
-	Hypercube_file_float.plot_line(algo_float.grid_params,128,127,12);
-	Hypercube_file_float.plot_line(algo_float.grid_params,127,128,12);
-	Hypercube_file_float.plot_line(algo_float.grid_params,128,128,12);
-	Hypercube_file_float.plot_line(algo_float.grid_params,129,128,12);
-	Hypercube_file_float.plot_line(algo_float.grid_params,129,129,12);
-	Hypercube_file_float.plot_line(algo_float.grid_params,127,128,12);
-	Hypercube_file_float.plot_line(algo_float.grid_params,128,129,12);
-
-
-	for(int num_gauss = 0; num_gauss < user_parametres_float.n_gauss; num_gauss ++){
-		for (int num_par = 0; num_par < 3; num_par++)
-		{
-			Hypercube_file_float.display_avec_et_sans_regu(algo_float.grid_params, num_gauss, num_par , num_par+num_gauss*3);
-		}
+	if(user_parametres_double.double_mode){
+		main_routine<double>(user_parametres_double);
+	}else if(user_parametres_float.float_mode){
+		main_routine<float>(user_parametres_float);
 	}
 
-	exit(0);
 /*
 
 	if(user_parametres.file_type_fits){
@@ -300,13 +280,4 @@ exit(0);
 
 		}
 */
-
-
-
 	}
-
-
-
-
-
-
