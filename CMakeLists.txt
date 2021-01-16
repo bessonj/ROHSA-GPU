@@ -22,8 +22,9 @@ find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
 	set(LIBS ${LIBS} OpenMP::OpenMP_CXX)
 endif()
-
-#find_package(CCFits REQUIRED)
+###
+###find_package(CCFits REQUIRED)
+###
 include_directories("/opt/include")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/)

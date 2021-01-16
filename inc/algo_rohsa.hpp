@@ -23,7 +23,7 @@
 #include "convolutions.hpp"
 #include "f_g_cube_gpu.hpp"
 #include "culbfgsb.h"
-#include "callback_cpu.h"
+//#include "callback_cpu.h"
 #include "f_g_cube.hpp"
 
 
