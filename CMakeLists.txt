@@ -26,6 +26,7 @@ endif()
 ###find_package(CCFits REQUIRED)
 ###
 include_directories("/opt/include")
+include_directories("/usr/local/include")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/)
 add_library(BFGS ${CPP_FILES_BFGS})
