@@ -104,7 +104,7 @@ int main(int argc, char * argv[])
 //    hypercube<double> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max, 540, 375, 256); 
     hypercube<float> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max); 
 
-	Hypercube_file_float.get_noise_map_from_fits(user_parametres_float);
+//	Hypercube_file_float.get_noise_map_from_fits(user_parametres_float);
 
 //    hypercube<float> Hypercube_file_float(user_parametres_float, user_parametres_float.slice_index_min, user_parametres_float.slice_index_max); 
 /*

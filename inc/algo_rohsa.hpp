@@ -467,6 +467,16 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 	int n;
 	double temps1_before_nside = omp_get_wtime();
 
+		printf("M.lambda_amp = %f\n",M.lambda_amp);
+		printf("M.lambda_mu = %f\n",M.lambda_mu);
+		printf("M.lambda_sig = %f\n",M.lambda_sig);
+		printf("M.lambda_var_amp = %f\n",M.lambda_var_amp);
+		printf("M.lambda_var_mu = %f\n",M.lambda_var_mu);
+		printf("M.lambda_var_sig = %f\n",M.lambda_var_sig);
+		printf("M.amp_fact_init = %f\n",M.amp_fact_init);
+		printf("M.sig_init = %f\n",M.sig_init);
+		printf("M.n_gauss = %d\n",M.n_gauss);
+
 	if(!(M.jump_to_last_level)){
 		for(n=0; n<file.nside; n++)
 		{
@@ -501,11 +511,11 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 	//				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
 	//				init_spectrum(M, cube_mean_flat, max_spect_norm); //option norme spectre
 
-				for(int e(0); e<fit_params_flat_init_double.size(); e++) {
-					printf("fit_params_flat_init_double[%d] = %.16f\n",e,fit_params_flat_init_double[e]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
-				}
+//				for(int e(0); e<fit_params_flat_init_double.size(); e++) {
+//					printf("fit_params_flat_init_double[%d] = %.16f\n",e,fit_params_flat_init_double[e]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
+//				}
 //				exit(0);
-				std::cin.ignore();
+//				std::cin.ignore();
 
 				for(int i(0); i<M.n_gauss; i++) {
 						b_params[i]= T(fit_params_flat_init_double[2+3*i]);
@@ -536,7 +546,7 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 						upgrade(M ,cube_mean, fit_params, power);
 						double temps2_upgrade = omp_get_wtime();
 						temps_upgrade+=temps2_upgrade-temps1_upgrade;
-
+/*
 fit_params[0][0][0] = 2.0050162089404973;
 fit_params[1][0][0] = 34.8209155748459693;
 fit_params[2][0][0] = 11.4670363365702190;
@@ -573,7 +583,7 @@ fit_params[32][0][0] = 2.9227478705517469;
 fit_params[33][0][0] = 0.1039070910971688;
 fit_params[34][0][0] = 47.0012069960593806;
 fit_params[35][0][0] = 2.1412268676013992;
-
+*/
 					}
 					if (n>0 and n<file.nside){
 
@@ -961,7 +971,7 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 			ub[n_beta-M.n_gauss+i] = M.ub_sig;
 			beta[n_beta-M.n_gauss+i] = b_params[i];
 		}
-
+/*
 		printf("M.lambda_amp = %f\n",M.lambda_amp);
 		printf("M.lambda_mu = %f\n",M.lambda_mu);
 		printf("M.lambda_sig = %f\n",M.lambda_sig);
@@ -972,7 +982,7 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 		printf("M.sig_init = %f\n",M.sig_init);
 		printf("M.n_gauss = %d\n",M.n_gauss);
 		std::cin.ignore();
-
+*/
 //		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
 		minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened); 
 		if(M.select_version == 0){ //-cpu
@@ -1716,16 +1726,16 @@ void algo_rohsa<T>::upgrade(parameters<T> &M, std::vector<std::vector<std::vecto
             for(p=0; p<params.size(); p++){
             	x[p]=double(params[p][i][j]); //cache
             }
-            for(p=0; p<params.size();p++){
-				printf("x[%d] = %.16f\n", p, x[p]);
-            }
-			printf("--------------------------------\n");
+//            for(p=0; p<params.size();p++){
+//				printf("x[%d] = %.16f\n", p, x[p]);
+  //          }
+//			printf("--------------------------------\n");
             init_bounds_double(M, line, M.n_gauss, lb, ub, false); //bool _init = false;
             minimize_spec(M,3*M.n_gauss ,M.m ,x ,lb , M.n_gauss, ub ,line);
-            for(p=0; p<params.size();p++){
-				printf("x[%d] = %.16f\n", p, x[p]);
-            }
-			std::cin.ignore();			
+//            for(p=0; p<params.size();p++){
+//				printf("x[%d] = %.16f\n", p, x[p]);
+//            }
+//			std::cin.ignore();			
 
             for(p=0; p<params.size();p++){
             	params[p][i][j]=T(x[p]); //cache
@@ -2149,22 +2159,23 @@ void algo_rohsa<T>::init_spectrum(parameters<T> &M, std::vector<double> &line, s
 		x[0+3*(i-1)] = double(line[int(argmin_res)])*double(M.amp_fact_init);
 		x[1+3*(i-1)] = double(argmin_res+1);
 		x[2+3*(i-1)] = double(M.sig_init);
-		printf("--------------------------------\n");
-		for(int p(0); p<3*(i-1); p++){	
-			printf("x[%d] = %.16f\n",p,x[p]);
-		}
-		printf("--------------------------------\n");
+//		printf("--------------------------------\n");
+//		for(int p(0); p<3*(i-1); p++){	
+//			printf("x[%d] = %.16f\n",p,x[p]);
+//		}
+//		printf("--------------------------------\n");
 
 		minimize_spec(M, 3*i, M.m, x, lb, i, ub, line);
 
-		for(int p(0); p<3*(i-1); p++){	
-			printf("x[%d] = %.16f\n",p,x[p]);
-		}
+//		for(int p(0); p<3*(i-1); p++){	
+//			printf("x[%d] = %.16f\n",p,x[p]);
+//		}
 
 		for(int p(0); p<3*(i); p++){	
 			params[p]=x[p];
 		}
 	}
+
 }
 
 

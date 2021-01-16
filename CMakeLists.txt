@@ -17,7 +17,6 @@ list(APPEND HEADER_REP_BFGGPUS ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb)
 file(GLOB CPP_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/CPP/*.cpp)
 file(GLOB CU_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/CPP/*.cu)
 
-
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
 	set(LIBS ${LIBS} OpenMP::OpenMP_CXX)
