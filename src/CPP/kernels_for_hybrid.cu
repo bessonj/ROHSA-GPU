@@ -172,7 +172,7 @@ __global__ void kernel_residual(T* beta, T* cube, T* residual, int indice_x, int
 }
 
 template <typename T> 
-__global__ void kernel_norm_map_boucle_v(T* map_norm_dev, T* residual, int* taille_residual, T* std_map, int indice_x, int indice_y, int indice_v)
+__global__ void kernel_norm_map_boucle_v(T* map_norm_dev, T* residual, T* std_map, int indice_x, int indice_y, int indice_v)
 {
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
 	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
