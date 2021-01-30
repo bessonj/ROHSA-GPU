@@ -280,6 +280,8 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     checkCudaErrors(cudaMemcpy(taille_std_map_dev, taille_std_map,2*sizeof(int), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
 
+  printf("> TEST 1\n");
+
     dim3 Dg, Db;
     Db.x = BLOCK_SIZE_X_BIS; //
     Db.y = BLOCK_SIZE_Y_BIS; //
@@ -299,7 +301,11 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     kernel_residual_simple_difference<T><<<Dg,Db>>>(cube_dev, cube_reconstructed, residual_dev, indice_x, indice_y, indice_v);
     checkCudaErrors(cudaFree(cube_reconstructed));
 */
+  printf("> TEST 2\n");
+
     kernel_residual<T><<<Dg,Db>>>(beta_dev, cube_dev, residual_dev,indice_x, indice_y, indice_v, n_gauss);
+
+  printf("> TEST 3\n");
 
     checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
 
@@ -311,19 +317,28 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     Dg_L2.y = ceil(indice_y/T(BLOCK_SIZE_L2_Y));
     Dg_L2.z = 1;
 
+
     T* map_norm_dev = NULL;
     checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(T)));
 
+  printf("> TEST 4\n");
+
     kernel_norm_map_boucle_v<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, taille_residual_dev, std_map_dev, indice_x, indice_y, indice_v);
+
+  printf("> TEST 5\n");
 
     T* d_array_f=NULL;
     checkCudaErrors(cudaMalloc(&d_array_f, 1*sizeof(T))); // ERREUR ICI
     reduction_loop<T>(map_norm_dev, d_array_f, indice_x*indice_y);
     T* array_f = (T*)malloc(1*sizeof(T));
+  printf("> TEST 6\n");
+
     checkCudaErrors(cudaMemcpy(array_f, d_array_f, 1*sizeof(T), cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
     T sum1 = array_f[0];
     free(array_f);
+
+  printf("> TEST 7\n");
 
     checkCudaErrors(cudaFree(d_array_f));
     checkCudaErrors(cudaFree(map_norm_dev));
