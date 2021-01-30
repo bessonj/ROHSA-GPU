@@ -263,9 +263,13 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
   printf("> TEST 0\n");
 
     checkCudaErrors(cudaMalloc(&beta_dev, product_taille_beta*sizeof(T)));
+  printf("> TEST 0.1\n");
     checkCudaErrors(cudaMalloc(&residual_dev, product_taille_residual*sizeof(T)));
+  printf("> TEST 0.2\n");
     checkCudaErrors(cudaMalloc(&cube_dev, product_taille_cube*sizeof(T)));
+  printf("> TEST 0.3\n");
     checkCudaErrors(cudaMalloc(&std_map_dev, product_taille_std_map*sizeof(T)));
+  printf("> TEST 0.4\n");
 
     checkCudaErrors(cudaMalloc(&taille_cube_dev, 3*sizeof(int)));
     checkCudaErrors(cudaMalloc(&taille_beta_dev, 3*sizeof(int)));
