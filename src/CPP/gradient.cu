@@ -319,8 +319,13 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
   printf("> TEST 5\n");
 
     T* d_array_f=NULL;
+  printf("> TEST 5.1\n");
     checkCudaErrors(cudaMalloc(&d_array_f, 1*sizeof(T))); // ERREUR ICI
+
+  printf("> TEST 5.2\n");
+
     reduction_loop<T>(map_norm_dev, d_array_f, indice_x*indice_y);
+  printf("> TEST 5.3\n");
     T* array_f = (T*)malloc(1*sizeof(T));
   printf("> TEST 6\n");
 
