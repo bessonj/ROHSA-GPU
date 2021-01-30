@@ -1336,10 +1336,10 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 
 	int compteur_iter_boucle_optim = 0;
 
-	printf("dim_x = %d , dim_y = %d , dim_v = %d \n", dim_x, dim_y, dim_v);
-	printf("n = %d , n_gauss = %d\n", int(n), M.n_gauss);
 
-	if (true){//dim_x >128){
+	if (print){//dim_x >128){
+		printf("dim_x = %d , dim_y = %d , dim_v = %d \n", dim_x, dim_y, dim_v);
+		printf("n = %d , n_gauss = %d\n", int(n), M.n_gauss);
 		printf("beta[n_beta-1] = %f , beta[n_beta] = %f\n", beta[n-1], beta[n-1]);
 		printf("cube_flattened[dim_x*dim_y*dim_v-1] = %f , cube_flattened[dim_x*dim_y*dim_v] = %f\n", cube_flattened[dim_x*dim_y*dim_v-1], cube_flattened[dim_x*dim_y*dim_v]);
 	}
@@ -1354,8 +1354,15 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 
 	while(IS_FG(*task) or *task==NEW_X or *task==START){
 		double temps_temp = omp_get_wtime();
+
+	printf("BEFORE SETULB\n");
+
 		setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task,
 				&M.iprint, csave, lsave, isave, dsave);
+
+	printf("AFTER SETULB\n");
+
+			
 		temps_setulb += omp_get_wtime() - temps_temp;
 
 	if(false){//dim_x<64){
@@ -1695,13 +1702,13 @@ void algo_rohsa<T>::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta
 
 	lbfgsbcuda::lbfgsbdefaultoption<T>(lbfgsb_options);
 	lbfgsb_options.mode = LCM_NO_ACCELERATION;
-	lbfgsb_options.eps_f = static_cast<T>(1e-8);
-	lbfgsb_options.eps_g = static_cast<T>(1e-8);
-	lbfgsb_options.eps_x = static_cast<T>(1e-8);
+	lbfgsb_options.eps_f = static_cast<T>(1e-15);
+	lbfgsb_options.eps_g = static_cast<T>(1e-15);
+	lbfgsb_options.eps_x = static_cast<T>(1e-15);
 	lbfgsb_options.max_iteration = M.maxiter;
     lbfgsb_options.step_scaling = 1.;
 	lbfgsb_options.hessian_approximate_dimension = M.m;
-  	lbfgsb_options.machine_epsilon = 1e-8;
+  	lbfgsb_options.machine_epsilon = 1e-15;
   	lbfgsb_options.machine_maximum = std::numeric_limits<T>::max();
 
 	// initialize LBFGSB state
