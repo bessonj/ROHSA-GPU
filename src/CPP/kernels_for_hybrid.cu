@@ -182,9 +182,11 @@ __global__ void kernel_norm_map_boucle_v(T* map_norm_dev, T* residual, T* std_ma
         if(std_map[index_y*indice_x + index_x]>0.){
             T sum = 0.;
             for(int index_z = 0; index_z<indice_v ; index_z++){
-                sum += 0.5*pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2);
+//                sum += 0.5*pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2);
+                sum += 0.5*(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]*residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]);
             }
-            map_norm_dev[index_y*indice_x+index_x] = sum*1/pow(std_map[index_y*indice_x + index_x],2);
+//            map_norm_dev[index_y*indice_x+index_x] = sum*1/pow(std_map[index_y*indice_x + index_x],2);
+            map_norm_dev[index_y*indice_x+index_x] = sum*1/(std_map[index_y*indice_x + index_x]*std_map[index_y*indice_x + index_x]);
         }
     }
 }
