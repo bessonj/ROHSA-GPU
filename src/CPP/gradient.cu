@@ -255,41 +255,28 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     T* residual_dev = NULL;
     T* std_map_dev = NULL;
 
-    int* taille_beta_dev = NULL;
-    int* taille_cube_dev = NULL;
-    int* taille_residual_dev = NULL;
-
-  printf("> TEST 0\n");
-
     checkCudaErrors(cudaMalloc(&beta_dev, product_taille_beta*sizeof(T)));
     checkCudaErrors(cudaMalloc(&residual_dev, product_taille_residual*sizeof(T)));
     checkCudaErrors(cudaMalloc(&cube_dev, product_taille_cube*sizeof(T)));
     checkCudaErrors(cudaMalloc(&std_map_dev, product_taille_std_map*sizeof(T)));
 
+  printf("> TEST 0\n");
   printf("> TEST 0.1\n");
-    checkCudaErrors(cudaMalloc(&taille_cube_dev, 3*sizeof(int)));
+    checkCudaErrors(cudaMemcpy(beta_dev, beta, product_taille_beta*sizeof(T), cudaMemcpyHostToDevice));
   printf("> TEST 0.2\n");
-    checkCudaErrors(cudaMalloc(&taille_beta_dev, 3*sizeof(int)));
+    checkCudaErrors(cudaMemcpy(residual_dev, residual, product_taille_residual*sizeof(T), cudaMemcpyHostToDevice));
   printf("> TEST 0.3\n");
+    checkCudaErrors(cudaMemcpy(cube_dev, cube, product_taille_cube*sizeof(T), cudaMemcpyHostToDevice));
   printf("> TEST 0.4\n");
-    checkCudaErrors(cudaMalloc(&taille_residual_dev, 3*sizeof(int)));
+    checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_taille_std_map*sizeof(T), cudaMemcpyHostToDevice));
   printf("> TEST 0.5\n");
     
-    checkCudaErrors(cudaMemcpy(beta_dev, beta, product_taille_beta*sizeof(T), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(residual_dev, residual, product_taille_residual*sizeof(T), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(cube_dev, cube, product_taille_cube*sizeof(T), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_taille_std_map*sizeof(T), cudaMemcpyHostToDevice));
-    
-    checkCudaErrors(cudaMemcpy(taille_cube_dev, taille_cube, 3*sizeof(int), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(taille_beta_dev, taille_beta, 3*sizeof(int), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
-
-  printf("> TEST 1\n");
 
     dim3 Dg, Db;
     Db.x = BLOCK_SIZE_X_BIS; //
     Db.y = BLOCK_SIZE_Y_BIS; //
     Db.z = BLOCK_SIZE_Z_BIS; //
+  printf("> TEST 1\n");
 
     Dg.x = ceil(T(indice_x)/T(BLOCK_SIZE_X_BIS));
     Dg.y = ceil(T(indice_y)/T(BLOCK_SIZE_Y_BIS));
@@ -327,7 +314,7 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
 
   printf("> TEST 4\n");
 
-    kernel_norm_map_boucle_v<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, taille_residual_dev, std_map_dev, indice_x, indice_y, indice_v);
+    kernel_norm_map_boucle_v<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v);
 
   printf("> TEST 5\n");
 
@@ -347,12 +334,9 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     checkCudaErrors(cudaFree(d_array_f));
     checkCudaErrors(cudaFree(map_norm_dev));
     checkCudaErrors(cudaFree(beta_dev));
-    checkCudaErrors(cudaFree(taille_beta_dev));
     checkCudaErrors(cudaFree(cube_dev));
-    checkCudaErrors(cudaFree(taille_cube_dev));
     checkCudaErrors(cudaFree(std_map_dev));
     checkCudaErrors(cudaFree(residual_dev));
-    checkCudaErrors(cudaFree(taille_residual_dev));
 
     return sum1;
   }
