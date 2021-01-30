@@ -248,11 +248,11 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     kernel_residual_simple_difference<T><<<Dg,Db>>>(cube_dev, cube_reconstructed, residual_dev, indice_x, indice_y, indice_v);
     checkCudaErrors(cudaFree(cube_reconstructed));
 */
-  printf("> TEST 2\n");
+//  printf("> TEST 2\n");
 
     kernel_residual<T><<<Dg,Db>>>(beta_dev, cube_dev, residual_dev,indice_x, indice_y, indice_v, n_gauss);
 
-  printf("> TEST 3\n");
+//  printf("> TEST 3\n");
 
     checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
 
@@ -268,11 +268,11 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     T* map_norm_dev = NULL;
     checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(T)));
 
-  printf("> TEST 4\n");
+//  printf("> TEST 4\n");
 
     kernel_norm_map_boucle_v<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v);
 
-  printf("> TEST 5\n");
+//  printf("> TEST 5\n");
 
     T* d_array_f=NULL;
   printf("> TEST 5.1\n");
