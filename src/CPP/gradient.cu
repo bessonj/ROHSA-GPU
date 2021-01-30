@@ -97,13 +97,16 @@ void reduction_loop(T* array_in, T* d_array_f, int size_array){
 
       int GRID_SIZE_REDUCTION = int(ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION)));
       int size_array_out_kernel = ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION));
+      checkCudaErrors(cudaDeviceSynchronize());
       T* array_out_kernel=NULL;
+      checkCudaErrors(cudaDeviceSynchronize());
       checkCudaErrors(cudaMalloc(&array_out_kernel, size_array_out_kernel*sizeof(T)));    
+      checkCudaErrors(cudaDeviceSynchronize());
       checkCudaErrors(cudaMemset(array_out_kernel, 0., size_array_out_kernel*sizeof(T)));
       checkCudaErrors(cudaDeviceSynchronize());
 
   printf(">> TEST 0\n");
-  
+
     bool reduction_in_one_thread = false;
     if(reduction_in_one_thread){
       reduce_last_in_one_thread<T><<<1,1>>>(array_in, d_array_f, size_array);
@@ -112,8 +115,8 @@ void reduction_loop(T* array_in, T* d_array_f, int size_array){
 
   printf(">> TEST 1\n");
       sum_reduction<T><<< GRID_SIZE_REDUCTION, BLOCK_SIZE_REDUCTION >>>(array_in, array_out_kernel, size_array);
-  printf(">> TEST 2\n");
       checkCudaErrors(cudaDeviceSynchronize());
+  printf(">> TEST 2\n");
       if(size_array_out_kernel>1){
   printf(">> TEST 2.1\n");
         reduce_last_in_one_thread<T><<<1,1>>>(array_out_kernel, d_array_f, size_array_out_kernel);
