@@ -125,65 +125,6 @@ void reduction_loop(T* array_in, T* d_array_f, int size_array){
       cudaFree(array_out_kernel);
     }
   printf(">> TEST 3\n");
-
-
-//  exit(0);
-/*
-    reduce_last_in_one_thread<T><<<1,1>>>(array_in, d_array_f, size_array);
-    checkCudaErrors(cudaDeviceSynchronize());
-
-    if (N==1){
-        int size_array_out_kernel = ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION));
-        int copy_dev_blocks = ceil(T(size_array_out_kernel)/T(BLOCK_SIZE_REDUCTION));
-        T* array_out_kernel=NULL;
-        checkCudaErrors(cudaMalloc(&array_out_kernel, size_array_out_kernel*sizeof(T)));
-
-        checkCudaErrors(cudaDeviceSynchronize());
-
-        sum_reduction<T><<< GRID_SIZE_REDUCTION, BLOCK_SIZE_REDUCTION >>>(array_in, array_out_kernel, size_array);
-
-        checkCudaErrors(cudaDeviceSynchronize());
-
-        cpy_first_num_dev<T><<<1,1>>>( array_out_kernel, d_array_f);
-        cudaFree(array_out_kernel);
-
-    } else{
-        int size_array_out_kernel = ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION));
-        T* array_out_kernel=NULL;
-        checkCudaErrors(cudaMalloc(&array_out_kernel, size_array_out_kernel*sizeof(T)));
-
-        sum_reduction<T><<< GRID_SIZE_REDUCTION, BLOCK_SIZE_REDUCTION >>>(array_in, array_out_kernel, size_array);
-
-        checkCudaErrors(cudaDeviceSynchronize());
-
-        T* array_in_copied_2;
-        checkCudaErrors(cudaMalloc(&array_in_copied_2, size_array_out_kernel*sizeof(T)));
-
-        int copy_dev_blocks = ceil(T(size_array_out_kernel)/T(BLOCK_SIZE_REDUCTION));
-        copy_dev<T><<< copy_dev_blocks , BLOCK_SIZE_REDUCTION >>>(array_out_kernel, array_in_copied_2, size_array_out_kernel);
-
-        cudaFree(array_out_kernel);
-
-        checkCudaErrors(cudaDeviceSynchronize());
-
-        T size_array_out_kernel_2 = ceil(T(size_array)/T(pow(BLOCK_SIZE_REDUCTION,2)));
-        T* array_out_kernel_2=NULL;
-        checkCudaErrors(cudaMalloc(&array_out_kernel_2, size_array_out_kernel_2*sizeof(T)));
-
-        sum_reduction<T><<< GRID_SIZE_REDUCTION, BLOCK_SIZE_REDUCTION >>>(array_in_copied_2, array_out_kernel_2, size_array_out_kernel);
-
-        checkCudaErrors(cudaDeviceSynchronize());
-
-        if(N>2){
-        reduce_last_in_one_thread<T><<<1,1>>>(array_out_kernel_2, d_array_f, size_array_out_kernel_2);
-        }
-        else{
-        cpy_first_num_dev<T><<<1,1>>>( array_out_kernel_2, d_array_f);
-        }
-        cudaFree(array_in_copied_2);
-        cudaFree(array_out_kernel_2);
-    }
-  */
 }	
 
 template <typename T> 
