@@ -22,7 +22,7 @@ __global__ void gradient_kernel_2_beta_with_INDEXING(T* deriv, int* t_d, T* para
 	int params_SHAPE0 = t_p[0];
 	int params_SHAPE1 = t_p[1];
 	int params_SHAPE2 = t_p[2];
-
+/*
 	//taille tableau residual
 	int tr0=t_r[0]; // v --> i
 	int tr1=t_r[1]; // y --> index_y
@@ -41,7 +41,7 @@ __global__ void gradient_kernel_2_beta_with_INDEXING(T* deriv, int* t_d, T* para
 	int tp0 = t_p[0]; // 3*ng --> index_z
 	int tp1 = t_p[1]; // y --> index_y
 	int tp2 = t_p[2]; // x --> index_x
-
+*/
 //						ROHSA world			dev world 
         //params     --> (ng,y,x)    --> (z,y,x)
 		//residual   --> (z,y,x)     --> (i,y,x)
@@ -113,6 +113,42 @@ __global__ void cpy_first_num_dev(T* array_in, T* array_out){
 	array_out[0] = array_in[0];
 }
 
+template <typename T>
+__global__ void kernel_residual_simple_difference(T* cube, T* cube_reconstructed, T* residual, int indice_x, int indice_y, int indice_v)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
+
+	if(index_x<indice_x && index_y<indice_y && index_z<indice_v)
+	{
+
+	residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]=cube_reconstructed[index_z*indice_y*indice_x+index_y*indice_x+index_x]-cube[index_z*indice_y*indice_x+index_y*indice_x+index_x];
+
+	}
+}
+
+template <typename T>
+__global__ void kernel_hypercube_reconstructed(T* beta, T* cube_tilde, int indice_x, int indice_y, int indice_v, int n_gauss)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
+
+	if(index_x<indice_x && index_y<indice_y && index_z<indice_v)
+	{
+	  	T model_gaussienne = 0.;
+		for(int g = 0; g<n_gauss; g++)
+		{
+			T par[3];
+			par[0]=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];
+			par[1]=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];
+			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
+			model_gaussienne += par[0]*exp(-pow((T(index_z+1)-par[1]),2.) / (2.*pow(par[2],2.)));
+		}
+		cube_tilde[index_z*indice_y*indice_x+index_y*indice_x+index_x]=model_gaussienne;
+	}
+}
 template <typename T> 
 __global__ void kernel_residual(T* beta, T* cube, T* residual, int indice_x, int indice_y, int indice_v, int n_gauss)
 {
@@ -158,8 +194,163 @@ __global__ void reduce_last_in_one_thread(T* array_in, T* array_out, int size){
 	T sum = 0;
 	for(int i = 0; i<size; i++){
 		sum += array_in[i];
-        printf("sum = %f\n",sum);
 	}
 	array_out[0]=sum;
-    printf("array_out[0] = %f\n",array_out[0]);
 }
+
+template <typename T> 
+__global__ void print_diff(T* array_in_1, T* array_in_2){
+	printf("difference = %.25f\n",abs((array_in_1[0] - array_in_2[0])/array_in_2[0]));
+}
+
+template <typename T>
+__global__ void parameter_maps_sliced_from_beta_sort(T* beta_modif, T* d_IMAGE_amp, T* d_IMAGE_mu, T* d_IMAGE_sig, int image_x, int image_y, int k){
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+	if (pixel_x < image_x && pixel_y < image_y){
+		d_IMAGE_amp[pixel_y*image_x+pixel_x] = beta_modif[ (0+3*k)*image_x*image_y+ pixel_y*image_x+pixel_x];		
+		d_IMAGE_mu[pixel_y*image_x+pixel_x] = beta_modif[ (1+3*k)*image_x*image_y+ pixel_y*image_x+pixel_x];		
+		d_IMAGE_sig[pixel_y*image_x+pixel_x] = beta_modif[ (2+3*k)*image_x*image_y+ pixel_y*image_x+pixel_x];
+	}
+}
+
+template <typename T>
+__global__ void init_extended_array_sort(T* d_IMAGE, T* d_IMAGE_extended, int image_x, int image_y){
+
+	int image_x_ext = image_x+4;
+	int image_y_ext = image_y+4;
+	int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+	int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+	
+	if (pixel_x < image_x && pixel_y<image_y){
+		d_IMAGE_extended[image_x_ext*(pixel_y+2)+pixel_x+2]=d_IMAGE[image_x*pixel_y+pixel_x];
+	}
+}
+
+template <typename T>
+__global__ void extension_mirror_gpu_sort_bis(T* d_IMAGE, T* d_IMAGE_extended, int image_x, int image_y){
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+	int image_x_ext = image_x+4;
+	int image_y_ext = image_y+4;
+
+	if(pixel_x < 2 && pixel_y < image_y){
+		d_IMAGE_extended[image_x_ext*(pixel_y+2)+(pixel_x)] = d_IMAGE[image_x*pixel_y+pixel_x];
+	}
+	__syncthreads();
+	if(pixel_x < image_x && pixel_y < 2){
+		d_IMAGE_extended[image_x_ext*(pixel_y)+(2+pixel_x)] = d_IMAGE[image_x*pixel_y+pixel_x];
+	}
+	__syncthreads();
+	if(pixel_x>=image_x && pixel_x < image_x+2 && pixel_y < image_y){
+		d_IMAGE_extended[image_x_ext*(2+pixel_y)+(2+pixel_x)] = d_IMAGE[image_x*pixel_y+(pixel_x-2)];
+	}
+	__syncthreads();
+	if(pixel_x < image_x && pixel_y>=image_y && pixel_y < image_y+2){
+		d_IMAGE_extended[image_x_ext*(2+pixel_y)+(2+pixel_x)] = d_IMAGE[image_x*(pixel_y-2)+pixel_x];
+	}
+}
+
+template<typename T>
+__global__ void ConvKernel(T* d_Result, T* d_Data, int c_image_x, int c_image_y)
+	{
+    T c_Kernel[9] = {0.,-0.25,0.,-0.25,1.,-0.25,0.,-0.25,0.};
+    int c_kernel_radius_x = 1;
+    int c_kernel_radius_y = 1;
+	int c_kernel_x = 3;
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+	if(pixel_y < c_image_y && pixel_x < c_image_x) {
+	    T tmp_sum = 0;
+	    int pixel_pos = pixel_y * c_image_x + pixel_x ;
+		for (int y = - (c_kernel_radius_y) ; y <= c_kernel_radius_y; y++)
+			{
+			for (int x = - (c_kernel_radius_x) ; x <= c_kernel_radius_x; x++)
+				{
+			    T pixel_extrait = 0.;
+				if ( ( (pixel_x-c_kernel_radius_x) >= 0) && ((pixel_y-c_kernel_radius_y) >= 0) && ((pixel_x+c_kernel_radius_x) < c_image_x) && ((pixel_y+c_kernel_radius_x) < c_image_y) ){
+				    pixel_extrait = d_Data[pixel_x+x + (pixel_y+y)*c_image_x];
+				}
+/*
+				if ( ( (pixel_x+x) >= 0) && ((pixel_y+y) >= 0) && ((pixel_x+x) < c_image_x) && ((pixel_y+y) < c_image_y) ){
+				    pixel_extrait = d_Data[pixel_x+x + (pixel_y+y)*c_image_x];
+				}
+*/
+				tmp_sum += pixel_extrait * c_Kernel[c_kernel_radius_x+x + (c_kernel_radius_y+y)*c_kernel_x];
+			}
+		}
+		d_Result[pixel_pos] = tmp_sum;
+	}
+}
+
+template <typename T>
+__global__ void copy_gpu(T* d_out, T* d_in, int length_x_in, int length_y_in)
+{
+    int pixel_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
+    if(pixel_x < length_x_in && pixel_y < length_y_in){
+        d_out[length_x_in*pixel_y + pixel_x] = d_in[(length_x_in+4)*(pixel_y+2) + (pixel_x+2)];
+    }
+}
+
+template <typename T>
+__global__ void kernel_norm_map_simple_sort(T lambda, T* map_norm_dev, T* map_dev, int indice_x, int indice_y)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+    if(index_x<indice_x && index_y<indice_y)
+    {
+  	    map_norm_dev[index_y*indice_x+index_x] = 0.5*lambda*pow(map_dev[index_y*indice_x+index_x],2);
+    }
+}
+
+template <typename T>
+__global__ void kernel_norm_map_simple_sort(T lambda, T lambda_var, T* map_norm_dev, T* map_conv_dev, T* map_image_dev, int indice_x, int indice_y, int k, T* b_params)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+
+  if(index_x<indice_x && index_y<indice_y)
+  {
+  	map_norm_dev[index_y*indice_x+index_x] = 0.5*lambda*pow(map_conv_dev[index_y*indice_x+index_x],2) + 0.5*lambda_var*pow(map_image_dev[index_y*indice_x+index_x]-b_params[k],2);
+  }
+}
+
+template <typename T>
+__global__ void add_first_elements_sort(T* array_in, T* array_out){
+	array_out[0] = array_out[0] + array_in[0];
+}
+
+template <typename T>
+__global__ void kernel_conv_g_reduction_sort(int n_beta, T* d_g, T* result_reduction_sig, T lambda_var_sig, int n_gauss, T* b_params_dev, int k, int image_x, int image_y)
+{ 
+    d_g[n_beta - n_gauss + k-1] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
+}
+
+template <typename T>
+__global__ void kernel_update_deriv_conv_conv_sort(T* deriv, T lambda_amp, T lambda_mu, T lambda_sig, T lambda_var_sig, T* conv_conv_amp, T* conv_conv_mu, T* conv_conv_sig, T* image_sig, T* b_params_dev, int indice_y, int indice_x, int k)
+{ 
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+//						ROHSA world			dev world 
+		//deriv      --> (ng,y,x)    --> (z,y,x)
+		//conv_conv_*    --> (y,x)       --> (y,x)
+	if(index_x<indice_x && index_y<indice_y)
+	{
+        deriv[(3*k+0)*indice_x*indice_y+index_y*indice_x+ index_x] += lambda_amp*conv_conv_amp[indice_x*index_y + index_x];
+        deriv[(3*k+1)*indice_x*indice_y+index_y*indice_x+ index_x] += lambda_mu*conv_conv_mu[indice_x*index_y + index_x];
+        deriv[(3*k+2)*indice_x*indice_y+index_y*indice_x+ index_x] += lambda_sig*conv_conv_sig[indice_x*index_y + index_x]+ lambda_var_sig*(image_sig[indice_x*index_y + index_x]-b_params_dev[k]);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+

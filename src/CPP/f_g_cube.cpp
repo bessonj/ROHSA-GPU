@@ -1,4 +1,5 @@
 #include "f_g_cube.hpp"
+#include "f_g_cube_gpu.hpp"
 
 #define print false
 
@@ -678,7 +679,7 @@ double temps1_deriv = omp_get_wtime();
 
 
 template <typename T> 
-void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std::vector<std::vector<T>>> &cube, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened, double* temps, double temps_transfert_d, double temps_mirroirs)
+void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std::vector<std::vector<T>>> &cube, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened, double* temps, double temps_transfert_d, double temps_mirroirs, double* temps_bis)
 {
 	double temps_conv;
 	double temps_deriv;
@@ -702,7 +703,7 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 		std::cin.ignore();
 	}
     
-	std::vector<T> b_params(M.n_gauss,0.);
+//	std::vector<T> b_params(M.n_gauss,0.);
 	int i,k,j,l,p;
 
 	int taille_params_flat[] = {3*M.n_gauss, indice_y, indice_x};
@@ -742,6 +743,9 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 	T* image_amp = (T*)malloc(size_image_conv);
 	T* image_mu = (T*)malloc(size_image_conv);
 	T* image_sig = (T*)malloc(size_image_conv);
+
+	T* b_params = (T*)malloc(M.n_gauss*sizeof(T));
+
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
 	double temps1_copy = omp_get_wtime();
@@ -777,11 +781,60 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 */
 
 	double temps1_tableaux = omp_get_wtime();
+/*
+	for(int i=0; i<indice_y; i++){
+		for(int j=0; j<indice_x; j++){
+			std::vector<T> residual_1D(indice_v,0.);
+			std::vector<T> params_flat(3*M.n_gauss,0.);
+			std::vector<T> cube_flat(cube[0][0].size(),0.);
+
+			for (int p=0; p<3*M.n_gauss; p++){
+				params_flat[p]=beta[p*indice_y*indice_x+i*indice_x+j];
+			}
+			for (int p=0; p<indice_v; p++){
+				cube_flat[p]=cube[j][i][p];
+			}
+
+			myresidual<T>(params_flat, cube_flat, residual_1D, M.n_gauss);
+
+			for (int p=0;p<indice_v;p++){
+				residual[p*indice_y*indice_x+i*indice_x+j]=residual_1D[p];
+			}
+
+			if(std_map[i][j]>0.){
+				f += myfunc_spec(residual_1D)*1/pow(std_map[i][j],2.); //std_map est arrondie... 
+			}
+
+		}
+	}
+*/
 	f =  compute_residual_and_f<T>(beta, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
 	double temps2_tableaux = omp_get_wtime();
 
 	double temps1_deriv = omp_get_wtime();
+
+/*
+	#pragma omp parallel private(i) shared(beta,deriv,std_map,residual,indice_v,indice_y,indice_x)
+	{
+	#pragma omp for
+	for(int i=0; i<M.n_gauss; i++){
+		for(int k=0; k<indice_v; k++){
+			for(int j=0; j<indice_y; j++){
+				for(int l=0; l<indice_x; l++){
+					if(std_map[j][l]>0.){
+						T spec = T(k+1);
+						deriv[(0+3*i)*indice_y*indice_x+j*indice_x+l] += exp(-pow( spec-beta[(1+3*i)*indice_y*indice_x+j*indice_x+l],2.)/(2*pow(beta[(2+3*i)*indice_y*indice_x+j*indice_x+l],2.)) )*residual[k*indice_x*indice_y+j*indice_x+l]/pow(std_map[j][l],2);
+						deriv[(1+3*i)*indice_y*indice_x+j*indice_x+l] += beta[(3*i)*indice_y*indice_x+j*indice_x+l]*( spec - beta[(1+3*i)*indice_y*indice_x+j*indice_x+l])/pow(beta[(2+3*i)*indice_y*indice_x+j*indice_x+l],2.) * exp(-pow( spec-beta[(1+3*i)*indice_y*indice_x+j*indice_x+l],2.)/	(2*pow(beta[(2+3*i)*indice_y*indice_x+j*indice_x+l],2.)) )*residual[k*indice_x*indice_y+j*indice_x+l]/pow(std_map[j][l],2);
+						deriv[(2+3*i)*indice_y*indice_x+j*indice_x+l] += beta[(3*i)*indice_y*indice_x+j*indice_x+l]*pow( spec - beta[(1+3*i)*indice_y*indice_x+j*indice_x+l], 2.)/(pow(beta[(2+3*i)*indice_y*indice_x+j*indice_x+l],3.)) * exp(-pow( spec-beta[(1+3*i)*indice_y*indice_x+j*indice_x+l],2.)/(2*pow(beta[(2+3*i)*indice_y*indice_x+j*indice_x+l],2.)) )*residual[k*indice_x*indice_y+j*indice_x+l]/pow(std_map[j][l],2);
+					}
+				}
+			}
+		}
+	}
+	}
+*/
 	gradient_L_2_beta<T>(deriv, taille_deriv, product_deriv, beta, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
+
 	double temps2_deriv = omp_get_wtime();
 
 	if(print){
@@ -793,9 +846,10 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 		std::cin.ignore();
 	}
 
-    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
 
 	double temps1_conv = omp_get_wtime();
+/*
+    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
 	for(int k=0; k<M.n_gauss; k++){
 		for(int p=0; p<indice_y; p++){
 			for(int q=0; q<indice_x; q++){
@@ -838,22 +892,6 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 		}
 
 	if(print){
-/*		for(int p=0; p<300; p++){
-			printf("image_amp[%d] = %.16f\n", p, image_amp[p]);
-		}
-		for(int p=0; p<300; p++){
-			printf("image_mu[%d] = %.16f\n", p, image_mu[p]);
-		}
-		for(int p=0; p<300; p++){
-			printf("image_sig[%d] = %.16f\n", p, image_sig[p]);
-		}
-		for(int p=0; p<300; p++){
-			printf("conv_mu[%d] = %.16f\n", p, conv_mu[p]);
-		}
-		for(int p=0; p<300; p++){
-			printf("conv_sig[%d] = %.16f\n", p, conv_sig[p]);
-		}
-		*/
 		for(int p=0; p<300; p++){
 			printf("conv_amp[%d] = %.16f\n", p, conv_amp[p]);
 		}
@@ -873,20 +911,28 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 		}
 		f+=f_1+f_2+f_3;
 	}
+*/
+
+	regularisation(beta, deriv, g, b_params, f, indice_x, indice_y, indice_v, M, temps_bis);
+	temps_bis[0] = 2.; 
+
+//	printf("temps_bis[1] = %f\n")
+
 	double temps2_conv = omp_get_wtime();
 
 	for(int i=0; i<n_beta-M.n_gauss; i++){
 		g[i]=deriv[i];
 	}
 
-	if (print)
+	if (false)
 	{
+		lim = n_beta;
 		for(int i=0; i<lim; i++){
 			printf("g[%d] = %.16f\n",i, g[i]);
 		}
-		for(int i=lim-40; i<lim; i++){
+/*		for(int i=lim-40; i<lim; i++){
 			printf("g[%d] = %.16f\n",i, g[i]);
-		}
+		}*/
 		printf("fin -> f = %.16f\n", f);
         std::cin.ignore();
 	}
@@ -907,6 +953,7 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 	free(residual);
 	free(std_map_);
 
+	free(b_params);
 	free(conv_amp);
 	free(conv_conv_amp);
 	free(conv_mu);
@@ -1330,7 +1377,7 @@ template void convolution_2D_mirror(const parameters<double> &M, const std::vect
 template void f_g_cube_fast_clean(parameters<double>&, double &, double*, int n, std::vector<std::vector<std::vector<double>>>&, double*, int , int , int , std::vector<std::vector<double>>&, double*);
 template void f_g_cube_not_very_fast_clean(parameters<double>&, double &, double*, int n, std::vector<std::vector<std::vector<double>>>&, double*, int , int , int , std::vector<std::vector<double>>&, double*);
 template void f_g_cube_fast_clean_optim_CPU_lib(parameters<double>&, double &, double*, int n, std::vector<std::vector<std::vector<double>>>&, double*, int , int , int , std::vector<std::vector<double>>&, double**, double*);
-template void f_g_cube_cuda_L_clean(parameters<double>&, double &, double*, int n, std::vector<std::vector<std::vector<double>>>&, double*, int , int , int , std::vector<std::vector<double>>&, double*, double*, double, double);
+template void f_g_cube_cuda_L_clean(parameters<double>&, double &, double*, int n, std::vector<std::vector<std::vector<double>>>&, double*, int , int , int , std::vector<std::vector<double>>&, double*, double*, double, double, double* temps_bis);
 template void f_g_cube_cuda_L_clean_lib(parameters<double>&, double &, double*, int, double*, int , int , int , std::vector<std::vector<double>>&, double*, double*, double, double);
 
 template void one_D_to_three_D_same_dimensions(double*, std::vector<std::vector<std::vector<double>>>&, int, int, int);
@@ -1353,7 +1400,7 @@ template void convolution_2D_mirror(const parameters<float> &M, const std::vecto
 template void f_g_cube_fast_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, double*);
 template void f_g_cube_not_very_fast_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, double*);
 template void f_g_cube_fast_clean_optim_CPU_lib(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, float**, double*);
-template void f_g_cube_cuda_L_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, float*, double*, double, double);
+template void f_g_cube_cuda_L_clean(parameters<float>&, float &, float*, int n, std::vector<std::vector<std::vector<float>>>&, float*, int , int , int , std::vector<std::vector<float>>&, float*, double*, double, double, double* temps_bis);
 template void f_g_cube_cuda_L_clean_lib(parameters<float>&, float &, float*, int, float*, int , int , int , std::vector<std::vector<float>>&, float*, double*, double, double);
 
 template void one_D_to_three_D_same_dimensions(float*, std::vector<std::vector<std::vector<float>>>&, int, int, int);

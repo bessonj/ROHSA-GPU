@@ -44,7 +44,10 @@ class hypercube
 	hypercube(parameters<T> &M,int indice_debut, int indice_fin, bool one_level);
 	hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square);
 
-	void get_noise_map_from_fits(parameters<T> &M);
+	int writeImage();
+	int save_noise_map_in_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map);
+	void get_noise_map_from_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map);
+	void get_noise_map_from_GHIGLS(parameters<T> &M, std::vector <std::vector<T>>& noise_map);
 
 	void display_cube(int rang);
 	void display_data(int rang);
@@ -488,6 +491,7 @@ std::vector<std::vector<std::vector<T>>> hypercube<T>::reshape_up_for_last_level
 	return cube_;
 }
 
+
 template<typename T>
 std::vector<std::vector<std::vector<T>>> hypercube<T>::reshape_up(int borne_inf, int borne_sup)
 {
@@ -539,6 +543,7 @@ void hypercube<T>::write_into_binary(parameters<T> &M, std::vector<std::vector<s
 	objetfichier.write((char*)&(grid_params)[0], n);
 
 	objetfichier.close();
+//	free(n);
 }
 
 template<typename T>
@@ -669,7 +674,6 @@ void hypercube<T>::get_array_from_fits(parameters<T> &M){
 	this->dim_data[2]=ax3;
 
 	std::vector <std::vector<std::vector<T>>> z(dim_data[0], std::vector<std::vector<T>>(dim_data[1], std::vector<T>(dim_data[2],0.)));
-	int i__=0;
 
 	for(int i=0; i<dim_data[2]; i++)
 	{
@@ -677,9 +681,7 @@ void hypercube<T>::get_array_from_fits(parameters<T> &M){
 		{
 		for(int k=0; k<dim_data[0]; k++)
 			{
-				z[k][j][i] = contents[i__];
-				i__++;
-//				std::cout<<"k,j,i = "<<k<<","<<j<<","<<i<<std::endl;
+				z[k][j][i] = contents[k*ax3*ax2+j*ax3+i];
 			}
 		}
 	}
@@ -689,48 +691,80 @@ void hypercube<T>::get_array_from_fits(parameters<T> &M){
 }
 
 template<typename T>
-void hypercube<T>::get_noise_map_from_fits(parameters<T> &M){
+void hypercube<T>::get_noise_map_from_GHIGLS(parameters<T> &M, std::vector <std::vector<T>>& noise_map){
 	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
 
 	PHDU& image = pInfile->pHDU();
+
+    ExtHDU& extension = pInfile->extension(2);
+
 	std::valarray<T> contents;
-    image.readAllKeys();
+    extension.readAllKeys();
 
 	int dim[] = {0,0};
 
-    image.read(contents);
+    extension.read(contents);
 
-    // this doesn't print the data, just header info.
-	std::cout << image << std::endl;
+	std::cout << extension << std::endl;
 
-    long ax1(image.axis(0));
-    long ax2(image.axis(1));
-//    long ax3(image.axis(2));
-//	long ax4(image.axis(3));
+    long ax1(extension.axis(0));
+    long ax2(extension.axis(1));
 
 	dim[0]=ax1;
 	dim[1]=ax2;
-//	this->dim_data[0]=ax1;
-//	this->dim_data[1]=ax2;
-
-	std::cout << "ax1 = "<<ax1<< std::endl;
-	std::cout << "ax2 = "<<ax2<< std::endl;
 
 	std::vector <std::vector<T>> z(dim[0], std::vector<T>(dim[1],0.));//, std::vector<T>(dim_data[2],0.)));
-//	std::vector <std::vector<std::vector<T>>> z(dim_data[0], std::vector<std::vector<T>>(dim_data[1], std::vector<T>(dim_data[2],0.)));
-	int i__=0;
 
+	int i__=0;
 	for(int j=0; j<dim[1]; j++)
 	{
 		for(int k=0; k<dim[0]; k++)
 		{
-			z[k][j] = contents[i__];
-			i__++;
+			z[j][k] = contents[dim[0]*j+k];
 		}
 	}
-	this->noise_map=z;
+	noise_map = z;
+	//why not directly noise_map[][] = ... ?
+/*
+	for(int j=0; j<dim[1]; j++)
+	{
+		for(int k=0; k<dim[0]; k++)
+		{
+			printf("z[%d][%d] = %f\n",k,j,z[k][j]);
+		}
+	}
+*/
+}
+
+template<typename T>
+void hypercube<T>::get_noise_map_from_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map){
+	std::auto_ptr<FITS> pInfile(new FITS(M.filename_noise,Read,true));
+
+    PHDU& image = pInfile->pHDU();
+	std::valarray<T> contents;
+    image.readAllKeys();
+	image.read(contents);
+
+ 	// this doesn't print the data, just header info.
+    // std::cout << image << std::endl;
+	long ax1(image.axis(0));
+    long ax2(image.axis(1));
+	printf("ax1 = %d , ax2 = %d\n", ax1, ax2);
+	int dim[] = {0,0};
+	dim[0]=ax1;
+	dim[1]=ax2;
+
+	std::vector <std::vector<T>> z(dim[0], std::vector<T>(dim[1],0.));//, std::vector<T>(dim_data[2],0.)));
+
+	for(int j=0; j<dim[0]; j++)
+	{
+		for(int k=0; k<dim[1]; k++)
+		{
+			z[j][k] = contents[dim[1]*j+k];
+		}
+	}
+	noise_map=z;
 	z=std::vector<std::vector<T>>();
-	exit(0);
 }
 
 template<typename T>
@@ -793,8 +827,177 @@ void hypercube<T>::get_vector_from_binary(std::vector<std::vector<std::vector<T>
 		}
 	}
 */
+}
 
+template<typename T>
+int hypercube<T>::writeImage()
+{
+    long naxis    =   2;      
+    long naxes[2] = { 300, 200 };   
+    
+    // declare auto-pointer to FITS at function scope. Ensures no resources
+    // leaked if something fails in dynamic allocation.
+    std::auto_ptr<FITS> pFits(0);
+      
+    try
+    {                
+        // overwrite existing file if the file already exists.
+        const std::string fileName("!atestfil.fit");            
+        
+        // Create a new FITS object, specifying the data type and axes for the primary
+        // image. Simultaneously create the corresponding file.
+        
+        // this image is unsigned short data, demonstrating the cfitsio extension
+        // to the FITS standard.
+        
+        pFits.reset( new FITS(fileName , USHORT_IMG , naxis , naxes ) );
+    }
+    catch (FITS::CantCreate)
+    {
+          // ... or not, as the case may be.
+          return -1;       
+    }
+    
+    // references for clarity.
+    
+    long& vectorLength = naxes[0];
+    long& numberOfRows = naxes[1];
+    long nelements(1); 
+    
+    
+    // Find the total size of the array. 
+    // this is a little fancier than necessary ( It's only
+    // calculating naxes[0]*naxes[1]) but it demonstrates  use of the 
+    // C++ standard library accumulate algorithm.
+    
+    nelements = std::accumulate(&naxes[0],&naxes[naxis],1,std::multiplies<long>());
+           
+    // create a new image extension with a 300x300 array containing float data.
+    
+    std::vector<long> extAx(2,300);
+    string newName ("NEW-EXTENSION");
+    ExtHDU* imageExt = pFits->addImage(newName,FLOAT_IMG,extAx);
+    
+    // create a dummy row with a ramp. Create an array and copy the row to 
+    // row-sized slices. [also demonstrates the use of valarray slices].   
+    // also demonstrate implicit type conversion when writing to the image:
+    // input array will be of type float.
+    
+    std::valarray<int> row(vectorLength);
+    for (long j = 0; j < vectorLength; ++j) row[j] = j;
+    std::valarray<int> array(nelements);
+    for (int i = 0; i < numberOfRows; ++i)
+    {
+        array[std::slice(vectorLength*static_cast<int>(i),vectorLength,1)] = row + i;     
+    }
+    
+    // create some data for the image extension.
+    long extElements = std::accumulate(extAx.begin(),extAx.end(),1,std::multiplies<long>()); 
+    std::valarray<float> ranData(extElements);
+    const float PIBY (M_PI/150.);
+    for ( int jj = 0 ; jj < extElements ; ++jj) 
+    {
+            float arg = PIBY*jj;
+            ranData[jj] = std::cos(arg);
+    }
+ 
+    long  fpixel(1);
+    
+    // write the image extension data: also demonstrates switching between
+    // HDUs.
+    imageExt->write(fpixel,extElements,ranData);
+    
+    //add two keys to the primary header, one long, one complex.
+    
+    long exposure(1500);
+    std::complex<float> omega(std::cos(2*M_PI/3.),std::sin(2*M_PI/3));
+    pFits->pHDU().addKey("EXPOSURE", exposure,"Total Exposure Time"); 
+    pFits->pHDU().addKey("OMEGA",omega," Complex cube root of 1 ");  
 
+    
+    // The function PHDU& FITS::pHDU() returns a reference to the object representing 
+    // the primary HDU; PHDU::write( <args> ) is then used to write the data.
+    pFits->pHDU().write(fpixel,nelements,array);
+    
+    // PHDU's friend ostream operator. Doesn't print the entire array, just the
+    // required & user keywords, and is provided largely for testing purposes [see 
+    // readImage() for an example of how to output the image array to a stream].
+    
+    std::cout << pFits->pHDU() << std::endl;
+
+    return 0;
+}
+
+template<typename T>
+int hypercube<T>::save_noise_map_in_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map){
+	long ax1 = long(noise_map.size());
+	long ax2 = long(noise_map[0].size());
+    long naxis    =   2;      
+    long naxes[2] = { ax1, ax2 };   
+    
+    // declare auto-pointer to FITS at function scope. Ensures no resources
+    // leaked if something fails in dynamic allocation.
+    std::auto_ptr<FITS> pFits(0);
+
+	//adding a "!" to the filename, it allows overwritting
+	const std::string fileName = "!" + M.filename_noise;
+	std::cout<<"fileName = "<<fileName<<std::endl;
+
+    try
+    {                
+        // this image is unsigned short data, demonstrating the cfitsio extension
+        // to the FITS standard.
+		if(M.float_mode){
+		    pFits.reset( new FITS(fileName , FLOAT_IMG , naxis , naxes ) );
+		}else if(M.double_mode){
+		    pFits.reset( new FITS(fileName , DOUBLE_IMG , naxis , naxes ) );
+		}
+    }
+    catch (FITS::CantCreate)
+    {
+          // ... or not, as the case may be.
+          return -1;       
+    }
+    
+    // references for clarity.
+    long& vectorLength = naxes[0];
+    long& numberOfRows = naxes[1];
+    long nelements(1); 
+    
+    // Find the total size of the array. 
+    // this is a little fancier than necessary ( It's only
+    // calculating naxes[0]*naxes[1]) but it demonstrates  use of the 
+    // C++ standard library accumulate algorithm.    
+    nelements = std::accumulate(&naxes[0],&naxes[naxis],1,std::multiplies<long>());
+    std::valarray<float> array_T(nelements);
+    for (long j = 0; j < vectorLength; ++j){;
+    	for (int i = 0; i < numberOfRows; ++i)
+    	{
+        	array_T[i+j*numberOfRows] = float(noise_map[i][j]);     
+    	}
+	}
+    // create some data for the image extension.
+    long fpixel(1);
+    
+    //add two keys to the primary header, one long, one complex.
+    long exposure(1500);
+    std::complex<float> omega(std::cos(2*M_PI/3.),std::sin(2*M_PI/3));
+    pFits->pHDU().addKey("EXPOSURE", exposure,"Total Exposure Time"); 
+    pFits->pHDU().addKey("OMEGA",omega," Complex cube root of 1 ");  
+
+    // The function PHDU& FITS::pHDU() returns a reference to the object representing 
+    // the primary HDU; PHDU::write( <args> ) is then used to write the data.
+//    pFits->pHDU().write(fpixel,nelements,array_T);
+    pFits->pHDU().write(fpixel,nelements,array_T);
+        
+    // PHDU's friend ostream operator. Doesn't print the entire array, just the
+    // required & user keywords, and is provided largely for testing purposes [see 
+    // readImage() for an example of how to output the image array to a stream].
+    
+    std::cout << pFits->pHDU() << std::endl;
+
+	//	pFits->pHDU().write(fpixel, nelements, noise_map_valarray, nullPtr);
+    return 0;
 }
 
 template<typename T>

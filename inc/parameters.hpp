@@ -31,6 +31,7 @@ class parameters
 	public:
 		parameters();
 		parameters(std::string str, std::string str2, std::string str3, std::string str4);
+		inline bool compare_ends(std::string const & value, std::string const & ending);
 //		copy_double_T(parameters<double> &M_d, parameters<T> &M);
 		std::vector<int> dim_data; //inutile : file.dim_data
 		int dim_x;
@@ -66,7 +67,6 @@ class parameters
 	std::string check_noise;
 	std::string check_regul;
 	std::string check_descent;
-	bool noise;
 	bool regul; //!< Activates regularization
 	bool descent;
 	int lstd;
@@ -87,6 +87,8 @@ class parameters
 	std::string is_wrapper;
 	bool wrapper;
 	bool print_mean_parameters;
+	bool noise_map_provided;
+	bool noise;
 
 	std::vector<T> std_spect, mean_spect, max_spect, max_spect_norm;
 
@@ -273,6 +275,19 @@ parameters<T>::parameters(std::string str, std::string str2, std::string str3, s
             std::cerr << "Can't open the parameters.txt file !" << std::endl;
 		fichier.close();
 
+	std::string comp (".fits");
+	std::string COMP (".FITS");
+	bool is_fits_caps_lock = compare_ends(this->filename_noise, COMP);
+	bool is_fits = compare_ends(this->filename_noise, comp);
+	if(is_fits || is_fits_caps_lock){
+		this->noise_map_provided = true;
+	} else {
+		this->noise_map_provided = false;
+	}
+	//overwrite verification
+	this->noise_map_provided = this->noise;
+
+
 	if(false){
 //	if(true){
 		this->jump_to_last_level = true;
@@ -284,44 +299,14 @@ parameters<T>::parameters(std::string str, std::string str2, std::string str3, s
 		this->second_to_last_level_grid_name = "right_before_last_level";
 	}
 }
-/*
+
 template<typename T>
-parameters<T>::copy_double_T(parameters<double> &M_d, parameters<T> &M)
+inline bool parameters<T>::compare_ends(std::string const & value, std::string const & ending)
 {
-	M_d.filename_dat = M.filename_dat;
-	M_d.filename_fits = M.filename_fits;
-	M_d.file_type_dat_check = M.file_type_dat_check;
-	M_d.file_type_fits_check = M.file_type_fits_check;
-	M_d.slice_index_min = M.slice_index_min;
-	M_d.fileout = M.fileout;
-	M_d.filename_noise = M.filename_noise;
-	M_d.n_gauss = M.n_gauss;
-	M_d.lambda_amp = double(M.lambda_amp);
-	M_d.lambda_mu = double(M.lambda_mu);
-	M_d.lambda_sig = double(M.lambda_sig);
-	M_d.lambda_var_amp = double(M.lambda_var_amp);
-	M_d.lambda_var_mu = double(M.lambda_var_mu);
-	M_d.lambda_var_sig = double(M.lambda_var_sig);
-	M_d.amp_fact_init = double(M.amp_fact_init);
-	M_d.sig_init = double(M.sig_init);
-	M_d.init_option = M.init_option;
-	M_d.maxiter_init = M.maxiter_init;
-	M_d.maxiter = M.maxiter;
-	M_d.m = M.m;
-	M_d.check_noise = M.check_noise;
-	M_d.check_regul = M.check_regul;
-	M_d.check_descent = M.check_descent;
-	M_d.lstd = M.lstd;
-	M_d.ustd = M.ustd;
-	M_d.iprint = M.iprint;
-	M_d.iprint_init = M.iprint_init;
-	M_d.check_save_grid = M.check_save_grid;
-	M_d.ub_sig = double(M.ub_sig);
-	M_d.lb_sig = double(M.lb_sig);
-	M_d.ub_sig_init = double(M.ub_sig_init);
-	M_d.lb_sig_init = double(M.lb_sig_init);
-	M_d.double_or_float = M.double_or_float;
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
-*/
+
+
 
 #endif

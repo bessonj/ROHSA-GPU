@@ -72,15 +72,21 @@
 
 template <typename T> 
 void main_routine(parameters<T> &user_parametres){
-
 	printf("Reading the cube ...\n");
     hypercube<T> Hypercube_file(user_parametres, user_parametres.slice_index_min, user_parametres.slice_index_max); 
+
 	printf("Launching the ROHSA algorithm ...\n");
 	algo_rohsa<T> algo(user_parametres, Hypercube_file);
+
 	printf("Saving the result ...\n");
 	Hypercube_file.save_result(algo.grid_params, user_parametres);
 	printf("Result saved in dat file !\n");
 
+	if(! user_parametres.noise_map_provided){
+		printf("Saving noise_map ...\n");
+		Hypercube_file.save_noise_map_in_fits(user_parametres, algo.std_data_map);
+	}
+	exit(0);
 //	Hypercube_file.plot_line(algo.grid_params, **pos_x**, **pos_y**, user_parametres.n_gauss);
 /*
 	for(int num_gauss = 0; num_gauss < user_parametres.n_gauss; num_gauss ++){

@@ -101,7 +101,7 @@ template <typename T> void conv_twice_and_copy_sort(T* d_IMAGE_amp_ext, T* d_con
 
 
 
-//    update_array_f_dev_sort(M.lambda_sig, M.lambda_var_sig, array_f_dev, d_IMAGE_sig, d_conv_sig, image_x, image_y, k, b_params_dev);
+//update_array_f_dev_sort(M.lambda_sig, M.lambda_var_sig, array_f_dev, d_IMAGE_sig, d_conv_sig, image_x, image_y, k, b_params_dev);
 template <typename T> void update_array_f_dev_sort(T lambda, T lambda_var, T* array_f_dev, T* map_image_dev, T* map_conv_dev, int indice_x, int indice_y, int k, T* b_params){
 
     bool print = false;
@@ -377,7 +377,7 @@ for(int k = 0; k<M.n_gauss; k++){
     checkCudaErrors(cudaEventSynchronize(record_event[4]));
         
     //---------------------------------------------------------------------------------------------------------------------------    
-checkCudaErrors(cudaEventElapsedTime(time_msec+0, record_event[0], record_event[1]));
+    checkCudaErrors(cudaEventElapsedTime(time_msec+0, record_event[0], record_event[1]));
     checkCudaErrors(cudaEventElapsedTime(time_msec+1, record_event[1], record_event[2]));
     checkCudaErrors(cudaEventElapsedTime(time_msec+2, record_event[2], record_event[3]));
     checkCudaErrors(cudaEventElapsedTime(time_msec+3, record_event[3], record_event[4]));
