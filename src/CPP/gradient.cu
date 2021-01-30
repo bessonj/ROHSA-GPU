@@ -258,7 +258,6 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     int* taille_beta_dev = NULL;
     int* taille_cube_dev = NULL;
     int* taille_residual_dev = NULL;
-    int* taille_std_map_dev = NULL;
 
   printf("> TEST 0\n");
 
@@ -272,7 +271,6 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
   printf("> TEST 0.2\n");
     checkCudaErrors(cudaMalloc(&taille_beta_dev, 3*sizeof(int)));
   printf("> TEST 0.3\n");
-    checkCudaErrors(cudaMalloc(&taille_std_map_dev, 2*sizeof(int)));
   printf("> TEST 0.4\n");
     checkCudaErrors(cudaMalloc(&taille_residual_dev, 3*sizeof(int)));
   printf("> TEST 0.5\n");
@@ -284,7 +282,6 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     
     checkCudaErrors(cudaMemcpy(taille_cube_dev, taille_cube, 3*sizeof(int), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(taille_beta_dev, taille_beta, 3*sizeof(int), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(taille_std_map_dev, taille_std_map,2*sizeof(int), cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
 
   printf("> TEST 1\n");
@@ -354,7 +351,6 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     checkCudaErrors(cudaFree(cube_dev));
     checkCudaErrors(cudaFree(taille_cube_dev));
     checkCudaErrors(cudaFree(std_map_dev));
-    checkCudaErrors(cudaFree(taille_std_map_dev));
     checkCudaErrors(cudaFree(residual_dev));
     checkCudaErrors(cudaFree(taille_residual_dev));
 
