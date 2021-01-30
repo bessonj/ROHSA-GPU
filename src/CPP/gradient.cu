@@ -126,8 +126,8 @@ void reduction_loop(T* array_in, T* d_array_f, int size_array){
   printf(">> TEST 3\n");
       checkCudaErrors(cudaDeviceSynchronize());
   printf(">> TEST 4\n");
-  printf(">> TEST 5\n");
     }
+  printf(">> TEST 5\n");
   checkCudaErrors(cudaFree(array_out_kernel));
   printf(">> TEST 6\n");
 
