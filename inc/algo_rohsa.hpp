@@ -1299,7 +1299,8 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 
 	double temps2_tableau_update = omp_get_wtime();
 
-	double* g = (double*)malloc(n*sizeof(double));
+	double* g = NULL;
+	g = (double*)malloc(n*sizeof(double));
     for(int i(0); i<n; i++) {
 	g[i]=0.;
     }
@@ -1335,7 +1336,6 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(double), cudaMemcpyHostToDevice));
 
 	int compteur_iter_boucle_optim = 0;
-
 
 	if (print){//dim_x >128){
 		printf("dim_x = %d , dim_y = %d , dim_v = %d \n", dim_x, dim_y, dim_v);
