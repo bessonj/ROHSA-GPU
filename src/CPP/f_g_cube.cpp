@@ -695,8 +695,6 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
     }
 */
 
-printf("TEST 1\n");
-
 	if(print){
 		printf("Début :\n");
 		for(int i=0; i<lim; i++){
@@ -735,8 +733,6 @@ printf("TEST 1\n");
 	T* std_map_ = (T*)malloc(size_std);
 
 	T* b_params = (T*)malloc(M.n_gauss*sizeof(T));
-
-printf("TEST 2\n");
 
 	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
 
@@ -800,8 +796,6 @@ printf("TEST 2\n");
 		}
 	}
 */
-printf("TEST 3\n");
-
 	f =  compute_residual_and_f<T>(beta, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
 	double temps2_tableaux = omp_get_wtime();
 
@@ -827,7 +821,6 @@ printf("TEST 3\n");
 	}
 	}
 */
-printf("TEST 4\n");
 
 	gradient_L_2_beta<T>(deriv, taille_deriv, product_deriv, beta, taille_beta_modif, product_beta_modif, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, M.n_gauss);
 
@@ -930,15 +923,12 @@ printf("TEST 4\n");
 	free(image_mu);
 	free(image_amp);
 */
-printf("TEST 5\n");
-
 	regularisation(beta, deriv, g, b_params, f, indice_x, indice_y, indice_v, M, temps_bis);
 	temps_bis[0] = 2.; 
 
 //	printf("temps_bis[1] = %f\n")
 
 	double temps2_conv = omp_get_wtime();
-printf("TEST 6\n");
 
 	for(int i=0; i<n_beta-M.n_gauss; i++){
 		g[i]=deriv[i];

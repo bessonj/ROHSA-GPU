@@ -91,45 +91,33 @@ void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T*
 //                        map_norm_dev        d_array_f
 template <typename T> 
 void reduction_loop(T* array_in, T* d_array_f, int size_array){
-  printf(">> TEST 0\n");
     int N = ceil(log(T(size_array))/log(T(BLOCK_SIZE_REDUCTION)));
 //    printf("N = %d\n", N);
 
-      int GRID_SIZE_REDUCTION = int(ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION)));
-      int size_array_out_kernel = ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION));
-      checkCudaErrors(cudaDeviceSynchronize());
-      T* array_out_kernel=NULL;
-      checkCudaErrors(cudaDeviceSynchronize());
-      checkCudaErrors(cudaMalloc(&array_out_kernel, size_array_out_kernel*sizeof(T)));    
-      checkCudaErrors(cudaDeviceSynchronize());
-      checkCudaErrors(cudaMemset(array_out_kernel, 0., size_array_out_kernel*sizeof(T)));
-      checkCudaErrors(cudaDeviceSynchronize());
-
-  printf(">> TEST 0\n");
+    int GRID_SIZE_REDUCTION = int(ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION)));
+    int size_array_out_kernel = ceil(T(size_array)/T(BLOCK_SIZE_REDUCTION));
+    checkCudaErrors(cudaDeviceSynchronize());
+    T* array_out_kernel=NULL;
+    checkCudaErrors(cudaDeviceSynchronize());
+    checkCudaErrors(cudaMalloc(&array_out_kernel, size_array_out_kernel*sizeof(T)));    
+    checkCudaErrors(cudaDeviceSynchronize());
+    checkCudaErrors(cudaMemset(array_out_kernel, 0., size_array_out_kernel*sizeof(T)));
+    checkCudaErrors(cudaDeviceSynchronize());
 
     bool reduction_in_one_thread = false;
     if(reduction_in_one_thread){
       reduce_last_in_one_thread<T><<<1,1>>>(array_in, d_array_f, size_array);
     }else{
-
-
-  printf(">> TEST 1\n");
       sum_reduction<T><<< GRID_SIZE_REDUCTION, BLOCK_SIZE_REDUCTION >>>(array_in, array_out_kernel, size_array);
       checkCudaErrors(cudaDeviceSynchronize());
-  printf(">> TEST 2\n");
       if(size_array_out_kernel>1){
-  printf(">> TEST 2.1\n");
         reduce_last_in_one_thread<T><<<1,1>>>(array_out_kernel, d_array_f, size_array_out_kernel);
-  printf(">> TEST 2.2\n");
       }else{
         cpy_first_num_dev<T><<<1,1>>>( array_out_kernel, d_array_f);
       }
     }
-  printf(">> TEST 3\n");
   checkCudaErrors(cudaDeviceSynchronize());
-  printf(">> TEST 4\n");
   checkCudaErrors(cudaFree(array_out_kernel));
-  printf(">> TEST 5\n");
 
 }	
 
@@ -216,23 +204,15 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     checkCudaErrors(cudaMalloc(&cube_dev, product_taille_cube*sizeof(T)));
     checkCudaErrors(cudaMalloc(&std_map_dev, product_taille_std_map*sizeof(T)));
 
-  printf("> TEST 0\n");
-  printf("> TEST 0.1\n");
     checkCudaErrors(cudaMemcpy(beta_dev, beta, product_taille_beta*sizeof(T), cudaMemcpyHostToDevice));
-  printf("> TEST 0.2\n");
     checkCudaErrors(cudaMemcpy(residual_dev, residual, product_taille_residual*sizeof(T), cudaMemcpyHostToDevice));
-  printf("> TEST 0.3\n");
     checkCudaErrors(cudaMemcpy(cube_dev, cube, product_taille_cube*sizeof(T), cudaMemcpyHostToDevice));
-  printf("> TEST 0.4\n");
     checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_taille_std_map*sizeof(T), cudaMemcpyHostToDevice));
-  printf("> TEST 0.5\n");
     
-
     dim3 Dg, Db;
     Db.x = BLOCK_SIZE_X_BIS; //
     Db.y = BLOCK_SIZE_Y_BIS; //
     Db.z = BLOCK_SIZE_Z_BIS; //
-  printf("> TEST 1\n");
 
     Dg.x = ceil(T(indice_x)/T(BLOCK_SIZE_X_BIS));
     Dg.y = ceil(T(indice_y)/T(BLOCK_SIZE_Y_BIS));
@@ -248,11 +228,8 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     kernel_residual_simple_difference<T><<<Dg,Db>>>(cube_dev, cube_reconstructed, residual_dev, indice_x, indice_y, indice_v);
     checkCudaErrors(cudaFree(cube_reconstructed));
 */
-//  printf("> TEST 2\n");
 
     kernel_residual<T><<<Dg,Db>>>(beta_dev, cube_dev, residual_dev,indice_x, indice_y, indice_v, n_gauss);
-
-//  printf("> TEST 3\n");
 
     checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
 
@@ -268,29 +245,19 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
     T* map_norm_dev = NULL;
     checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(T)));
 
-//  printf("> TEST 4\n");
-
     kernel_norm_map_boucle_v<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v);
 
-//  printf("> TEST 5\n");
-
     T* d_array_f=NULL;
-  printf("> TEST 5.1\n");
     checkCudaErrors(cudaMalloc(&d_array_f, 1*sizeof(T))); // ERREUR ICI
 
-  printf("> TEST 5.2\n");
     reduction_loop<T>(map_norm_dev, d_array_f, indice_x*indice_y);
-  printf("> TEST 5.3\n");
 
     T* array_f = (T*)malloc(1*sizeof(T));
-  printf("> TEST 6\n");
 
     checkCudaErrors(cudaMemcpy(array_f, d_array_f, 1*sizeof(T), cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
     T sum1 = array_f[0];
     free(array_f);
-
-  printf("> TEST 7\n");
 
     checkCudaErrors(cudaFree(d_array_f));
     checkCudaErrors(cudaFree(map_norm_dev));

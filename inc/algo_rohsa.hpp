@@ -408,11 +408,12 @@ algo_rohsa<T>::algo_rohsa(parameters<T> &M, hypercube<T> &Hypercube)
 	cout.precision(std::numeric_limits<T>::max_digits10);
 //	std::cout<<std::setprecision(10);
 
+/*
 	for(int i = 0; i<this->dim_data[2]; i++){
 		std::cout<<"mean_spect_c["<<i<<"] = "<<mean_spect[i]<<std::endl;
 	}
 	std::cout<<"max_mean_spect = "<<max_mean_spect<<std::endl;
-
+*/
 	// can't define the variable in the if
 //////	std::vector<std::vector<std::vector<T>>> grid_params, fit_params;
 
@@ -1355,14 +1356,9 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 	while(IS_FG(*task) or *task==NEW_X or *task==START){
 		double temps_temp = omp_get_wtime();
 
-	printf("BEFORE SETULB\n");
-
 		setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task,
 				&M.iprint, csave, lsave, isave, dsave);
 
-	printf("AFTER SETULB\n");
-
-			
 		temps_setulb += omp_get_wtime() - temps_temp;
 
 	if(false){//dim_x<64){
@@ -1705,11 +1701,11 @@ void algo_rohsa<T>::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta
 	lbfgsb_options.eps_f = static_cast<T>(1e-15);
 	lbfgsb_options.eps_g = static_cast<T>(1e-15);
 	lbfgsb_options.eps_x = static_cast<T>(1e-15);
-	lbfgsb_options.max_iteration = M.maxiter;
+	lbfgsb_options.max_iteration = M.maxiter*2;
     lbfgsb_options.step_scaling = 1.;
 	lbfgsb_options.hessian_approximate_dimension = M.m;
   	lbfgsb_options.machine_epsilon = 1e-15;
-  	lbfgsb_options.machine_maximum = std::numeric_limits<T>::max();
+  	lbfgsb_options.machine_maximum = 1000000000000000000;// std::numeric_limits<T>::max();
 
 	// initialize LBFGSB state
 	LBFGSB_CUDA_STATE<T> state;
@@ -1930,19 +1926,20 @@ void algo_rohsa<T>::upgrade(parameters<T> &M, std::vector<std::vector<std::vecto
 		for(int p(0); p<3*(i-1); p++){
 			printf("x[%d] = %.16f\n",p,x[p]);
 		}
-*/
 			printf("--------------------------------\n");
             for(p=0; p<params.size();p++){
 				printf("x_upgrade_c[%d] = %.16f\n", p, x[p]);
 			}
 			printf("--------------------------------\n");
+*/
 
             init_bounds_double(M, line, M.n_gauss, lb, ub, false); //bool _init = false;
             minimize_spec(M,3*M.n_gauss ,M.m ,x ,lb , M.n_gauss, ub ,line, M.maxiter);
+/*
             for(p=0; p<params.size();p++){
 				printf("x_upgrade_c[%d] = %.16f\n", p, x[p]);
             }
-
+*/
 //			std::cin.ignore();
 
             for(p=0; p<3*M.n_gauss;p++){
@@ -2374,19 +2371,19 @@ void algo_rohsa<T>::init_spectrum(parameters<T> &M, std::vector<double> &line, s
 		x[0+3*(i-1)] = double(line[int(argmin_res)])*double(M.amp_fact_init);
 		x[1+3*(i-1)] = double(argmin_res+1);
 		x[2+3*(i-1)] = double(M.sig_init);
-
+/*
 		printf("--------------------------------\n");
 		for(int p(0); p<3*(i); p++){
 			printf("x_init_spec_c[%d] = %.16f\n",p,x[p]);
 		}
 		printf("--------------------------------\n");
-
+*/
 		minimize_spec(M, 3*i, M.m, x, lb, i, ub, line, M.maxiter_init);
-
+/*
 		for(int p(0); p<3*(i); p++){
 			printf("x_init_spec_c[%d] = %.16f\n",p,x[p]);
 		}
-
+*/
 		for(int p(0); p<3*(i); p++){
 			params[p]=x[p];
 		}

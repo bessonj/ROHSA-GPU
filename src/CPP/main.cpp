@@ -112,7 +112,7 @@ int main(int argc, char * argv[])
 	}else if(user_parametres_float.float_mode){
 		main_routine<float>(user_parametres_float);
 	}
-
+}
 /*
 
 	if(user_parametres.file_type_fits){
@@ -279,4 +279,3 @@ exit(0);
 
 		}
 */
-	}
