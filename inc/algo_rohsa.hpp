@@ -1698,14 +1698,14 @@ void algo_rohsa<T>::minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta
 
 	lbfgsbcuda::lbfgsbdefaultoption<T>(lbfgsb_options);
 	lbfgsb_options.mode = LCM_NO_ACCELERATION;
-	lbfgsb_options.eps_f = static_cast<T>(1e-15);
-	lbfgsb_options.eps_g = static_cast<T>(1e-15);
-	lbfgsb_options.eps_x = static_cast<T>(1e-15);
-	lbfgsb_options.max_iteration = M.maxiter*2;
+	lbfgsb_options.eps_f = static_cast<T>(1e-14);
+	lbfgsb_options.eps_g = static_cast<T>(1e-14);
+	lbfgsb_options.eps_x = static_cast<T>(1e-14);
+	lbfgsb_options.max_iteration = M.maxiter;
     lbfgsb_options.step_scaling = 1.;
 	lbfgsb_options.hessian_approximate_dimension = M.m;
-  	lbfgsb_options.machine_epsilon = 1e-15;
-  	lbfgsb_options.machine_maximum = 1000000000000000000;// std::numeric_limits<T>::max();
+  	lbfgsb_options.machine_epsilon = 1e-14;
+  	lbfgsb_options.machine_maximum = std::numeric_limits<T>::max();
 
 	// initialize LBFGSB state
 	LBFGSB_CUDA_STATE<T> state;
