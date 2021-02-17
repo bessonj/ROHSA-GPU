@@ -935,5 +935,15 @@ template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T
     template void conv_twice_and_copy_sort<double>(double*, double*, double*, int, int, dim3, dim3, dim3, dim3, dim3, dim3);
     template void prepare_for_convolution_sort<double>(double*, double*, int, int, dim3, dim3, dim3, dim3);
 
+ 	template void f_g_cube_parallel_lib<float>(const parameters<float>&, float&, float*, const int, float*, const int, const int, const int, float*, float*, double*);
+    template void compute_residual_and_f_parallel<float>(float*, float*, float*, float*, float*, int, int, int, int);
+    template void reduction_loop_parallel<float>(float*, float*, int);
+    template void gradient_L_2_beta_parallel<float>(float*, int*, int*, float*, int*, float*, int*, float*, int*, int);
+    template void conv2D_GPU_all_sort<float>(const parameters<float>&, float*, const int, float, float*, float*, float*, float*, const int, const int, const int, float, float);
+    template void update_array_f_dev_sort<float>(float,float, float*, float*, float*, int, int, int, float*);
+    template void update_array_f_dev_sort<float>(float, float*, float*, int, int);
+    template void conv_twice_and_copy_sort<float>(float*, float*, float*, int, int, dim3, dim3, dim3, dim3, dim3, dim3);
+    template void prepare_for_convolution_sort<float>(float*, float*, int, int, dim3, dim3, dim3, dim3);
+
 
 

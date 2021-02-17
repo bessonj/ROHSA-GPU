@@ -72,7 +72,7 @@ class parameters
 	int lstd;
 	int ustd;
 	long iprint; //!< Verbose mode for L-BFGS-B-C.
-	int iprint_init;
+	long iprint_init;
 	std::string check_save_grid;
 	bool save_grid;
 	T ub_sig;

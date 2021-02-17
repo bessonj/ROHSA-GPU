@@ -99,7 +99,7 @@ void main_routine(parameters<T> &user_parametres){
 }
 
 template void main_routine<double>(parameters<double>&);
-template void main_routine<float>(parameters<float>&);
+//template void main_routine<float>(parameters<float>&);
 
 
 int main(int argc, char * argv[])
@@ -110,7 +110,7 @@ int main(int argc, char * argv[])
 	if(user_parametres_double.double_mode){
 		main_routine<double>(user_parametres_double);
 	}else if(user_parametres_float.float_mode){
-		main_routine<float>(user_parametres_float);
+//		main_routine<float>(user_parametres_float);
 	}
 }
 /*

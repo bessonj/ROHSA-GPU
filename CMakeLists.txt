@@ -5,14 +5,17 @@ set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 #set(CMAKE_PREFIX_PATH /usr/lib)
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 project (ROHSA-GPU LANGUAGES CXX CUDA)
+enable_language( Fortran )
 
 
 list(APPEND HEADER_REP ${CMAKE_CURRENT_SOURCE_DIR}/inc ${CMAKE_CURRENT_SOURCE_DIR}/matplotlib-cpp ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/ ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb/ ${CMAKE_CURRENT_SOURCE_DIR}/src/CUDA ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} "/usr/local/cuda/samples/common/inc/" "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../samples/common/inc")
 
-list(APPEND HEADER_REP_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/)
+list(APPEND HEADER_REP_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/*.h)
 file(GLOB CPP_FILES_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/*.cpp)
 
 list(APPEND HEADER_REP_BFGGPUS ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb)
+
+list(APPEND HEADER_REP_BFGS_OTHER ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb_cpp/include/lbfgsb_cpp)
 
 file(GLOB CPP_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/CPP/*.cpp)
 file(GLOB CU_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/CPP/*.cu)
@@ -28,7 +31,11 @@ include_directories("/opt/include")
 include_directories("/usr/local/include")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/)
+#cmake_add_fortran_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb_cpp/)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb_cpp/)
+
 add_library(BFGS ${CPP_FILES_BFGS})
+
 #add_subdirectory(${CMAKE_SOURCE_DIR}/L-BFGS-B-GPU/)
 #add_library(cuBFGSB STATIC ${CPP_FILES_BFGSGPU} ${CU_FILES_BFGSGPU})
 ##add_library(BFGSGPU STATIC IMPORTED)
@@ -36,8 +43,9 @@ add_library(BFGS ${CPP_FILES_BFGS})
 
 #find_package(CudaLBFGS REQUIRED)
 ####include_directories(${CMAKE_CURRENT_SOURCE_DIR}/CudaLBFGS/)
+#target_link_libraries(ROHSA-GPU lbfgsb_cpp)
 
-set(LIBS ${LIBS} cfitsio CCfits BFGS cuLBFGSB)
+set(LIBS ${LIBS} cfitsio CCfits BFGS cuLBFGSB lbfgsb_cpp)
 # lbfgs)
 
 #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
@@ -45,7 +53,7 @@ add_executable(ROHSA-GPU ${CPP_FILES} ${CU_FILES})
 
 set_target_properties(ROHSA-GPU PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(ROHSA-GPU PUBLIC cxx_std_14)
-target_compile_options(ROHSA-GPU PUBLIC) #-O3  -funroll-loops) #-std=c++14)
+target_compile_options(ROHSA-GPU PUBLIC -lgfortran -lstdc++) #-O3  -funroll-loops) #-std=c++14)
 
 target_include_directories(ROHSA-GPU PUBLIC /usr/include/python2.7/ "${HEADER_REP}")
 set(LIBS ${LIBS} python2.7 gomp)

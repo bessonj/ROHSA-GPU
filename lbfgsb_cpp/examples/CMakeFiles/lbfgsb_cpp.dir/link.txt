@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblbfgsb_cpp.a  CMakeFiles/lbfgsb_cpp.dir/Lbfgsb.3.0/blas.f.o CMakeFiles/lbfgsb_cpp.dir/Lbfgsb.3.0/lbfgsb.f.o CMakeFiles/lbfgsb_cpp.dir/Lbfgsb.3.0/linpack.f.o CMakeFiles/lbfgsb_cpp.dir/Lbfgsb.3.0/timer.f.o
+/usr/bin/ranlib liblbfgsb_cpp.a
