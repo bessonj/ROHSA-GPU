@@ -70,7 +70,6 @@ __global__ void gradient_kernel_2_beta_with_INDEXING(T* deriv, int* t_d, T* para
 			buffer_1 += par0*(par1/pow(par2,2.)) * exp(-pow( par1,2.)*par2_pow ) * par_fin;
 			buffer_2 += par0*pow( par1, 2.)/(pow(par2,3.))*exp(-pow(par1 ,2.)*par2_pow ) * par_fin;
 		}
-//		__syncthreads();
 		INDEXING_3D(deriv,(3*index_z+0), index_y, index_x)= buffer_0;
 		INDEXING_3D(deriv,(3*index_z+1), index_y, index_x)= buffer_1;
 		INDEXING_3D(deriv,(3*index_z+2), index_y, index_x)= buffer_2;
@@ -298,6 +297,13 @@ __global__ void print_diff(T* array_in_1, T* array_in_2){
 	printf("difference = %.25f\n",abs((array_in_1[0] - array_in_2[0])/array_in_2[0]));
 }
 
+template <typename T> 
+__global__ void display_size(T* array_out, int size){
+	for(int i = 0; i<size; i++){
+	    printf("array_out[%d] = %f\n",i, array_out[i]);
+	}
+}
+
 template <typename T>
 __global__ void parameter_maps_sliced_from_beta_sort(T* beta_modif, T* d_IMAGE_amp, T* d_IMAGE_mu, T* d_IMAGE_sig, int image_x, int image_y, int k){
     int pixel_y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -419,7 +425,18 @@ __global__ void add_first_elements_sort(T* array_in, T* array_out){
 template <typename T>
 __global__ void kernel_conv_g_reduction_sort(int n_beta, T* d_g, T* result_reduction_sig, T lambda_var_sig, int n_gauss, T* b_params_dev, int k, int image_x, int image_y)
 { 
-    d_g[n_beta - n_gauss + k-1] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
+//	printf("n_beta - n_gauss + k = %d\n",n_beta - n_gauss + k);
+//	printf("lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]) = %f\n",lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]));
+    d_g[n_beta - n_gauss + k] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
+}
+
+template <typename T>
+__global__ void kernel_conv_g_reduction_sort_(int n_beta, T* d_g, T* result_reduction_sig, T lambda_var_sig, int n_gauss, T* b_params_dev, int k, int image_x, int image_y)
+{ 
+	printf("n_beta - n_gauss + k = %d\n",n_beta - n_gauss + k);
+	printf("lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]) = %f\n",lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]));
+    d_g[n_beta - n_gauss + k] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
+
 }
 
 template <typename T>

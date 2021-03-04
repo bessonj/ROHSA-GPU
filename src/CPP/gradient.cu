@@ -10,6 +10,7 @@
 
 void init_templates()
 {
+  
 /*
   reduce_last_in_one_thread<double><<<1,1>>>(NULL,NULL,0);
   gradient_kernel_2_beta_with_INDEXING<double><<<1,1>>>(NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0);
@@ -272,6 +273,7 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
 
 template <typename T> 
 void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int dim_y, int dim_v, parameters<T> &M, double* temps_bis){
+  temps_bis[0] = 2.;
 	int n_beta = (3*M.n_gauss*dim_x*dim_y)+M.n_gauss;
   T* b_params_dev = NULL;
   T* beta_dev = NULL;
@@ -279,6 +281,7 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
   checkCudaErrors(cudaMalloc(&b_params_dev, M.n_gauss*sizeof(T)));
   checkCudaErrors(cudaMalloc(&beta_dev, n_beta*sizeof(T)));
   checkCudaErrors(cudaMalloc(&deriv_dev, dim_x*dim_y*3*M.n_gauss*sizeof(T)));
+  checkCudaErrors(cudaMemcpy(b_params_dev, b_params, M.n_gauss*sizeof(T), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(beta_dev, beta, n_beta*sizeof(T), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(deriv_dev, deriv, dim_x*dim_y*3*M.n_gauss*sizeof(T), cudaMemcpyHostToDevice));
   T* array_f_dev = NULL;
@@ -310,7 +313,6 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
   checkCudaErrors(cudaDeviceSynchronize());
 
   for(int k = 0; k<M.n_gauss; k++){
-
     cudaEvent_t record_event[Nb_time_mes];
     float time_msec[Nb_time_mes];
     for (int i=0;i<Nb_time_mes;i++){
@@ -320,7 +322,7 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[0], NULL));
 
-    //Slices d_IMAGE_* from beta_dev    
+    //Slices d_IMAGE_* from beta_dev
     parameter_maps_sliced_from_beta_sort<T><<<Dg_2D, Db_2D>>>(beta_dev, d_IMAGE_amp, d_IMAGE_mu, d_IMAGE_sig, dim_x, dim_y, k);
 
     T* d_EXT_amp = NULL;
@@ -365,16 +367,42 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     conv_twice_and_copy<T>(d_EXT_sig, d_CONV_sig, d_CONV_CONV_sig, dim_x, dim_y);
 
     checkCudaErrors(cudaDeviceSynchronize());
+
+/*
+    display_size<<<1,1>>>(d_CONV_CONV_amp, dim_x*dim_y);
+    display_size<<<1,1>>>(d_CONV_CONV_mu, dim_x*dim_y);
+    display_size<<<1,1>>>(d_CONV_CONV_sig, dim_x*dim_y);
+    display_size<<<1,1>>>(d_CONV_amp, dim_x*dim_y);
+    display_size<<<1,1>>>(d_CONV_mu, dim_x*dim_y);
+    display_size<<<1,1>>>(d_CONV_sig, dim_x*dim_y);
+    display_size<<<1,1>>>(d_IMAGE_amp, dim_x*dim_y);
+    display_size<<<1,1>>>(d_IMAGE_mu, dim_x*dim_y);
+    display_size<<<1,1>>>(d_IMAGE_sig, dim_x*dim_y);
+    display_size<<<1,1>>>(array_f_dev, 1);
+*/
+    checkCudaErrors(cudaDeviceSynchronize());
+
+
+
+    
     checkCudaErrors(cudaEventRecord(record_event[3], NULL));
     checkCudaErrors(cudaEventSynchronize(record_event[3]));
     checkCudaErrors(cudaDeviceSynchronize());
 
     update_array_f_dev_sort<T>(M.lambda_amp, array_f_dev, d_CONV_amp, dim_x, dim_y);
     checkCudaErrors(cudaDeviceSynchronize());
+//    display_size<<<1,1>>>(array_f_dev, 1);
+    checkCudaErrors(cudaDeviceSynchronize());
+
     update_array_f_dev_sort<T>(M.lambda_mu, array_f_dev, d_CONV_mu, dim_x, dim_y);
     checkCudaErrors(cudaDeviceSynchronize());
+//    display_size<<<1,1>>>(array_f_dev, 1);
+    checkCudaErrors(cudaDeviceSynchronize());
     update_array_f_dev_sort<T>(M.lambda_sig, M.lambda_var_sig, array_f_dev, d_IMAGE_sig, d_CONV_sig, dim_x, dim_y, k, b_params_dev);
-
+    checkCudaErrors(cudaDeviceSynchronize());
+//    display_size<<<1,1>>>(array_f_dev, 1);
+//    display_size<<<1,1>>>(b_params_dev, M.n_gauss);
+//    exit(0);
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[4], NULL));
     checkCudaErrors(cudaEventSynchronize(record_event[4]));
@@ -389,8 +417,12 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
 
     checkCudaErrors(cudaDeviceSynchronize());
 
+    double temps_test__ = omp_get_wtime();
+
     kernel_update_deriv_conv_conv_sort<T><<<Dg_ud,Db_ud>>>(deriv_dev, M.lambda_amp, M.lambda_mu, M.lambda_sig, M.lambda_var_sig, d_CONV_CONV_amp, d_CONV_CONV_mu, d_CONV_CONV_sig, d_IMAGE_sig, b_params_dev, dim_y, dim_x, k);
 
+    temps_test += omp_get_wtime() - temps_test__;
+    
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[5], NULL));
     checkCudaErrors(cudaEventSynchronize(record_event[5]));
@@ -408,15 +440,14 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
 
     checkCudaErrors(cudaDeviceSynchronize());
 
-    int grid_k = ceil(T(M.n_gauss)/T(256));
-    kernel_conv_g_reduction_sort<T><<<1,1>>>(n_beta, d_g, d_image_sigma_reduc, M.lambda_var_sig, M.n_gauss, b_params_dev, k, dim_x, dim_y);
+    kernel_conv_g_reduction_sort<T><<<1,1>>>(n_beta+1, d_g, d_image_sigma_reduc, M.lambda_var_sig, M.n_gauss, b_params_dev, k, dim_x, dim_y);
 
+    checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaFree(d_image_sigma_reduc));
 
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[7], NULL));
     checkCudaErrors(cudaEventSynchronize(record_event[7]));
-
 
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[8], NULL));
@@ -447,7 +478,6 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     checkCudaErrors(cudaFree(d_CONV_mu));
     checkCudaErrors(cudaFree(d_CONV_sig));
     checkCudaErrors(cudaFree(d_CONV_CONV_amp));
-
     checkCudaErrors(cudaFree(d_CONV_CONV_mu));
     checkCudaErrors(cudaFree(d_CONV_CONV_sig));
     checkCudaErrors(cudaFree(d_EXT_amp));
@@ -455,9 +485,16 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     checkCudaErrors(cudaFree(d_EXT_sig));
   }
 
+//  display_size<<<1,1>>>(d_g, n_beta);
+
+  checkCudaErrors(cudaDeviceSynchronize());
+//  exit(0);
 
   checkCudaErrors(cudaMemcpy(g, d_g, n_beta*sizeof(T), cudaMemcpyDeviceToHost));
+
+  checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaFree(d_g));
+  checkCudaErrors(cudaDeviceSynchronize());
 
   checkCudaErrors(cudaMemcpy(array_f, array_f_dev, 1*sizeof(T), cudaMemcpyDeviceToHost));
   f += array_f[0];

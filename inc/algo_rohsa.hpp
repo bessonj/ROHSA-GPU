@@ -77,6 +77,7 @@ class algo_rohsa
 	public:
 
 	algo_rohsa(parameters<T> &M, hypercube<T> &Hypercube); //constructeur
+	algo_rohsa(std::vector<std::vector<T>> &std_map, parameters<T> &M, hypercube<T> &Hypercube);
 
 /**
  * @brief Each iteration into the main loop corresponds to a resolution. At each iteration, we compute a piecewise spatially averaged array from the data extracted from the FITS file, then we compute the standard deviation map along each spatial position, we set the upper and lower boundaries and we solve iteratively the problem using L-BFGS-B-C, finally, we project the result onto a higher resolution grid.
@@ -91,8 +92,8 @@ class algo_rohsa
  *
  */
 
-	void descente(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params); //!< main loop for the multiresolution process
-	void test_toolbox(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params);
+	void descente(hypercube<T> &Hypercube, parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params); //!< main loop for the multiresolution process
+	void test_toolbox(hypercube<T> &Hypercube, parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params);
 
 //	void descente(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params); //!< main loop for the multiresolution process
 /**
@@ -105,9 +106,9 @@ class algo_rohsa
 	void init_bounds(parameters<T> &M, std::vector<T>& line, int n_gauss_local, std::vector<T> &lb, std::vector<T> &ub, bool _init);
 	void init_bounds_double(parameters<T> &M, std::vector<double>& line, int n_gauss_local, std::vector<double>& lb, std::vector<double>& ub, bool _init);
 
-	void mean_array(int power, std::vector<std::vector<std::vector<T>>> &cube_mean);
+	void mean_array(hypercube<T> &Hypercube, int power, std::vector<std::vector<std::vector<T>>> &cube_mean);
 	void reshape_noise_up(std::vector<std::vector<T>>& std_cube);
-	void mean_noise_map(int power, std::vector<std::vector<T>> &std_cube, std::vector<std::vector<T>> &std_map);
+	void mean_noise_map(int n_side, int n, int power, std::vector<std::vector<T>> &std_cube, std::vector<std::vector<T>> &std_map);
 	void init_spectrum(parameters<T> &M, std::vector<double> &line, std::vector<double> &params);
 //	void init_spectrum(parameters<T> &M, std::vector<T> &line, std::vector<T> &params); //!< Initializes spectrum (called during first iteration)
 
@@ -301,14 +302,10 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
  *
  *
  */
-	void update_clean(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v,std::vector<T> &b_params);//!< Prepares boundary conditions and calls the minimize function.
+	void update_clean(hypercube<T> Hypercube, parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v,std::vector<T> &b_params);//!< Prepares boundary conditions and calls the minimize function.
 
 	void minimize_clean(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
 	void minimize_clean_driver(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
-	void minimize_clean_other_lib_2(parameters<T> &M, int N, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
-	void minimize_clean_other_lib_4(parameters<T> &M, int N, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
-	void minimize_clean_other_lib_8(parameters<T> &M, int N, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
-	void minimize_clean_other_lib_16(parameters<T> &M, int N, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
 	void minimize_clean_cpu(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
 	void minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta, T* lb, T* ub, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened);
 
@@ -335,16 +332,18 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
 	T std_2D(const std::vector<std::vector<T>> &map, int dim_y, int dim_x);
 	T max_2D(const std::vector<std::vector<T>> &map, int dim_y, int dim_x);
 	T mean_2D(const std::vector<std::vector<T>> &map, int dim_y, int dim_x);
-	void std_spectrum(int dim_x, int dim_y, int dim_v);
-	void mean_spectrum(int dim_x, int dim_y, int dim_v);
-	void max_spectrum(int dim_x, int dim_y, int dim_v);
-	void max_spectrum_norm(int dim_x, int dim_y, int dim_v, T norm_value);
+	void std_spectrum(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v);
+	void mean_spectrum(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v);
+	void max_spectrum(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v);
+	void max_spectrum_norm(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v, T norm_value);
 	void mean_parameters(std::vector<std::vector<std::vector<T>>> &params);
 
 	std::vector<std::vector<std::vector<T>>> grid_params; //!< 3D array containing the gaussian parameters \f$\lambda, \mu, \sigma \f$ depending on the spatial position. Dimensions : It is a \f$ 3 n\_gauss \times dim\_y \times dim\_x \f$.
 	std::vector<std::vector<std::vector<T>>> fit_params; //!< same as grid_params (gaussian parameters) but this array is used through multiresolution. Dimensions : \f$ 3 n\_gauss \times 2^k \times 2^k \f$ for \f$ 0 < k < n\_side \f$.
-	std::vector<std::vector<T>> std_data_map;
+	std::vector<std::vector<T>> std_data;
+	std::vector<std::vector<std::vector<T>>> std_data_3D;
 	std::vector<std::vector<T>> std_cube;
+	std::vector<std::vector<std::vector<T>>> std_cube_3D;
 
 	T* cube_or_dat_flattened; //!< Data flattened at each iteration. Because of the multiresolution process, it has to be computed at each iteration.
 
@@ -358,7 +357,7 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
 	int dim_x;
 	int dim_y;
 	int dim_v;
-	hypercube<T> file; //!< Dummy
+////	hypercube<T> file; //!< Dummy
 
 	double temps_global;
 	double temps_modification_beta;
@@ -385,12 +384,19 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
 	int n_gauss_add;
 	std::vector<T> std_spect, mean_spect, max_spect, max_spect_norm;
 };
+template<typename T>
+algo_rohsa<T>::algo_rohsa(std::vector<std::vector<T>> &std_map, parameters<T> &M, hypercube<T> &Hypercube)
+{
+//	this->file = Hypercube; //The hypercube is not modified afterwards
 
+	this->set_stdmap_transpose(std_map, Hypercube.data, M.lstd, M.ustd);
+
+}
 ////START
 template<typename T>
 algo_rohsa<T>::algo_rohsa(parameters<T> &M, hypercube<T> &Hypercube)
 {
-	this->file = Hypercube; //The hypercube is not modified afterwards
+////	this->file = Hypercube; //The hypercube is not modified afterwards
 
 //  Dimensions of data and cube
 	this->dim_cube = Hypercube.get_dim_cube();
@@ -404,22 +410,16 @@ algo_rohsa<T>::algo_rohsa(parameters<T> &M, hypercube<T> &Hypercube)
 	this->temps_detail_regu = (double*)malloc((Nb_time_mes+1)*sizeof(double));
 	this->temps_detail_regu[0] = 0.5;
 
-	std_spectrum(this->dim_data[0], this->dim_data[1], this->dim_data[2]); 
-	mean_spectrum(this->dim_data[0], this->dim_data[1], this->dim_data[2]);
-	max_spectrum(this->dim_data[0], this->dim_data[1], this->dim_data[2]); 
+	std_spectrum(Hypercube, this->dim_data[0], this->dim_data[1], this->dim_data[2]); 
+	mean_spectrum(Hypercube, this->dim_data[0], this->dim_data[1], this->dim_data[2]);
+	max_spectrum(Hypercube, this->dim_data[0], this->dim_data[1], this->dim_data[2]); 
 	//compute the maximum of the mean spectrum
 	T max_mean_spect = *std::max_element(mean_spect.begin(), mean_spect.end());
-	max_spectrum_norm(dim_data[0], dim_data[1], dim_data[2], max_mean_spect);
+	max_spectrum_norm(Hypercube, dim_data[0], dim_data[1], dim_data[2], max_mean_spect);
 
 	cout.precision(std::numeric_limits<T>::max_digits10);
 //	std::cout<<std::setprecision(10);
 
-/*
-	for(int i = 0; i<this->dim_data[2]; i++){
-		std::cout<<"mean_spect_c["<<i<<"] = "<<mean_spect[i]<<std::endl;
-	}
-	std::cout<<"max_mean_spect = "<<max_mean_spect<<std::endl;
-*/
 	// can't define the variable in the if
 //////	std::vector<std::vector<std::vector<T>>> grid_params, fit_params;
 
@@ -436,34 +436,45 @@ algo_rohsa<T>::algo_rohsa(parameters<T> &M, hypercube<T> &Hypercube)
 
 	std::cout<<"TEST DEBUG !"<<std::endl;
 	if(M.noise_map_provided){
-		std::vector<std::vector<T>> std_cube_init(this->dim_cube[1], std::vector<T>(this->dim_cube[0],0.));
-		Hypercube.get_noise_map_from_fits(M, this->std_data_map);
-		reshape_noise_up(std_cube_init);
-		this->std_cube = std_cube_init;
+		if(M.three_d_noise_mode){
+			//3D noise code
+		}else{
+		std::cout << "this->dim_cube[0] = " <<this->dim_cube[0]<< std::endl;
+		std::cout << "this->dim_cube[1] = " <<this->dim_cube[1]<< std::endl;
+//		Hypercube.get_noise_map_from_fits(M, this->std_data_map);
+		Hypercube.get_noise_map_from_DHIGLS(M, this->std_data, this->std_cube);
+		}
 	}else{
 		std::vector<std::vector<T>> std_map_init(this->dim_data[1], std::vector<T>(this->dim_data[0],0.));
-		this->std_data_map = std_map_init;
+		this->std_data = std_map_init;
+		this->std_cube = std_map_init;
 	}
 
-	std::cout << "std_data_map.size() : " << std_data_map.size() << " , " << std_data_map[0].size() <<  std::endl;
+
+	std::cout << "BEFORE" << std::endl;
+	std::cout << "this->std_cube.size() : " << this->std_cube.size() << " , " << this->std_cube[0].size() <<  std::endl;
+//	std::cout << "std_data_map.size() : " << std_data_map.size() << " , " << std_data_map[0].size() <<  std::endl;
 //	std::cout << "fit_params.size() : " << fit_params.size() << " , " << fit_params[0].size() << " , " << fit_params[0][0].size() <<  std::endl;
 	std::cout << "grid_params.size() : " << grid_params.size() << " , " << grid_params[0].size() << " , " << grid_params[0][0].size() <<  std::endl;
+	std::cout << "AFTER" << std::endl;
+
 	if(M.descent){
 		std::cout<<"START MULTIRESOLUTION"<<std::endl;
-		descente(M, this->grid_params, this->fit_params);
+		descente(Hypercube, M, this->grid_params, this->fit_params);
 	}else{
 		std::cout<<"START TEST TOOLBOX !"<<std::endl;
-		test_toolbox(M, this->grid_params);
+		test_toolbox(Hypercube, M, this->grid_params);
 	}
 
-	std::cout<<"TEST DEBUG BEFORE WRITING !"<<std::endl;
-	this->file.write_into_binary(M, this->grid_params);
-	std::cout<<"TEST DEBUG END !"<<std::endl;
+//	std::cout<<"TEST DEBUG BEFORE WRITING !"<<std::endl;
+//	this->file.write_into_binary(M, this->grid_params);
+//	std::cout<<"TEST DEBUG END !"<<std::endl;
 }
 
 //void algo_rohsa<T>::descente(parameters &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){
 template <typename T>
-void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){
+void algo_rohsa<T>::descente(hypercube<T> &Hypercube, parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params, std::vector<std::vector<std::vector<T>>> &fit_params){
+
 	std::vector<T> b_params(M.n_gauss,0.);
 	temps_global = 0.;
 	temps_f_g_cube = 0.;
@@ -503,18 +514,39 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 	int n;
 	double temps1_before_nside = omp_get_wtime();
 
-		printf("M.lambda_amp = %f\n",M.lambda_amp);
-		printf("M.lambda_mu = %f\n",M.lambda_mu);
-		printf("M.lambda_sig = %f\n",M.lambda_sig);
-		printf("M.lambda_var_amp = %f\n",M.lambda_var_amp);
-		printf("M.lambda_var_mu = %f\n",M.lambda_var_mu);
-		printf("M.lambda_var_sig = %f\n",M.lambda_var_sig);
-		printf("M.amp_fact_init = %f\n",M.amp_fact_init);
-		printf("M.sig_init = %f\n",M.sig_init);
-		printf("M.n_gauss = %d\n",M.n_gauss);
+	std::cout<<"M.input_format_fits = "<<M.input_format_fits<<std::endl;
+	std::cout<<"M.filename_dat = "<<M.filename_dat<<std::endl;
+	std::cout<<"M.filename_fits = "<<M.filename_fits<<std::endl;
+	std::cout<<"M.output_format_fits = "<<M.output_format_fits<<std::endl;
+	std::cout<<"M.fileout = "<<M.fileout<<std::endl;
+	std::cout<<"M.noise_map_provided = "<<M.noise_map_provided<<std::endl;
+	std::cout<<"M.filename_noise = "<<M.filename_noise<<std::endl;
+	std::cout<<"M.give_input_spectrum = "<<M.give_input_spectrum<<std::endl;
+	printf("M.n_gauss = %d\n",M.n_gauss);
+	printf("M.lambda_amp = %f\n",M.lambda_amp);
+	printf("M.lambda_mu = %f\n",M.lambda_mu);
+	printf("M.lambda_sig = %f\n",M.lambda_sig);
+	printf("M.lambda_var_sig = %f\n",M.lambda_var_sig);
+	printf("M.amp_fact_init = %f\n",M.amp_fact_init);
+	printf("M.sig_init = %f\n",M.sig_init);
+	printf("M.lstd = %d\n",M.lstd);
+	printf("M.ustd = %d\n",M.ustd);
+	printf("M.ub_sig = %f\n",M.ub_sig);
+	printf("M.lb_sig = %f\n",M.lb_sig);
+	printf("M.ub_sig_init = %f\n",M.ub_sig_init);
+	printf("M.lb_sig_init = %f\n",M.lb_sig_init);
+	printf("M.maxiter_init = %d\n",M.maxiter_init);
+	printf("M.maxiter = %d\n",M.maxiter);
+	printf("M.m = %d\n",M.m);
+	std::cout<<"M.init_option = "<<M.init_option<<std::endl;
+	std::cout<<"M.regul = "<<M.regul<<std::endl;
+	std::cout<<"M.descent = "<<M.descent<<std::endl;
+	std::cout<<"M.print_mean_parameters = "<<M.print_mean_parameters<<std::endl;
+	printf("M.iprint = %d\n",int(M.iprint));
+	printf("M.iprint_init = %d\n",int(M.iprint_init));
 
 	if(!(M.jump_to_last_level)){
-		for(n=0; n<file.nside; n++)
+		for(n=0; n<Hypercube.nside; n++)
 		{
 			double temps1_init_spectrum = omp_get_wtime();
 
@@ -524,7 +556,7 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 
 			std::vector<std::vector<std::vector<T>>> cube_mean(power, std::vector<std::vector<T>>(power,std::vector<T>(dim_v,1.)));
 
-			mean_array(power, cube_mean);
+			mean_array(Hypercube, power, cube_mean);
 
 			std::vector<T> cube_mean_flat(cube_mean[0][0].size());
 
@@ -538,23 +570,9 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 					fit_params_flat_init_double[e] = double(fit_params[e][0][0]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
 				}
 
-
 				//assume option "mean"
 				std::cout<<"Init mean spectrum"<<std::endl;
-
 				init_spectrum(M, cube_mean_flat_init_double, fit_params_flat_init_double);
-
-
-	//				init_spectrum(M, cube_mean_flat, std_spect); //option spectre
-	//				init_spectrum(M, cube_mean_flat, max_spect); //option max spectre
-	//				init_spectrum(M, cube_mean_flat, max_spect_norm); //option norme spectre
-/*
-				for(int e(0); e<fit_params_flat_init_double.size(); e++) {
-					printf("fit_params_flat_init_double[%d] = %.16f\n",e,fit_params_flat_init_double[e]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
-				}
-				std::cin.ignore();
-*/
-//				exit(0);
 
 				for(int i(0); i<M.n_gauss; i++) {
 					b_params[i]= T(fit_params_flat_init_double[2+3*i]);
@@ -582,56 +600,39 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 					if (n==0){
 						double temps1_upgrade = omp_get_wtime();
 //						upgrade(M ,cube_mean, fit_params, power);
-
-//				exit(0);
-/*
-				for(int e(0); e<fit_params.size(); e++) {
-					printf("fit_params[%d][0][0] = %.16f\n",e,fit_params[e][0][0]); //cache   USELESS SINCE NO ITERATION OCCURED BEFORE
-				}
-				std::cin.ignore();
-*/
-
 						double temps2_upgrade = omp_get_wtime();
 						temps_upgrade+=temps2_upgrade-temps1_upgrade;
 					}
-					if (n>0 and n<file.nside){
+					if (n>0 and n<Hypercube.nside){
 						std::vector<std::vector<T>> std_map(power, std::vector<T>(power,0.));
-
-
-						if (power >=2){
-/*			std::cout<<"fit_params[0][0][0] = "<<fit_params[0][0][0]<<std::endl;
-			std::cout<<"fit_params[0][0][1] = "<<fit_params[0][0][1]<<std::endl;
-			std::cout<<"fit_params[0][1][0] = "<<fit_params[0][1][0]<<std::endl;
-			std::cout<<"fit_params[0][1][1] = "<<fit_params[0][1][1]<<std::endl;
-			std::cout<<"fit_params[0][0][2] = "<<fit_params[0][0][2]<<std::endl;
-			std::cout<<"fit_params[0][2][0] = "<<fit_params[0][2][0]<<std::endl;
-			std::cout<<"fit_params[0][2][2] = "<<fit_params[0][2][2]<<std::endl;
-			std::cout<<"fit_params[0][0][3] = "<<fit_params[0][0][3]<<std::endl;
-			std::cout<<"fit_params[0][3][0] = "<<fit_params[0][3][0]<<std::endl;
-			std::cout<<"fit_params[0][3][3] = "<<fit_params[0][3][3]<<std::endl;
-*/
-						}
 						double temps_std_map1=omp_get_wtime();
 						if (M.noise_map_provided){
-//							reshape_noise_up(std_cube);
-							mean_noise_map(power, this->std_cube, std_map);
+//							reshape_noise_up(this->std_cube);
+////							mean_noise_map(this->Hypercube.nside, n, power, this->std_cube, std_map);
+							mean_noise_map(Hypercube.nside, n, power, this->std_cube, std_map);
 						}else{
 							set_stdmap_transpose(std_map, cube_mean, M.lstd, M.ustd);
+							std::cout<<"std_map[0][0] = "<<std_map[0][0]<<std::endl;
+							std::cout<<"std_map[1][0] = "<<std_map[1][0]<<std::endl;
+							std::cout<<"std_map[0][1] = "<<std_map[0][1]<<std::endl;
+							std::cout<<"cube_mean[0][0][0] = "<<cube_mean[0][0][0]<<std::endl;
+							std::cout<<"cube_mean[1][0][0] = "<<cube_mean[1][0][0]<<std::endl;
+							std::cout<<"cube_mean[0][1][0] = "<<cube_mean[0][1][0]<<std::endl;
+							std::cout<<"cube_mean[0][0][1] = "<<cube_mean[0][0][1]<<std::endl;
 	//						set_stdmap(std_map, cube_mean, M.lstd, M.ustd); //?
 						}
 						double temps_std_map2=omp_get_wtime();
 						temps_std_map_pp+=temps_std_map2-temps_std_map1;
 
 						double temps1_update_pp=omp_get_wtime();
-
-//			std::cout<<"cube_mean[0][0][0] = "<<cube_mean[0][0][0]<<std::endl;
-//			std::cout<<"cube_mean[1][0][0] = "<<cube_mean[1][0][0]<<std::endl;
-//			std::cout<<"cube_mean[0][1][0] = "<<cube_mean[0][1][0]<<std::endl;
-//			std::cout<<"cube_mean[0][0][1] = "<<cube_mean[0][0][1]<<std::endl;
-
-						update_clean(M, cube_mean, fit_params, std_map, power, power, dim_v, b_params);
-
-	//					(this->file).plot_multi_lines(fit_params, cube_mean, std::to_string(power));
+/*
+						std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+						std::cout<<"this->data[1][0][0] = "<<this->data[1][0][0]<<std::endl;
+						std::cout<<"this->data[0][1][0] = "<<this->data[0][1][0]<<std::endl;
+						std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+						exit(0);
+*/
+						update_clean(Hypercube, M, cube_mean, fit_params, std_map, power, power, dim_v, b_params);
 
 						double temps2_update_pp=omp_get_wtime();
 						temps_update_pp += temps2_update_pp-temps1_update_pp;
@@ -640,20 +641,14 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 							mean_parameters(fit_params);
 						}
 
-/*
-		std::cout<<"fit_params[0][0][0] = "<<fit_params[0][0][0]<<std::endl;
-		std::cout<<"fit_params[1][0][0] = "<<fit_params[1][0][0]<<std::endl;
-		std::cout<<"fit_params[0][1][0] = "<<fit_params[0][1][0]<<std::endl;
-		std::cout<<"fit_params[0][0][1] = "<<fit_params[0][0][1]<<std::endl;
-		std::cin.ignore();
-*/
 					}
 				}
 
 		double temps_go_up_level1=omp_get_wtime();
-
-		this->file.save_result_multires(fit_params, M, n);
-//		this->file.write_in_file(grid_params);
+		if(M.save_grid_through_multiresolution){
+			Hypercube.save_result_multires(fit_params, M, n);
+		}
+//		Hypercube.write_in_file(grid_params);
 
 		go_up_level(fit_params);
 
@@ -703,20 +698,22 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 
 		std::cout<<"Après reshape_down"<<std::endl;
 		if(M.save_second_to_last_level){
-			this->file.write_in_file(grid_params);
+////			this->file.write_in_file(grid_params);
+			Hypercube.write_in_file(grid_params);
 		}
 
 	}else{
-		this->file.get_from_file(grid_params, 3*M.n_gauss, this->dim_data[1], this->dim_data[0]);
+////		this->file.get_from_file(grid_params, 3*M.n_gauss, this->dim_data[1], this->dim_data[0]);
+		Hypercube.get_from_file(grid_params, 3*M.n_gauss, this->dim_data[1], this->dim_data[0]);
 	}
 
 
 	this->grid_params = grid_params;
 	double temps_dernier_niveau1 = omp_get_wtime();
-
 	double temps_std_map1=omp_get_wtime();
 	if(!M.noise_map_provided){
-		set_stdmap(this->std_data_map, this->file.data, M.lstd, M.ustd);
+////		set_stdmap(this->std_data, this->file.data, M.lstd, M.ustd);
+		set_stdmap(this->std_data, Hypercube.data, M.lstd, M.ustd);
 	}
 
 	double temps_std_map2=omp_get_wtime();
@@ -724,84 +721,73 @@ void algo_rohsa<T>::descente(parameters<T> &M, std::vector<std::vector<std::vect
 
 	double temps_update_dp1 = omp_get_wtime();
 
-	if(print){
-		int number_plot_2D = ceil(log(this->dim_data[1])/log(2));
-		this->file.simple_plot_through_regu(grid_params, 0,0,number_plot_2D, "début");
-	//	this->file.simple_plot_through_regu(grid_params, 0,1,number_plot_2D, "début");
-	//	this->file.simple_plot_through_regu(grid_params, 0,2,number_plot_2D, "début");
-		this->file.save_result_multires(grid_params, M, number_plot_2D);
-	}
+	std::cout<<"std_data[0][0] = "<<std_data[0][0]<<std::endl;
+	std::cout<<"std_data[1][0] = "<<std_data[1][0]<<std::endl;
+	std::cout<<"std_data[0][1] = "<<std_data[0][1]<<std::endl;
 
 	if(M.regul){
 		std::cout<<"Updating last level"<<std::endl;
-		update_clean(M, this->file.data, grid_params, this->std_data_map, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
+////		update_clean(M, this->file.data, grid_params, this->std_data, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
+		update_clean(Hypercube, M, Hypercube.data, grid_params, this->std_data, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
+//		update_clean(M, this->file.data, grid_params, this->std_cube, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
+
 	}
 
-	if(print){
-		int number_plot_2D = ceil(log(this->dim_data[1])/log(2));
-		this->file.simple_plot_through_regu(grid_params, 0,0,number_plot_2D, "fin");
-	//	this->file.simple_plot_through_regu(grid_params, 0,1,number_plot_2D, "fin");
-	//	this->file.simple_plot_through_regu(grid_params, 0,2,number_plot_2D, "fin");
-		this->file.save_result_multires(grid_params, M, number_plot_2D);
-	}
+	double temps_update_dp2 = omp_get_wtime();
+	temps_update_dp +=temps_update_dp2-temps_update_dp1;
+	
+	this->grid_params = grid_params;
+	int comptage = 600;
 
-		double temps_update_dp2 = omp_get_wtime();
-		temps_update_dp +=temps_update_dp2-temps_update_dp1;
+	double temps2_descente = omp_get_wtime();
+	double temps_dernier_niveau2 = omp_get_wtime();
+	temps_dernier_niveau+=temps_dernier_niveau2-temps_dernier_niveau1;
 
-		this->grid_params = grid_params;
-		int comptage = 600;
-
-		double temps2_descente = omp_get_wtime();
-		double temps_dernier_niveau2 = omp_get_wtime();
-		temps_dernier_niveau+=temps_dernier_niveau2-temps_dernier_niveau1;
-
-
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"            End of multiresolution             "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"Total multiresolution computation time : "<<temps2_descente - temps1_descente <<std::endl;
+	std::cout<<"	-> Computation time init_spectrum : "<< temps_init_spectrum <<std::endl;
+	std::cout<<"	-> Computation time upgrade function (update 1D) : "<< temps_upgrade <<std::endl;
+	std::cout<<"	-> Computation time std_map : "<< temps_std_map_pp <<std::endl;
+	std::cout<<"	-> Computation time update (update 1->n-1) : "<< temps_update_pp <<std::endl;
+	std::cout<<"	-> Computation time go_up_level (grid k->k+1) : "<<temps_go_up_level <<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"Computation time from levels 1 to n-1 : "<<temps2_before_nside - temps1_before_nside <<std::endl;
+	std::cout<<"Time spent on reshape_down function (n-1 -> n)"<<temps_reshape_down <<std::endl;
+	std::cout<<"Time spent on the last level n : "<< temps_dernier_niveau <<std::endl;
+	std::cout<<"	-> Computation time std_map : "<< temps_std_map_dp <<std::endl;
+	std::cout<<"	-> Computation time update : "<< temps_update_dp <<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"            Details             "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"Computation time setulb : "<<temps_setulb<<std::endl;
+	std::cout<<"Computation time f_g_cube : "<<this->temps_f_g_cube<<std::endl;
+	std::cout<< "	-> Computation time data transfer : " << this->temps_copy  <<std::endl;
+	std::cout<< "	-> Computation time residual and residual term of the cost function : " << this->temps_tableaux <<std::endl;
+	std::cout<< "	-> Computation time gradient (only data contribution to g) : " << this->temps_deriv  <<std::endl;
+	std::cout<< "	-> Computation time regularization (spatial coherence contribution to f and g) : " << this->temps_conv <<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	if(this->temps_detail_regu[0]>1.){
+		std::cout<<"            Details regularization            "<<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"            End of multiresolution             "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"Total multiresolution computation time : "<<temps2_descente - temps1_descente <<std::endl;
-		std::cout<<"	-> Computation time init_spectrum : "<< temps_init_spectrum <<std::endl;
-		std::cout<<"	-> Computation time upgrade function (update 1D) : "<< temps_upgrade <<std::endl;
-		std::cout<<"	-> Computation time std_map : "<< temps_std_map_pp <<std::endl;
-		std::cout<<"	-> Computation time update (update 1->n-1) : "<< temps_update_pp <<std::endl;
-		std::cout<<"	-> Computation time go_up_level (grid k->k+1) : "<<temps_go_up_level <<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"Computation time from levels 1 to n-1 : "<<temps2_before_nside - temps1_before_nside <<std::endl;
-		std::cout<<"Time spent on reshape_down function (n-1 -> n)"<<temps_reshape_down <<std::endl;
-		std::cout<<"Time spent on the last level n : "<< temps_dernier_niveau <<std::endl;
-		std::cout<<"	-> Computation time std_map : "<< temps_std_map_dp <<std::endl;
-		std::cout<<"	-> Computation time update : "<< temps_update_dp <<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"            Details             "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"Computation time setulb : "<<temps_setulb<<std::endl;
-		std::cout<<"Computation time f_g_cube : "<<this->temps_f_g_cube<<std::endl;
-		std::cout<< "	-> Computation time data transfer : " << this->temps_copy  <<std::endl;
-		std::cout<< "	-> Computation time residual and residual term of the cost function : " << this->temps_tableaux <<std::endl;
-		std::cout<< "	-> Computation time gradient (only data contribution to g) : " << this->temps_deriv  <<std::endl;
-		std::cout<< "	-> Computation time regularization (spatial coherence contribution to f and g) : " << this->temps_conv <<std::endl;
-		std::cout<<"                                "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-		if(this->temps_detail_regu[0]>1.){
-			std::cout<<"            Details regularization            "<<std::endl;
-			std::cout<<"                                "<<std::endl;
-			for(int i = 1; i<=Nb_time_mes ; i++){
-				std::cout<< "	-> "<<i<<" : " << this->temps_detail_regu[i]  <<std::endl;
-			}
-			std::cout<<"                                "<<std::endl;
+		for(int i = 1; i<=Nb_time_mes ; i++){
+			std::cout<< "	-> "<<i<<" : " << this->temps_detail_regu[i]  <<std::endl;
 		}
-		std::cout<<"           End of details section             "<<std::endl;
 		std::cout<<"                                "<<std::endl;
-		std::cout<<"                                "<<std::endl;
-
 	}
+	std::cout<<"           End of details section             "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+	std::cout<<"                                "<<std::endl;
+}
 
 template <typename T>
-void algo_rohsa<T>::test_toolbox(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params){
+void algo_rohsa<T>::test_toolbox(hypercube<T> &Hypercube, parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params){
 	temps_global = 0.;
 	temps_f_g_cube = 0.;
 	temps_conv = 0.;
@@ -836,8 +822,6 @@ void algo_rohsa<T>::test_toolbox(parameters<T> &M, std::vector<std::vector<std::
 	printf("M.lambda_amp = %f\n",M.lambda_amp);
 	printf("M.lambda_mu = %f\n",M.lambda_mu);
 	printf("M.lambda_sig = %f\n",M.lambda_sig);
-	printf("M.lambda_var_amp = %f\n",M.lambda_var_amp);
-	printf("M.lambda_var_mu = %f\n",M.lambda_var_mu);
 	printf("M.lambda_var_sig = %f\n",M.lambda_var_sig);
 	printf("M.amp_fact_init = %f\n",M.amp_fact_init);
 	printf("M.sig_init = %f\n",M.sig_init);
@@ -868,7 +852,8 @@ void algo_rohsa<T>::test_toolbox(parameters<T> &M, std::vector<std::vector<std::
 	std::cout<<"TEST DEBUG !"<<std::endl;
 
 	if(!M.noise_map_provided){
-		set_stdmap(this->std_data_map, this->file.data, M.lstd, M.ustd);
+////		set_stdmap(this->std_cube, this->file.data, M.lstd, M.ustd);
+		set_stdmap(this->std_cube, Hypercube.data, M.lstd, M.ustd);
 	}
 	std::cout<<"TEST DEBUG !"<<std::endl;
 
@@ -879,7 +864,8 @@ void algo_rohsa<T>::test_toolbox(parameters<T> &M, std::vector<std::vector<std::
 
 	if(M.regul){
 		std::cout<<"Updating last level"<<std::endl;
-		update_clean(M, this->file.data, grid_params, this->std_data_map, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
+////		update_clean(M, this->file.data, grid_params, this->std_cube, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
+		update_clean(Hypercube, M, Hypercube.data, grid_params, this->std_cube, this->dim_data[0], this->dim_data[1], this->dim_v, b_params);
 	}
 
 	double temps_update_dp2 = omp_get_wtime();
@@ -953,8 +939,7 @@ void algo_rohsa<T>::reshape_down(std::vector<std::vector<std::vector<T>>> &tab1,
 
 
 template <typename T>
-void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<T> &b_params) {
-
+void algo_rohsa<T>::update_clean(hypercube<T> Hypercube, parameters<T> &M, std::vector<std::vector<std::vector<T>>> &cube_avgd_or_data, std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<T>> &std_map, int indice_x, int indice_y, int indice_v, std::vector<T> &b_params) {
 	int n_beta = (3*M.n_gauss * indice_y * indice_x) +M.n_gauss;
 
 	double temps1_tableau_update = omp_get_wtime();
@@ -1005,39 +990,36 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 //		exit(0);
 
 		parameters<double> M_d;
+		M_d.input_format_fits = M.input_format_fits;
 		M_d.filename_dat = M.filename_dat;
 		M_d.filename_fits = M.filename_fits;
-		M_d.file_type_dat_check = M.file_type_dat_check;
-		M_d.file_type_fits_check = M.file_type_fits_check;
-		M_d.slice_index_min = M.slice_index_min;
+		M_d.output_format_fits = M.output_format_fits;
 		M_d.fileout = M.fileout;
+		M_d.noise_map_provided = M.noise_map_provided;
 		M_d.filename_noise = M.filename_noise;
+		M_d.give_input_spectrum = M.give_input_spectrum;
 		M_d.n_gauss = M.n_gauss;
 		M_d.lambda_amp = double(M.lambda_amp);
 		M_d.lambda_mu = double(M.lambda_mu);
 		M_d.lambda_sig = double(M.lambda_sig);
-		M_d.lambda_var_amp = double(M.lambda_var_amp);
-		M_d.lambda_var_mu = double(M.lambda_var_mu);
 		M_d.lambda_var_sig = double(M.lambda_var_sig);
 		M_d.amp_fact_init = double(M.amp_fact_init);
 		M_d.sig_init = double(M.sig_init);
-		M_d.init_option = M.init_option;
-		M_d.maxiter_init = M.maxiter_init;
-		M_d.maxiter = M.maxiter;
-		M_d.m = M.m;
-		M_d.check_noise = M.check_noise;
-		M_d.check_regul = M.check_regul;
-		M_d.check_descent = M.check_descent;
 		M_d.lstd = M.lstd;
 		M_d.ustd = M.ustd;
-		M_d.iprint = M.iprint;
-		M_d.iprint_init = M.iprint_init;
-		M_d.check_save_grid = M.check_save_grid;
 		M_d.ub_sig = double(M.ub_sig);
 		M_d.lb_sig = double(M.lb_sig);
 		M_d.ub_sig_init = double(M.ub_sig_init);
 		M_d.lb_sig_init = double(M.lb_sig_init);
-		M_d.double_or_float = M.double_or_float;
+		M_d.maxiter_init = M.maxiter_init;
+		M_d.maxiter = M.maxiter;
+		M_d.m = M.m;
+		M_d.init_option = M.init_option;
+		M_d.regul = M.regul;
+		M_d.descent = M.descent;
+		M_d.print_mean_parameters = M.print_mean_parameters;
+		M_d.iprint = M.iprint;
+		M_d.iprint_init = M.iprint_init;
 		M_d.select_version = M.select_version;
 		//		(this->M).copy_double_T(M_double, M);
 
@@ -1075,13 +1057,6 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 			ub[n_beta-M.n_gauss+i] = double(M.ub_sig);
 			beta[n_beta-M.n_gauss+i] = double(b_params[i]);
 		}
-		if(print){
-			int number_plot_2D = ceil(log(indice_x)/log(2));
-			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "début");
-//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "début");
-//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "début");
-			this->file.save_result_multires(params, M, number_plot_2D);
-		}
 
 //		minimize_clean_driver(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 		minimize_clean(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
@@ -1089,13 +1064,6 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 			one_D_to_three_D_inverted_dimensions_double(beta, params, 3*M.n_gauss, indice_y, indice_x);
 		}else if(M.select_version == 1 || M.select_version == 2){ //-gpu and -h
 			one_D_to_three_D_same_dimensions_double(beta, params, 3*M.n_gauss, indice_y, indice_x);
-		}
-		if(print){
-			int number_plot_2D = ceil(log(indice_x)/log(2));
-			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "fin");
-//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "fin");
-//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "fin");
-			this->file.save_result_multires(params, M, number_plot_2D);
 		}
 		for(int i=0; i<M.n_gauss; i++){
 			b_params[i]=T(beta[n_beta-M.n_gauss+i]);
@@ -1160,31 +1128,13 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 		}
 		if(print){
 			int number_plot_2D = ceil(log(indice_x)/log(2));
-			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "début");
-//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "début");
-//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "début");
-			this->file.save_result_multires(params, M, number_plot_2D);
+			//this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "début");
+//			//this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "début");
+//			//this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "début");
+			Hypercube.save_result_multires(params, M, number_plot_2D);
 		}
 //		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
 		minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
-/*
-		if(indice_x == 2){
-			minimize_clean_other_lib_2(M, 156, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
-		}
-		if(indice_x == 4){
-			std::cout<<"indice_x = "<<indice_x<<std::endl;
-			minimize_clean_other_lib_4(M, 588, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
-		}
-		if(indice_x == 8){
-			std::cout<<"indice_x = "<<indice_x<<std::endl;
-			minimize_clean_other_lib_8(M, 2316, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
-		}
-		if(indice_x == 16){
-			std::cout<<"indice_x = "<<indice_x<<std::endl;
-			minimize_clean_other_lib_16(M, 9228, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
-		}
-*/
-
 //		void algo_rohsa<T>::minimize_clean_same_dim_test(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
 
 		if(M.select_version == 0){ //-cpu
@@ -1194,10 +1144,10 @@ void algo_rohsa<T>::update_clean(parameters<T> &M, std::vector<std::vector<std::
 		}
 		if(print){
 			int number_plot_2D = ceil(log(indice_x)/log(2));
-			this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "fin");
-//			this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "fin");
-//			this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "fin");
-			this->file.save_result_multires(params, M, number_plot_2D);
+			//this->file.simple_plot_through_regu(params, 0,0,number_plot_2D, "fin");
+//			//this->file.simple_plot_through_regu(params, 0,1,number_plot_2D, "fin");
+//			//this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "fin");
+			Hypercube.save_result_multires(params, M, number_plot_2D);
 		}
 		for(int i=0; i<M.n_gauss; i++){
 			b_params[i]=beta[n_beta-M.n_gauss+i];
@@ -1244,572 +1194,6 @@ void algo_rohsa<T>::set_stdmap_transpose(std::vector<std::vector<T>> &std_map, s
 //		printf("Std(line) = %f \n",Std(line));
 		}
 	}
-}
-
-
-
-
-template <typename T>
-void algo_rohsa<T>::minimize_clean_other_lib_2(parameters<T> &M, int N, long m, T* beta, T* lb_pt, T* ub_pt, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
-	const int n_2 = 156;
-	std::cout<<"n_2 = "<<n_2<<std::endl;
-	
-	std::array<T, n_2> lb;
-	std::array<T, n_2> ub;
-	std::array<int, n_2> bound_type;
-    std::array<T, n_2> x;
-
-	for(int element = 0; element < n_2; element++){
-		lb[element] = lb_pt[element];
-		ub[element] = ub_pt[element];
-		x[element] = beta[element];
-		bound_type[element] = 2;
-	}
-
-    double* temps = NULL;
-    temps = (double*)malloc(4*sizeof(double));
-    temps[0] = 0.;
-    temps[1] = 0.;
-    temps[2] = 0.;
-    temps[3] = 0.;
-    temps[4] = 0.;
-
-    T* std_map_ = NULL;
-    std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T));
-
-	for(int i=0; i<dim_y; i++){
-		for(int j=0; j<dim_x; j++){
-			std_map_[i*dim_x+j]=std_map[i][j];
-		}
-	}
-
-	T* std_map_dev = NULL;
-	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
-	T* cube_flattened_dev = NULL;
-	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
-
-    lbfgsb::Optimizer optimizer{156};
-
-// Can adjust many optimization configs.
-    // E.g. `iprint`, `factr`, `pgtol`, `max_iter`, `max_fun`, `time_limit_sec`
-    optimizer.iprint = 0;
-    optimizer.max_iter = M.maxiter;
-    optimizer.factr = 1e+7;
-    optimizer.pgtol = 1e-5;
-    optimizer.max_fun = 10000000000000;
-
-	T f;
-
-	std::cout<<"x[0] = "<<x[0]<<std::endl;
-	std::cout<<"x[1] = "<<x[1]<<std::endl;
-	std::cout<<"x[2] = "<<x[2]<<std::endl;
-
-	auto get_objective_lambda = [this, &M, &n_2, &cube, &cube_flattened, &cube_flattened_dev,
-&std_map, &std_map_dev, &std_map_, dim_x, dim_y, dim_v, &temps, &f](const std::array<T, n_2>& x_array, std::array<T, n_2>& grad) -> T { 
-
-		f = 0.000000000000;
-
-		T* g = NULL;
-		g = (T*)malloc(n_2*sizeof(T));
-		T* x_current = NULL;
-		x_current = (T*)malloc(n_2*sizeof(T));
-
-		for(int element = 0; element < n_2; element++){
-			x_current[element] = x_array[element];
-			g[element] = 0.;
-		}
-//		f_g_cube_fast_unidimensional<T>(M, f, g, n_2, cube_flattened, cube, x_current, dim_v, dim_y, dim_x, std_map_, temps);
-
-		if(M.select_version == 0){ //-cpu
-		f_g_cube_fast_clean<double>(M, f, g, n_2, cube, x_current, dim_v, dim_y, dim_x, std_map, temps);
-//		f_g_cube_fast_unidimensional<T>(M, f, g, n_2, cube_flattened, cube, x_current, dim_v, dim_y, dim_x, std_map_, temps);
-		}else if(M.select_version == 1){ //-gpu
-			T* x_dev = nullptr;
-			T* g_dev = nullptr;
-			cudaMalloc(&x_dev, n_2 * sizeof(x_dev[0]));
-			cudaMalloc(&g_dev, n_2 * sizeof(g_dev[0]));
-			checkCudaErrors(cudaMemset(g_dev, 0., n_2*sizeof(g_dev[0])));
-			checkCudaErrors(cudaMemcpy(x_dev, x_current, n_2*sizeof(T), cudaMemcpyHostToDevice));
-			checkCudaErrors(cudaDeviceSynchronize());
-//			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
-			checkCudaErrors(cudaDeviceSynchronize());
-			checkCudaErrors(cudaMemcpy(g, g_dev, n_2*sizeof(T), cudaMemcpyDeviceToHost));
-			checkCudaErrors(cudaFree(x_dev));
-			checkCudaErrors(cudaFree(g_dev));
-			checkCudaErrors(cudaDeviceSynchronize());
-		}else if(M.select_version == 2){ //-autre
-			f_g_cube_cuda_L_clean<T>(M, f, g, n_2, cube, x_current, dim_v, dim_y, dim_x, std_map, cube_flattened, temps, this->temps_transfert, this->temps_mirroirs, this->temps_detail_regu); // expérimentation gradient
-		}
-/*
-	printf("g[0] = %.16f\n",g[0]);
-	printf("g[%d] = %.16f\n",1*dim_x*dim_y, g[1*dim_x*dim_y]);
-	printf("g[%d] = %.16f\n",2*dim_x*dim_y, g[2*dim_x*dim_y]);
-			printf("-> f = %.16f\n",f);
-
-	std::cout<<"x_current["<<0<<"] = "<<x_current[0]<<std::endl;
-	std::cout<<"x_current["<<1*dim_x*dim_y<<"] = "<<x_current[1*dim_x*dim_y]<<std::endl;
-	std::cout<<"x_current["<<2*dim_x*dim_y<<"] = "<<x_current[2*dim_x*dim_y]<<std::endl;
-		std::cin.ignore();
-*/
-		for(int element = 0; element < n_2; element++){
-			grad[element] = g[element];
-		}
-/*
-		printf("-> f = %.16f\n");
-		printf("-> g[0] = %.16f\n",g[0]);
-		printf("-> g[1] = %.16f\n",g[1]);
-		printf("-> g[2] = %.16f\n",g[2]);
-*/
-		printf("-> f = %.16f\n",f);
-		printf("-> g[0] = %.16f\n",g[0]);
-
-		free(g);
-		free(x_current);
-		return f;
-	};
-
-	double t1 = omp_get_wtime();
-
-    auto result = optimizer.minimize(
-        get_objective_lambda, x, lb.data(), ub.data(), bound_type.data()
-    );
-
-	for(int element = 0; element < n_2; element++){
-		beta[element] = x[element];
-	}
-
-    std::cout << "x0: (" << beta[0] << ", " << beta[1] << ")" << std::endl;
-
-	double t2 = omp_get_wtime();
-	temps_global+=t2-t1;
-
-	printf("temps_global cumulé = %f\n",temps_global);
-
-	// release allocated memory
-	free(std_map_);
-	checkCudaErrors(cudaFree(cube_flattened_dev));
-	checkCudaErrors(cudaFree(std_map_dev));
-
-	this->temps_conv += temps[3]/1000;
-	this->temps_deriv += temps[2]/1000;
-	this->temps_tableaux += temps[1]/1000;
-	this->temps_copy += temps[0]/1000;
-	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
-	free(temps);
-	printf("this->temps_copy = %f\n", this->temps_copy);
-	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
-	printf("this->temps_deriv = %f\n", this->temps_deriv);
-	printf("this->temps_conv = %f\n", this->temps_conv);
-	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
-//	exit(0);
-	std::cin.ignore();
-}
-
-template <typename T>
-void algo_rohsa<T>::minimize_clean_other_lib_4(parameters<T> &M, int N, long m, T* beta, T* lb_pt, T* ub_pt, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
-	const int n = 588;
-	std::cout<<"n = "<<n<<std::endl;
-	
-	std::array<T, n> lb;
-	std::array<T, n> ub;
-	std::array<int, n> bound_type;
-    std::array<T, n> x;
-
-    double* temps = NULL;
-    temps = (double*)malloc(4*sizeof(double));
-    temps[0] = 0.;
-    temps[1] = 0.;
-    temps[2] = 0.;
-    temps[3] = 0.;
-    temps[4] = 0.;
-
-    T* std_map_ = NULL;
-    std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T));
-
-	for(int i=0; i<dim_y; i++){
-		for(int j=0; j<dim_x; j++){
-			std_map_[i*dim_x+j]=std_map[i][j];
-		}
-	}
-
-	T* std_map_dev = NULL;
-	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
-	T* cube_flattened_dev = NULL;
-	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
-
-    lbfgsb::Optimizer optimizer{n};
-
-// Can adjust many optimization configs.
-    // E.g. `iprint`, `factr`, `pgtol`, `max_iter`, `max_fun`, `time_limit_sec`
-    optimizer.iprint = M.iprint;
-    optimizer.max_iter = M.maxiter;
-    optimizer.factr = 1e+7;
-    optimizer.pgtol = 1e-5;
-    optimizer.max_fun = 10000000000000;
-
-	T f;
-
-	auto get_objective_lambda = [this, &M, &n, &cube, &cube_flattened, &cube_flattened_dev,
-&std_map, &std_map_dev, &std_map_, dim_x, dim_y, dim_v, &temps, &f](const std::array<T, n>& x_array, std::array<T, n>& grad) -> T { 
-
-		T* g = NULL;
-		g = (T*)malloc(n*sizeof(T));
-		T* x_current = NULL;
-		x_current = (T*)malloc(n*sizeof(T));
-		f = 0.000000000000;
-
-		for(int element = 0; element < n; element++){
-			x_current[element] = x_array[element];
-			g[element] = 0.;
-		}
-
-		if(M.select_version == 0){ //-cpu
-//			f_g_cube_fast_unidimensional<T>(M, f, g, n, cube_flattened, cube, x_current, dim_v, dim_y, dim_x, std_map_, temps);
-			f_g_cube_fast_clean<double>(M, f, g, n, cube, x_current, dim_v, dim_y, dim_x, std_map, temps);
-		}else if(M.select_version == 1){ //-gpu
-			T* x_dev = nullptr;
-			T* g_dev = nullptr;
-			cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
-			cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
-			checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
-			checkCudaErrors(cudaMemcpy(x_dev, x_current, n*sizeof(T), cudaMemcpyHostToDevice));
-			checkCudaErrors(cudaDeviceSynchronize());
-//			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
-			checkCudaErrors(cudaDeviceSynchronize());
-			checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
-			checkCudaErrors(cudaFree(x_dev));
-			checkCudaErrors(cudaFree(g_dev));
-			checkCudaErrors(cudaDeviceSynchronize());
-		}else if(M.select_version == 2){ //-autre
-			f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, x_current, dim_v, dim_y, dim_x, std_map, cube_flattened, temps, this->temps_transfert, this->temps_mirroirs, this->temps_detail_regu); // expérimentation gradient
-			printf("-> f = %.16f\n",f);
-		}
-		for(int element = 0; element < n; element++){
-			grad[element] = g[element];
-		}
-
-		free(g);
-		free(x_current);
-		return f;
-	};
-
-
-	for(int element = 0; element < n; element++){
-		lb[element] = lb_pt[element];
-		ub[element] = ub_pt[element];
-		x[element] = beta[element];
-		bound_type[element] = 2;
-	}
-
-	double t1 = omp_get_wtime();
-
-    auto result = optimizer.minimize(
-        get_objective_lambda, x, lb.data(), ub.data(), bound_type.data()
-    );
-
-	for(int element = 0; element < n; element++){
-		beta[element] = x[element];
-	}
-
-    std::cout << "x0: (" << beta[0] << ", " << beta[1] << ")" << std::endl;
-
-	double t2 = omp_get_wtime();
-	temps_global+=t2-t1;
-
-	printf("temps_global cumulé = %f\n",temps_global);
-
-	// release allocated memory
-	free(std_map_);
-	checkCudaErrors(cudaFree(cube_flattened_dev));
-	checkCudaErrors(cudaFree(std_map_dev));
-
-	this->temps_conv += temps[3]/1000;
-	this->temps_deriv += temps[2]/1000;
-	this->temps_tableaux += temps[1]/1000;
-	this->temps_copy += temps[0]/1000;
-	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
-	
-	free(temps);
-
-	printf("this->temps_copy = %f\n", this->temps_copy);
-	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
-	printf("this->temps_deriv = %f\n", this->temps_deriv);
-	printf("this->temps_conv = %f\n", this->temps_conv);
-	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
-
-//	std::cin.ignore();
-}
-
-template <typename T>
-void algo_rohsa<T>::minimize_clean_other_lib_8(parameters<T> &M, int N, long m, T* beta, T* lb_pt, T* ub_pt, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
-	const int n = 2316;
-	std::cout<<"n = "<<n<<std::endl;
-	
-	std::array<T, n> lb;
-	std::array<T, n> ub;
-	std::array<int, n> bound_type;
-    std::array<T, n> x;
-
-    double* temps = NULL;
-    temps = (double*)malloc(4*sizeof(double));
-    temps[0] = 0.;
-    temps[1] = 0.;
-    temps[2] = 0.;
-    temps[3] = 0.;
-    temps[4] = 0.;
-
-    T* std_map_ = NULL;
-    std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T));
-
-	for(int i=0; i<dim_y; i++){
-		for(int j=0; j<dim_x; j++){
-			std_map_[i*dim_x+j]=std_map[i][j];
-		}
-	}
-
-	T* std_map_dev = NULL;
-	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
-	T* cube_flattened_dev = NULL;
-	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
-
-    lbfgsb::Optimizer optimizer{n};
-
-// Can adjust many optimization configs.
-    // E.g. `iprint`, `factr`, `pgtol`, `max_iter`, `max_fun`, `time_limit_sec`
-    optimizer.iprint = M.iprint;
-    optimizer.max_iter = M.maxiter;
-    optimizer.factr = 1e+7;
-    optimizer.pgtol = 1e-5;
-    optimizer.max_fun = 10000000000000;
-
-	T f = 0.;
-
-	auto get_objective_lambda = [this, &M, &n, &cube, &cube_flattened, &cube_flattened_dev,
-&std_map, &std_map_dev, &std_map_, dim_x, dim_y, dim_v, &temps, &f](const std::array<T, n>& x_array, std::array<T, n>& grad) -> T { 
-		f = 0.;
-
-		T* g = NULL;
-		g = (T*)malloc(n*sizeof(T));
-		T* x_current = NULL;
-		x_current = (T*)malloc(n*sizeof(T));
-
-		for(int element = 0; element < n; element++){
-			x_current[element] = x_array[element];
-			g[element] = 0.;
-		}
-
-		if(M.select_version == 0){ //-cpu
-//			f_g_cube_fast_unidimensional<T>(M, f, g, n, cube_flattened, cube, x_current, dim_v, dim_y, dim_x, std_map_, temps);
-			f_g_cube_fast_clean<double>(M, f, g, n, cube, x_current, dim_v, dim_y, dim_x, std_map, temps);
-		}else if(M.select_version == 1){ //-gpu
-			T* x_dev = nullptr;
-			T* g_dev = nullptr;
-			cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
-			cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
-			checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
-			checkCudaErrors(cudaMemcpy(x_dev, x_current, n*sizeof(T), cudaMemcpyHostToDevice));
-			checkCudaErrors(cudaDeviceSynchronize());
-//			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
-			checkCudaErrors(cudaDeviceSynchronize());
-			checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
-			checkCudaErrors(cudaFree(x_dev));
-			checkCudaErrors(cudaFree(g_dev));
-			checkCudaErrors(cudaDeviceSynchronize());
-		}else if(M.select_version == 2){ //-autre
-			f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, x_current, dim_v, dim_y, dim_x, std_map, cube_flattened, temps, this->temps_transfert, this->temps_mirroirs, this->temps_detail_regu); // expérimentation gradient
-			printf("-> f = %.16f\n",f);
-		}
-		for(int element = 0; element < n; element++){
-			grad[element] = g[element];
-		}
-
-		free(g);
-		free(x_current);
-		return f;
-	};
-
-
-	for(int element = 0; element < n; element++){
-		lb[element] = lb_pt[element];
-		ub[element] = ub_pt[element];
-		x[element] = beta[element];
-		bound_type[element] = 2;
-	}
-
-	double t1 = omp_get_wtime();
-
-    auto result = optimizer.minimize(
-        get_objective_lambda, x, lb.data(), ub.data(), bound_type.data()
-    );
-
-	for(int element = 0; element < n; element++){
-		beta[element] = x[element];
-	}
-
-    std::cout << "x0: (" << beta[0] << ", " << beta[1] << ")" << std::endl;
-
-	double t2 = omp_get_wtime();
-	temps_global+=t2-t1;
-
-	printf("temps_global cumulé = %f\n",temps_global);
-
-	// release allocated memory
-	free(std_map_);
-	checkCudaErrors(cudaFree(cube_flattened_dev));
-	checkCudaErrors(cudaFree(std_map_dev));
-
-	this->temps_conv += temps[3]/1000;
-	this->temps_deriv += temps[2]/1000;
-	this->temps_tableaux += temps[1]/1000;
-	this->temps_copy += temps[0]/1000;
-	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
-	free(temps);
-	printf("this->temps_copy = %f\n", this->temps_copy);
-	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
-	printf("this->temps_deriv = %f\n", this->temps_deriv);
-	printf("this->temps_conv = %f\n", this->temps_conv);
-	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
-//	std::cin.ignore();
-}
-
-
-template <typename T>
-void algo_rohsa<T>::minimize_clean_other_lib_16(parameters<T> &M, const int N, long m, T* beta, T* lb_pt, T* ub_pt, std::vector<std::vector<std::vector<T>>> &cube, std::vector<std::vector<T>> &std_map, int dim_x, int dim_y, int dim_v, T* cube_flattened) {
-	const int n = 9228;
-	std::cout<<"n = "<<n<<std::endl;
-
-	std::array<T, n> lb;
-	std::array<T, n> ub;
-	std::array<int, n> bound_type;
-    std::array<T, n> x;
-
-    double* temps = NULL;
-    temps = (double*)malloc(4*sizeof(double));
-    temps[0] = 0.;
-    temps[1] = 0.;
-    temps[2] = 0.;
-    temps[3] = 0.;
-    temps[4] = 0.;
-
-    T* std_map_ = NULL;
-    std_map_ = (T*)malloc(dim_x*dim_y*sizeof(T));
-
-	for(int i=0; i<dim_y; i++){
-		for(int j=0; j<dim_x; j++){
-			std_map_[i*dim_x+j]=std_map[i][j];
-		}
-	}
-
-	T* std_map_dev = NULL;
-	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(T), cudaMemcpyHostToDevice));
-	T* cube_flattened_dev = NULL;
-	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(T)));
-	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(T), cudaMemcpyHostToDevice));
-
-    lbfgsb::Optimizer optimizer{n};
-
-// Can adjust many optimization configs.
-    // E.g. `iprint`, `factr`, `pgtol`, `max_iter`, `max_fun`, `time_limit_sec`
-    optimizer.iprint = M.iprint;
-    optimizer.max_iter = M.maxiter;
-    optimizer.factr = 1e+7;
-    optimizer.pgtol = 1e-5;
-    optimizer.max_fun = 10000000000000;
-
-	T f = 0.;
-	auto get_objective_lambda = [this, &M, &n, &cube, &cube_flattened, &cube_flattened_dev,
-&std_map, &std_map_dev, &std_map_, dim_x, dim_y, dim_v, &temps, &f](const std::array<T, n>& x_array, std::array<T, n>& grad) -> T { 
-		f = 0.;
-		T* g = NULL;
-		g = (T*)malloc(n*sizeof(T));
-		T* x_current = NULL;
-		x_current = (T*)malloc(n*sizeof(T));
-
-		for(int element = 0; element < n; element++){
-			x_current[element] = x_array[element];
-			g[element] = 0.;
-		}
-
-		if(M.select_version == 0){ //-cpu
-//			f_g_cube_fast_unidimensional<T>(M, f, g, n, cube_flattened, cube, x_current, dim_v, dim_y, dim_x, std_map_, temps);
-			f_g_cube_fast_clean<double>(M, f, g, n, cube, x_current, dim_v, dim_y, dim_x, std_map, temps);
-//			printf("-> f = %.16f\n",f);
-		}else if(M.select_version == 1){ //-gpu
-			T* x_dev = nullptr;
-			T* g_dev = nullptr;
-			cudaMalloc(&x_dev, n * sizeof(x_dev[0]));
-			cudaMalloc(&g_dev, n * sizeof(g_dev[0]));
-			checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
-			checkCudaErrors(cudaMemcpy(x_dev, x_current, n*sizeof(T), cudaMemcpyHostToDevice));
-			checkCudaErrors(cudaDeviceSynchronize());
-//			f_g_cube_parallel_lib<T>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
-			checkCudaErrors(cudaDeviceSynchronize());
-			checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
-			checkCudaErrors(cudaFree(x_dev));
-			checkCudaErrors(cudaFree(g_dev));
-			checkCudaErrors(cudaDeviceSynchronize());
-		}else if(M.select_version == 2){ //-autre
-			f_g_cube_cuda_L_clean<T>(M, f, g, n,cube, x_current, dim_v, dim_y, dim_x, std_map, cube_flattened, temps, this->temps_transfert, this->temps_mirroirs, this->temps_detail_regu); // expérimentation gradient
-			printf("-> f = %.16f\n",f);
-		}
-		for(int element = 0; element < n; element++){
-			grad[element] = g[element];
-		}
-
-		free(g);
-		free(x_current);
-		return f;
-	};
-
-
-	for(int element = 0; element < n; element++){
-		lb[element] = lb_pt[element];
-		ub[element] = ub_pt[element];
-		x[element] = beta[element];
-		bound_type[element] = 2;
-	}
-
-	double t1 = omp_get_wtime();
-
-    auto result = optimizer.minimize(
-        get_objective_lambda, x, lb.data(), ub.data(), bound_type.data()
-    );
-
-	for(int element = 0; element < n; element++){
-		beta[element] = x[element];
-	}
-
-    std::cout << "x0: (" << beta[0] << ", " << beta[1] << ")" << std::endl;
-
-	double t2 = omp_get_wtime();
-	temps_global+=t2-t1;
-
-	printf("temps_global cumulé = %f\n",temps_global);
-
-	// release allocated memory
-	free(std_map_);
-	checkCudaErrors(cudaFree(cube_flattened_dev));
-	checkCudaErrors(cudaFree(std_map_dev));
-
-	this->temps_conv += temps[3]/1000;
-	this->temps_deriv += temps[2]/1000;
-	this->temps_tableaux += temps[1]/1000;
-	this->temps_copy += temps[0]/1000;
-	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
-	free(temps);
-	printf("this->temps_copy = %f\n", this->temps_copy);
-	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
-	printf("this->temps_deriv = %f\n", this->temps_deriv);
-	printf("this->temps_conv = %f\n", this->temps_conv);
-	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
-//	std::cin.ignore();
 }
 
 
@@ -1925,334 +1309,361 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
     temps[3] = 0.;
     temps[4] = 0.;
 
-/*
-	for(int i = 0; i<n; i++){
-		printf("ub[%d] = %f , lb[%d] = %f\n", i, ub[i], i, lb[i]);
-	}
-	std::cin.ignore();
-*/
-
-	if(dim_x == 2 && false){
+	if(dim_x == 2 ){
 		double* beta_bis = NULL;
 		beta_bis = (double*)malloc(n*sizeof(double));
+		if(M.n_gauss == 24){
 
+		}else if(M.n_gauss == 18){
 
- beta_bis[           0 ] =   0.67833389419947754      ;
- beta_bis[           1 ] =    36.305979791642834      ;
- beta_bis[           2 ] =    1.0000000000000000      ;
- beta_bis[           3 ] =    2.1362334864458470      ;
- beta_bis[           4 ] =    104.74151212624943      ;
- beta_bis[           5 ] =    5.0120125349816229      ;
- beta_bis[           6 ] =   0.58716662412705467      ;
- beta_bis[           7 ] =    48.949117820700110      ;
- beta_bis[           8 ] =    11.218170661758490      ;
- beta_bis[           9 ] =    2.3966901711505657      ;
- beta_bis[          10 ] =    34.519980895828915      ;
- beta_bis[          11 ] =    1.0030093980187293      ;
- beta_bis[          12 ] =    1.5537608132045986      ;
- beta_bis[          13 ] =    43.282478388464732      ;
- beta_bis[          14 ] =    2.5661189440171031      ;
- beta_bis[          15 ] =    1.4586731100749117      ;
- beta_bis[          16 ] =    105.67396943490013      ;
- beta_bis[          17 ] =    10.948356953376557      ;
- beta_bis[          18 ] =   0.22666568343932372      ;
- beta_bis[          19 ] =    72.702728863772521      ;
- beta_bis[          20 ] =    11.305280766529464      ;
- beta_bis[          21 ] =    1.1938238102024301      ;
- beta_bis[          22 ] =    102.91630953845004      ;
- beta_bis[          23 ] =    3.2905591239600276      ;
- beta_bis[          24 ] =    2.7354641026275686      ;
- beta_bis[          25 ] =    31.217802985654085      ;
- beta_bis[          26 ] =    1.0002077888470544      ;
- beta_bis[          27 ] =   0.24784670109116774      ;
- beta_bis[          28 ] =    15.667595995227504      ;
- beta_bis[          29 ] =    5.1806755657583619      ;
- beta_bis[          30 ] =   0.67208786608071702      ;
- beta_bis[          31 ] =    40.655473856553151      ;
- beta_bis[          32 ] =    7.0383240996727743      ;
- beta_bis[          33 ] =   0.70881064674372363      ;
- beta_bis[          34 ] =    23.212875038597467      ;
- beta_bis[          35 ] =    4.1879613785376373      ;
- beta_bis[          36 ] =    2.5752380902346315      ;
- beta_bis[          37 ] =    29.898512241626968      ;
- beta_bis[          38 ] =    1.3001354860096483      ;
- beta_bis[          39 ] =    3.5140369293263358      ;
- beta_bis[          40 ] =    32.767991840967376      ;
- beta_bis[          41 ] =    1.0001060777240913      ;
- beta_bis[          42 ] =   0.67928563629399707      ;
- beta_bis[          43 ] =    28.211342468436921      ;
- beta_bis[          44 ] =    1.5234765972916333      ;
- beta_bis[          45 ] =    5.5837926948285599      ;
- beta_bis[          46 ] =    33.616616873366034      ;
- beta_bis[          47 ] =    4.2598083540299747      ;
- beta_bis[          48 ] =    7.3534273003340687      ;
- beta_bis[          49 ] =    36.774894902679051      ;
- beta_bis[          50 ] =    2.8816063220142092      ;
- beta_bis[          51 ] =   0.13084955041025478      ;
- beta_bis[          52 ] =    100.27142485310985      ;
- beta_bis[          53 ] =    1.5081697395110967      ;
- beta_bis[          54 ] =    1.2558405524383564E-002 ;
- beta_bis[          55 ] =    42.194337582270904      ;
- beta_bis[          56 ] =    4.9475982863672590      ;
- beta_bis[          57 ] =    0.0000000000000000      ;
- beta_bis[          58 ] =    42.111367965640397      ;
- beta_bis[          59 ] =    4.8144612802189712      ;
- beta_bis[          60 ] =    8.6141983434314561E-005 ;
- beta_bis[          61 ] =    42.156657153633702      ;
- beta_bis[          62 ] =    4.8167165540985044      ;
- beta_bis[          63 ] =    1.2731357312892116E-003 ;
- beta_bis[          64 ] =    42.110064143717892      ;
- beta_bis[          65 ] =    4.8285765968191656      ;
- beta_bis[          66 ] =    2.5722540686586368E-004 ;
- beta_bis[          67 ] =    42.161128969269747      ;
- beta_bis[          68 ] =    4.8176920477077427      ;
- beta_bis[          69 ] =   0.26778206239465308      ;
- beta_bis[          70 ] =    42.097439997970575      ;
- beta_bis[          71 ] =    4.7282391279015439      ;
- beta_bis[          72 ] =   0.67833389419947754      ;
- beta_bis[          73 ] =    36.305979791642834      ;
- beta_bis[          74 ] =    1.0000000000000000      ;
- beta_bis[          75 ] =    2.1362334864458470      ;
- beta_bis[          76 ] =    104.74151212624943      ;
- beta_bis[          77 ] =    5.0120125349816229      ;
- beta_bis[          78 ] =   0.58716662412705467      ;
- beta_bis[          79 ] =    48.949117820700110      ;
- beta_bis[          80 ] =    11.218170661758490      ;
- beta_bis[          81 ] =    2.3966901711505657      ;
- beta_bis[          82 ] =    34.519980895828915      ;
- beta_bis[          83 ] =    1.0030093980187293      ;
- beta_bis[          84 ] =    1.5537608132045986      ;
- beta_bis[          85 ] =    43.282478388464732      ;
- beta_bis[          86 ] =    2.5661189440171031      ;
- beta_bis[          87 ] =    1.4586731100749117      ;
- beta_bis[          88 ] =    105.67396943490013      ;
- beta_bis[          89 ] =    10.948356953376557      ;
- beta_bis[          90 ] =   0.22666568343932372      ;
- beta_bis[          91 ] =    72.702728863772521      ;
- beta_bis[          92 ] =    11.305280766529464      ;
- beta_bis[          93 ] =    1.1938238102024301      ;
- beta_bis[          94 ] =    102.91630953845004      ;
- beta_bis[          95 ] =    3.2905591239600276      ;
- beta_bis[          96 ] =    2.7354641026275686      ;
- beta_bis[          97 ] =    31.217802985654085      ;
- beta_bis[          98 ] =    1.0002077888470544      ;
- beta_bis[          99 ] =   0.24784670109116774      ;
- beta_bis[         100 ] =    15.667595995227504      ;
- beta_bis[         101 ] =    5.1806755657583619      ;
- beta_bis[         102 ] =   0.67208786608071702      ;
- beta_bis[         103 ] =    40.655473856553151      ;
- beta_bis[         104 ] =    7.0383240996727743      ;
- beta_bis[         105 ] =   0.70881064674372363      ;
- beta_bis[         106 ] =    23.212875038597467      ;
- beta_bis[         107 ] =    4.1879613785376373      ;
- beta_bis[         108 ] =    2.5752380902346315      ;
- beta_bis[         109 ] =    29.898512241626968      ;
- beta_bis[         110 ] =    1.3001354860096483      ;
- beta_bis[         111 ] =    3.5140369293263358      ;
- beta_bis[         112 ] =    32.767991840967376      ;
- beta_bis[         113 ] =    1.0001060777240913      ;
- beta_bis[         114 ] =   0.67928563629399707      ;
- beta_bis[         115 ] =    28.211342468436921      ;
- beta_bis[         116 ] =    1.5234765972916333      ;
- beta_bis[         117 ] =    5.5837926948285599      ;
- beta_bis[         118 ] =    33.616616873366034      ;
- beta_bis[         119 ] =    4.2598083540299747      ;
- beta_bis[         120 ] =    7.3534273003340687      ;
- beta_bis[         121 ] =    36.774894902679051      ;
- beta_bis[         122 ] =    2.8816063220142092      ;
- beta_bis[         123 ] =   0.13084955041025478      ;
- beta_bis[         124 ] =    100.27142485310985      ;
- beta_bis[         125 ] =    1.5081697395110967      ;
- beta_bis[         126 ] =    1.2558405524383564E-002 ;
- beta_bis[         127 ] =    42.194337582270904      ;
- beta_bis[         128 ] =    4.9475982863672590      ;
- beta_bis[         129 ] =    0.0000000000000000      ;
- beta_bis[         130 ] =    42.111367965640397      ;
- beta_bis[         131 ] =    4.8144612802189712      ;
- beta_bis[         132 ] =    8.6141983434314561E-005 ;
- beta_bis[         133 ] =    42.156657153633702      ;
- beta_bis[         134 ] =    4.8167165540985044      ;
- beta_bis[         135 ] =    1.2731357312892116E-003 ;
- beta_bis[         136 ] =    42.110064143717892      ;
- beta_bis[         137 ] =    4.8285765968191656      ;
- beta_bis[         138 ] =    2.5722540686586368E-004 ;
- beta_bis[         139 ] =    42.161128969269747      ;
- beta_bis[         140 ] =    4.8176920477077427      ;
- beta_bis[         141 ] =   0.26778206239465308      ;
- beta_bis[         142 ] =    42.097439997970575      ;
- beta_bis[         143 ] =    4.7282391279015439      ;
- beta_bis[         144 ] =   0.67833389419947754      ;
- beta_bis[         145 ] =    36.305979791642834      ;
- beta_bis[         146 ] =    1.0000000000000000      ;
- beta_bis[         147 ] =    2.1362334864458470      ;
- beta_bis[         148 ] =    104.74151212624943      ;
- beta_bis[         149 ] =    5.0120125349816229      ;
- beta_bis[         150 ] =   0.58716662412705467      ;
- beta_bis[         151 ] =    48.949117820700110      ;
- beta_bis[         152 ] =    11.218170661758490      ;
- beta_bis[         153 ] =    2.3966901711505657      ;
- beta_bis[         154 ] =    34.519980895828915      ;
- beta_bis[         155 ] =    1.0030093980187293      ;
- beta_bis[         156 ] =    1.5537608132045986      ;
- beta_bis[         157 ] =    43.282478388464732      ;
- beta_bis[         158 ] =    2.5661189440171031      ;
- beta_bis[         159 ] =    1.4586731100749117      ;
- beta_bis[         160 ] =    105.67396943490013      ;
- beta_bis[         161 ] =    10.948356953376557      ;
- beta_bis[         162 ] =   0.22666568343932372      ;
- beta_bis[         163 ] =    72.702728863772521      ;
- beta_bis[         164 ] =    11.305280766529464      ;
- beta_bis[         165 ] =    1.1938238102024301      ;
- beta_bis[         166 ] =    102.91630953845004      ;
- beta_bis[         167 ] =    3.2905591239600276      ;
- beta_bis[         168 ] =    2.7354641026275686      ;
- beta_bis[         169 ] =    31.217802985654085      ;
- beta_bis[         170 ] =    1.0002077888470544      ;
- beta_bis[         171 ] =   0.24784670109116774      ;
- beta_bis[         172 ] =    15.667595995227504      ;
- beta_bis[         173 ] =    5.1806755657583619      ;
- beta_bis[         174 ] =   0.67208786608071702      ;
- beta_bis[         175 ] =    40.655473856553151      ;
- beta_bis[         176 ] =    7.0383240996727743      ;
- beta_bis[         177 ] =   0.70881064674372363      ;
- beta_bis[         178 ] =    23.212875038597467      ;
- beta_bis[         179 ] =    4.1879613785376373      ;
- beta_bis[         180 ] =    2.5752380902346315      ;
- beta_bis[         181 ] =    29.898512241626968      ;
- beta_bis[         182 ] =    1.3001354860096483      ;
- beta_bis[         183 ] =    3.5140369293263358      ;
- beta_bis[         184 ] =    32.767991840967376      ;
- beta_bis[         185 ] =    1.0001060777240913      ;
- beta_bis[         186 ] =   0.67928563629399707      ;
- beta_bis[         187 ] =    28.211342468436921      ;
- beta_bis[         188 ] =    1.5234765972916333      ;
- beta_bis[         189 ] =    5.5837926948285599      ;
- beta_bis[         190 ] =    33.616616873366034      ;
- beta_bis[         191 ] =    4.2598083540299747      ;
- beta_bis[         192 ] =    7.3534273003340687      ;
- beta_bis[         193 ] =    36.774894902679051      ;
- beta_bis[         194 ] =    2.8816063220142092      ;
- beta_bis[         195 ] =   0.13084955041025478      ;
- beta_bis[         196 ] =    100.27142485310985      ;
- beta_bis[         197 ] =    1.5081697395110967      ;
- beta_bis[         198 ] =    1.2558405524383564E-002 ;
- beta_bis[         199 ] =    42.194337582270904      ;
- beta_bis[         200 ] =    4.9475982863672590      ;
- beta_bis[         201 ] =    0.0000000000000000      ;
- beta_bis[         202 ] =    42.111367965640397      ;
- beta_bis[         203 ] =    4.8144612802189712      ;
- beta_bis[         204 ] =    8.6141983434314561E-005 ;
- beta_bis[         205 ] =    42.156657153633702      ;
- beta_bis[         206 ] =    4.8167165540985044      ;
- beta_bis[         207 ] =    1.2731357312892116E-003 ;
- beta_bis[         208 ] =    42.110064143717892      ;
- beta_bis[         209 ] =    4.8285765968191656      ;
- beta_bis[         210 ] =    2.5722540686586368E-004 ;
- beta_bis[         211 ] =    42.161128969269747      ;
- beta_bis[         212 ] =    4.8176920477077427      ;
- beta_bis[         213 ] =   0.26778206239465308      ;
- beta_bis[         214 ] =    42.097439997970575      ;
- beta_bis[         215 ] =    4.7282391279015439      ;
- beta_bis[         216 ] =   0.67833389419947754      ;
- beta_bis[         217 ] =    36.305979791642834      ;
- beta_bis[         218 ] =    1.0000000000000000      ;
- beta_bis[         219 ] =    2.1362334864458470      ;
- beta_bis[         220 ] =    104.74151212624943      ;
- beta_bis[         221 ] =    5.0120125349816229      ;
- beta_bis[         222 ] =   0.58716662412705467      ;
- beta_bis[         223 ] =    48.949117820700110      ;
- beta_bis[         224 ] =    11.218170661758490      ;
- beta_bis[         225 ] =    2.3966901711505657      ;
- beta_bis[         226 ] =    34.519980895828915      ;
- beta_bis[         227 ] =    1.0030093980187293      ;
- beta_bis[         228 ] =    1.5537608132045986      ;
- beta_bis[         229 ] =    43.282478388464732      ;
- beta_bis[         230 ] =    2.5661189440171031      ;
- beta_bis[         231 ] =    1.4586731100749117      ;
- beta_bis[         232 ] =    105.67396943490013      ;
- beta_bis[         233 ] =    10.948356953376557      ;
- beta_bis[         234 ] =   0.22666568343932372      ;
- beta_bis[         235 ] =    72.702728863772521      ;
- beta_bis[         236 ] =    11.305280766529464      ;
- beta_bis[         237 ] =    1.1938238102024301      ;
- beta_bis[         238 ] =    102.91630953845004      ;
- beta_bis[         239 ] =    3.2905591239600276      ;
- beta_bis[         240 ] =    2.7354641026275686      ;
- beta_bis[         241 ] =    31.217802985654085      ;
- beta_bis[         242 ] =    1.0002077888470544      ;
- beta_bis[         243 ] =   0.24784670109116774      ;
- beta_bis[         244 ] =    15.667595995227504      ;
- beta_bis[         245 ] =    5.1806755657583619      ;
- beta_bis[         246 ] =   0.67208786608071702      ;
- beta_bis[         247 ] =    40.655473856553151      ;
- beta_bis[         248 ] =    7.0383240996727743      ;
- beta_bis[         249 ] =   0.70881064674372363      ;
- beta_bis[         250 ] =    23.212875038597467      ;
- beta_bis[         251 ] =    4.1879613785376373      ;
- beta_bis[         252 ] =    2.5752380902346315      ;
- beta_bis[         253 ] =    29.898512241626968      ;
- beta_bis[         254 ] =    1.3001354860096483      ;
- beta_bis[         255 ] =    3.5140369293263358      ;
- beta_bis[         256 ] =    32.767991840967376      ;
- beta_bis[         257 ] =    1.0001060777240913      ;
- beta_bis[         258 ] =   0.67928563629399707      ;
- beta_bis[         259 ] =    28.211342468436921      ;
- beta_bis[         260 ] =    1.5234765972916333      ;
- beta_bis[         261 ] =    5.5837926948285599      ;
- beta_bis[         262 ] =    33.616616873366034      ;
- beta_bis[         263 ] =    4.2598083540299747      ;
- beta_bis[         264 ] =    7.3534273003340687      ;
- beta_bis[         265 ] =    36.774894902679051      ;
- beta_bis[         266 ] =    2.8816063220142092      ;
- beta_bis[         267 ] =   0.13084955041025478      ;
- beta_bis[         268 ] =    100.27142485310985      ;
- beta_bis[         269 ] =    1.5081697395110967      ;
- beta_bis[         270 ] =    1.2558405524383564E-002 ;
- beta_bis[         271 ] =    42.194337582270904      ;
- beta_bis[         272 ] =    4.9475982863672590      ;
- beta_bis[         273 ] =    0.0000000000000000      ;
- beta_bis[         274 ] =    42.111367965640397      ;
- beta_bis[         275 ] =    4.8144612802189712      ;
- beta_bis[         276 ] =    8.6141983434314561E-005 ;
- beta_bis[         277 ] =    42.156657153633702      ;
- beta_bis[         278 ] =    4.8167165540985044      ;
- beta_bis[         279 ] =    1.2731357312892116E-003 ;
- beta_bis[         280 ] =    42.110064143717892      ;
- beta_bis[         281 ] =    4.8285765968191656      ;
- beta_bis[         282 ] =    2.5722540686586368E-004 ;
- beta_bis[         283 ] =    42.161128969269747      ;
- beta_bis[         284 ] =    4.8176920477077427      ;
- beta_bis[         285 ] =   0.26778206239465308      ;
- beta_bis[         286 ] =    42.097439997970575      ;
- beta_bis[         287 ] =    4.7282391279015439      ;
- beta_bis[         288 ] =    1.0002339976558168      ;
- beta_bis[         289 ] =    4.9892550745700754      ;
- beta_bis[         290 ] =    11.167653717531552      ;
- beta_bis[         291 ] =    1.0000697460674153      ;
- beta_bis[         292 ] =    2.5612340824602402      ;
- beta_bis[         293 ] =    10.898896216885726      ;
- beta_bis[         294 ] =    11.284909297921667      ;
- beta_bis[         295 ] =    3.2795385931480605      ;
- beta_bis[         296 ] =    1.0008635748768435      ;
- beta_bis[         297 ] =    5.2033341430629774      ;
- beta_bis[         298 ] =    7.0504136357080869      ;
- beta_bis[         299 ] =    4.1763192069241590      ;
- beta_bis[         300 ] =    1.3044611803869948      ;
- beta_bis[         301 ] =    1.0012295995323277      ;
- beta_bis[         302 ] =    1.5410150072220175      ;
- beta_bis[         303 ] =    4.2555950020110869      ;
- beta_bis[         304 ] =    2.8800415825811214      ;
- beta_bis[         305 ] =    1.5270545981487378      ;
- beta_bis[         306 ] =    4.9470174646717195      ;
- beta_bis[         307 ] =    4.8142234992693131      ;
- beta_bis[         308 ] =    4.8164492297372430      ;
- beta_bis[         309 ] =    4.8285035536604237      ;
- beta_bis[         310 ] =    4.8174191060577316      ;
- beta_bis[         311 ] =    4.7154244078886762      ;
+		}else if (M.n_gauss ==12){
+	beta_bis[           0 ] =    1.8291378325452126      ;
+	beta_bis[           1 ] =    39.871343144937960      ;
+	beta_bis[           2 ] =    4.6851530996168922      ;
+	beta_bis[           3 ] =    1.2820424336249656      ;
+	beta_bis[           4 ] =    37.012933928250916      ;
+	beta_bis[           5 ] =    9.5638381115306519      ;
+	beta_bis[           6 ] =   0.42713252167660620      ;
+	beta_bis[           7 ] =    47.918930184042956      ;
+	beta_bis[           8 ] =    10.455457440673259      ;
+	beta_bis[           9 ] =   0.27809017189757468      ;
+	beta_bis[          10 ] =    7.2061967116249894      ;
+	beta_bis[          11 ] =    11.963730445674138      ;
+	beta_bis[          12 ] =   0.15175946930379686      ;
+	beta_bis[          13 ] =   0.19435666384039235      ;
+	beta_bis[          14 ] =    3.3602193913219058      ;
+	beta_bis[          15 ] =    0.0000000000000000      ;
+	beta_bis[          16 ] =    44.454422499784172      ;
+	beta_bis[          17 ] =    4.3096226987940796      ;
+	beta_bis[          18 ] =    1.6774457999475341e-3 ;
+	beta_bis[          19 ] =    44.430157471831407      ;
+	beta_bis[          20 ] =    4.4674765595881762      ;
+	beta_bis[          21 ] =   0.17308026759527767      ;
+	beta_bis[          22 ] =    44.275115974002134      ;
+	beta_bis[          23 ] =    3.9771614632260213      ;
+	beta_bis[          24 ] =    0.0000000000000000      ;
+	beta_bis[          25 ] =    44.464623782218865      ;
+	beta_bis[          26 ] =    4.1511716558859710      ;
+	beta_bis[          27 ] =    0.0000000000000000      ;
+	beta_bis[          28 ] =    44.513206878131825      ;
+	beta_bis[          29 ] =    4.2669624185588386      ;
+	beta_bis[          30 ] =    2.0427594510370052e-2 ;
+	beta_bis[          31 ] =    44.314432191565572      ;
+	beta_bis[          32 ] =    4.4953992819474244      ;
+	beta_bis[          33 ] =    0.0000000000000000      ;
+	beta_bis[          34 ] =    44.566681455798950      ;
+	beta_bis[          35 ] =    4.1615552832483775      ;
+	beta_bis[          36 ] =    1.8291378325452126      ;
+	beta_bis[          37 ] =    39.871343144937960      ;
+	beta_bis[          38 ] =    4.6851530996168922      ;
+	beta_bis[          39 ] =    1.2820424336249656      ;
+	beta_bis[          40 ] =    37.012933928250916      ;
+	beta_bis[          41 ] =    9.5638381115306519      ;
+	beta_bis[          42 ] =   0.42713252167660620      ;
+	beta_bis[          43 ] =    47.918930184042956      ;
+	beta_bis[          44 ] =    10.455457440673259      ;
+	beta_bis[          45 ] =   0.27809017189757468      ;
+	beta_bis[          46 ] =    7.2061967116249894      ;
+	beta_bis[          47 ] =    11.963730445674138      ;
+	beta_bis[          48 ] =   0.15175946930379686      ;
+	beta_bis[          49 ] =   0.19435666384039235      ;
+	beta_bis[          50 ] =    3.3602193913219058      ;
+	beta_bis[          51 ] =    0.0000000000000000      ;
+	beta_bis[          52 ] =    44.454422499784172      ;
+	beta_bis[          53 ] =    4.3096226987940796      ;
+	beta_bis[          54 ] =    1.6774457999475341e-3 ;
+	beta_bis[          55 ] =    44.430157471831407      ;
+	beta_bis[          56 ] =    4.4674765595881762      ;
+	beta_bis[          57 ] =   0.17308026759527767      ;
+	beta_bis[          58 ] =    44.275115974002134      ;
+	beta_bis[          59 ] =    3.9771614632260213      ;
+	beta_bis[          60 ] =    0.0000000000000000      ;
+	beta_bis[          61 ] =    44.464623782218865      ;
+	beta_bis[          62 ] =    4.1511716558859710      ;
+	beta_bis[          63 ] =    0.0000000000000000      ;
+	beta_bis[          64 ] =    44.513206878131825      ;
+	beta_bis[          65 ] =    4.2669624185588386      ;
+	beta_bis[          66 ] =    2.0427594510370052e-2 ;
+	beta_bis[          67 ] =    44.314432191565572      ;
+	beta_bis[          68 ] =    4.4953992819474244      ;
+	beta_bis[          69 ] =    0.0000000000000000      ;
+	beta_bis[          70 ] =    44.566681455798950      ;
+	beta_bis[          71 ] =    4.1615552832483775      ;
+	beta_bis[          72 ] =    1.8291378325452126      ;
+	beta_bis[          73 ] =    39.871343144937960      ;
+	beta_bis[          74 ] =    4.6851530996168922      ;
+	beta_bis[          75 ] =    1.2820424336249656      ;
+	beta_bis[          76 ] =    37.012933928250916      ;
+	beta_bis[          77 ] =    9.5638381115306519      ;
+	beta_bis[          78 ] =   0.42713252167660620      ;
+	beta_bis[          79 ] =    47.918930184042956      ;
+	beta_bis[          80 ] =    10.455457440673259      ;
+	beta_bis[          81 ] =   0.27809017189757468      ;
+	beta_bis[          82 ] =    7.2061967116249894      ;
+	beta_bis[          83 ] =    11.963730445674138      ;
+	beta_bis[          84 ] =   0.15175946930379686      ;
+	beta_bis[          85 ] =   0.19435666384039235      ;
+	beta_bis[          86 ] =    3.3602193913219058      ;
+	beta_bis[          87 ] =    0.0000000000000000      ;
+	beta_bis[          88 ] =    44.454422499784172      ;
+	beta_bis[          89 ] =    4.3096226987940796      ;
+	beta_bis[          90 ] =    1.6774457999475341e-3 ;
+	beta_bis[          91 ] =    44.430157471831407      ;
+	beta_bis[          92 ] =    4.4674765595881762      ;
+	beta_bis[          93 ] =   0.17308026759527767      ;
+	beta_bis[          94 ] =    44.275115974002134      ;
+	beta_bis[          95 ] =    3.9771614632260213      ;
+	beta_bis[          96 ] =    0.0000000000000000      ;
+	beta_bis[          97 ] =    44.464623782218865      ;
+	beta_bis[          98 ] =    4.1511716558859710      ;
+	beta_bis[          99 ] =    0.0000000000000000      ;
+	beta_bis[         100 ] =    44.513206878131825      ;
+	beta_bis[         101 ] =    4.2669624185588386      ;
+	beta_bis[         102 ] =    2.0427594510370052e-2 ;
+	beta_bis[         103 ] =    44.314432191565572      ;
+	beta_bis[         104 ] =    4.4953992819474244      ;
+	beta_bis[         105 ] =    0.0000000000000000      ;
+	beta_bis[         106 ] =    44.566681455798950      ;
+	beta_bis[         107 ] =    4.1615552832483775      ;
+	beta_bis[         108 ] =    1.8291378325452126      ;
+	beta_bis[         109 ] =    39.871343144937960      ;
+	beta_bis[         110 ] =    4.6851530996168922      ;
+	beta_bis[         111 ] =    1.2820424336249656      ;
+	beta_bis[         112 ] =    37.012933928250916      ;
+	beta_bis[         113 ] =    9.5638381115306519      ;
+	beta_bis[         114 ] =   0.42713252167660620      ;
+	beta_bis[         115 ] =    47.918930184042956      ;
+	beta_bis[         116 ] =    10.455457440673259      ;
+	beta_bis[         117 ] =   0.27809017189757468      ;
+	beta_bis[         118 ] =    7.2061967116249894      ;
+	beta_bis[         119 ] =    11.963730445674138      ;
+	beta_bis[         120 ] =   0.15175946930379686      ;
+	beta_bis[         121 ] =   0.19435666384039235      ;
+	beta_bis[         122 ] =    3.3602193913219058      ;
+	beta_bis[         123 ] =    0.0000000000000000      ;
+	beta_bis[         124 ] =    44.454422499784172      ;
+	beta_bis[         125 ] =    4.3096226987940796      ;
+	beta_bis[         126 ] =    1.6774457999475341e-3 ;
+	beta_bis[         127 ] =    44.430157471831407      ;
+	beta_bis[         128 ] =    4.4674765595881762      ;
+	beta_bis[         129 ] =   0.17308026759527767      ;
+	beta_bis[         130 ] =    44.275115974002134      ;
+	beta_bis[         131 ] =    3.9771614632260213      ;
+	beta_bis[         132 ] =    0.0000000000000000      ;
+	beta_bis[         133 ] =    44.464623782218865      ;
+	beta_bis[         134 ] =    4.1511716558859710      ;
+	beta_bis[         135 ] =    0.0000000000000000      ;
+	beta_bis[         136 ] =    44.513206878131825      ;
+	beta_bis[         137 ] =    4.2669624185588386      ;
+	beta_bis[         138 ] =    2.0427594510370052e-2 ;
+	beta_bis[         139 ] =    44.314432191565572      ;
+	beta_bis[         140 ] =    4.4953992819474244      ;
+	beta_bis[         141 ] =    0.0000000000000000      ;
+	beta_bis[         142 ] =    44.566681455798950      ;
+	beta_bis[         143 ] =    4.1615552832483775      ;
+	beta_bis[         144 ] =    4.5744335068816584      ;
+	beta_bis[         145 ] =    9.4019729580022791      ;
+	beta_bis[         146 ] =    10.627495413950800      ;
+	beta_bis[         147 ] =    11.935845195198421      ;
+	beta_bis[         148 ] =    3.3692637754785850      ;
+	beta_bis[         149 ] =    4.3060211165878162      ;
+	beta_bis[         150 ] =    4.4656094572562424      ;
+	beta_bis[         151 ] =    4.0141328037328563      ;
+	beta_bis[         152 ] =    4.1471831828320633      ;
+	beta_bis[         153 ] =    4.2633136656717658      ;
+	beta_bis[         154 ] =    4.4944746292197530      ;
+	beta_bis[         155 ] =    4.1612466019975232      ;
+		}else if (M.n_gauss ==6){
+	beta_bis[           0 ] =    12.716325252990259      ;
+	beta_bis[           1 ] =    35.005944371647800      ;
+	beta_bis[           2 ] =    4.1375353036624256      ;
+	beta_bis[           3 ] =    2.9257533649950189      ;
+	beta_bis[           4 ] =    103.90643440499855      ;
+	beta_bis[           5 ] =    6.1325794780427918      ;
+	beta_bis[           6 ] =    2.1201422505160266      ;
+	beta_bis[           7 ] =    36.340880662934175      ;
+	beta_bis[           8 ] =    11.547099725049405      ;
+	beta_bis[           9 ] =    1.2612910673717819      ;
+	beta_bis[          10 ] =    43.123866925260153      ;
+	beta_bis[          11 ] =    2.3931614818485718      ;
+	beta_bis[          12 ] =   0.50410674881741480      ;
+	beta_bis[          13 ] =    98.747432793870558      ;
+	beta_bis[          14 ] =    28.475866059393734      ;
+	beta_bis[          15 ] =   0.65455333303959062      ;
+	beta_bis[          16 ] =    31.117961622408590      ;
+	beta_bis[          17 ] =    1.2113861376442041      ;
+	beta_bis[          18 ] =    12.716325252990259      ;
+	beta_bis[          19 ] =    35.005944371647800      ;
+	beta_bis[          20 ] =    4.1375353036624256      ;
+	beta_bis[          21 ] =    2.9257533649950189      ;
+	beta_bis[          22 ] =    103.90643440499855      ;
+	beta_bis[          23 ] =    6.1325794780427918      ;
+	beta_bis[          24 ] =    2.1201422505160266      ;
+	beta_bis[          25 ] =    36.340880662934175      ;
+	beta_bis[          26 ] =    11.547099725049405      ;
+	beta_bis[          27 ] =    1.2612910673717819      ;
+	beta_bis[          28 ] =    43.123866925260153      ;
+	beta_bis[          29 ] =    2.3931614818485718      ;
+	beta_bis[          30 ] =   0.50410674881741480      ;
+	beta_bis[          31 ] =    98.747432793870558      ;
+	beta_bis[          32 ] =    28.475866059393734      ;
+	beta_bis[          33 ] =   0.65455333303959062      ;
+	beta_bis[          34 ] =    31.117961622408590      ;
+	beta_bis[          35 ] =    1.2113861376442041      ;
+	beta_bis[          36 ] =    12.716325252990259      ;
+	beta_bis[          37 ] =    35.005944371647800      ;
+	beta_bis[          38 ] =    4.1375353036624256      ;
+	beta_bis[          39 ] =    2.9257533649950189      ;
+	beta_bis[          40 ] =    103.90643440499855      ;
+	beta_bis[          41 ] =    6.1325794780427918      ;
+	beta_bis[          42 ] =    2.1201422505160266      ;
+	beta_bis[          43 ] =    36.340880662934175      ;
+	beta_bis[          44 ] =    11.547099725049405      ;
+	beta_bis[          45 ] =    1.2612910673717819      ;
+	beta_bis[          46 ] =    43.123866925260153      ;
+	beta_bis[          47 ] =    2.3931614818485718      ;
+	beta_bis[          48 ] =   0.50410674881741480      ;
+	beta_bis[          49 ] =    98.747432793870558      ;
+	beta_bis[          50 ] =    28.475866059393734      ;
+	beta_bis[          51 ] =   0.65455333303959062      ;
+	beta_bis[          52 ] =    31.117961622408590      ;
+	beta_bis[          53 ] =    1.2113861376442041      ;
+	beta_bis[          54 ] =    12.716325252990259      ;
+	beta_bis[          55 ] =    35.005944371647800      ;
+	beta_bis[          56 ] =    4.1375353036624256      ;
+	beta_bis[          57 ] =    2.9257533649950189      ;
+	beta_bis[          58 ] =    103.90643440499855      ;
+	beta_bis[          59 ] =    6.1325794780427918      ;
+	beta_bis[          60 ] =    2.1201422505160266      ;
+	beta_bis[          61 ] =    36.340880662934175      ;
+	beta_bis[          62 ] =    11.547099725049405      ;
+	beta_bis[          63 ] =    1.2612910673717819      ;
+	beta_bis[          64 ] =    43.123866925260153      ;
+	beta_bis[          65 ] =    2.3931614818485718      ;
+	beta_bis[          66 ] =   0.50410674881741480      ;
+	beta_bis[          67 ] =    98.747432793870558      ;
+	beta_bis[          68 ] =    28.475866059393734      ;
+	beta_bis[          69 ] =   0.65455333303959062      ;
+	beta_bis[          70 ] =    31.117961622408590      ;
+	beta_bis[          71 ] =    1.2113861376442041      ;
+	beta_bis[          72 ] =    4.1616519981739879      ;
+	beta_bis[          73 ] =    7.1844245308024570      ;
+	beta_bis[          74 ] =    12.000000000000000      ;
+	beta_bis[          75 ] =    2.3449533920457784      ;
+	beta_bis[          76 ] =    12.000000000000000      ;
+	beta_bis[          77 ] =    1.1885788737040284      ;
+		}else if (M.n_gauss ==8){
 
- 
+	beta_bis[           0 ] =    12.353264410244705      ;
+	beta_bis[           1 ] =    35.027520483583437      ;
+	beta_bis[           2 ] =    4.0072412693393993      ;
+	beta_bis[           3 ] =    2.0762432405857538      ;
+	beta_bis[           4 ] =    104.15706795909465      ;
+	beta_bis[           5 ] =    4.9550605934499217      ;
+	beta_bis[           6 ] =    2.2998750809694619      ;
+	beta_bis[           7 ] =    34.578226353760925      ;
+	beta_bis[           8 ] =    9.8900680298302603      ;
+	beta_bis[           9 ] =    1.4446077116680269      ;
+	beta_bis[          10 ] =    42.932903802767250      ;
+	beta_bis[          11 ] =    2.6445883655031057      ;
+	beta_bis[          12 ] =   0.45347566931960331      ;
+	beta_bis[          13 ] =    55.871692478260861      ;
+	beta_bis[          14 ] =    16.298566106312968      ;
+	beta_bis[          15 ] =   0.78757429933146206      ;
+	beta_bis[          16 ] =    31.020579809589695      ;
+	beta_bis[          17 ] =    1.3550720193231238      ;
+	beta_bis[          18 ] =   0.18094640174908366      ;
+	beta_bis[          19 ] =    114.30418086828358      ;
+	beta_bis[          20 ] =    11.410971975683598      ;
+	beta_bis[          21 ] =    1.3074339632115508      ;
+	beta_bis[          22 ] =    101.99097180740357      ;
+	beta_bis[          23 ] =    10.843991503575749      ;
+	beta_bis[          24 ] =    12.353264410244705      ;
+	beta_bis[          25 ] =    35.027520483583437      ;
+	beta_bis[          26 ] =    4.0072412693393993      ;
+	beta_bis[          27 ] =    2.0762432405857538      ;
+	beta_bis[          28 ] =    104.15706795909465      ;
+	beta_bis[          29 ] =    4.9550605934499217      ;
+	beta_bis[          30 ] =    2.2998750809694619      ;
+	beta_bis[          31 ] =    34.578226353760925      ;
+	beta_bis[          32 ] =    9.8900680298302603      ;
+	beta_bis[          33 ] =    1.4446077116680269      ;
+	beta_bis[          34 ] =    42.932903802767250      ;
+	beta_bis[          35 ] =    2.6445883655031057      ;
+	beta_bis[          36 ] =   0.45347566931960331      ;
+	beta_bis[          37 ] =    55.871692478260861      ;
+	beta_bis[          38 ] =    16.298566106312968      ;
+	beta_bis[          39 ] =   0.78757429933146206      ;
+	beta_bis[          40 ] =    31.020579809589695      ;
+	beta_bis[          41 ] =    1.3550720193231238      ;
+	beta_bis[          42 ] =   0.18094640174908366      ;
+	beta_bis[          43 ] =    114.30418086828358      ;
+	beta_bis[          44 ] =    11.410971975683598      ;
+	beta_bis[          45 ] =    1.3074339632115508      ;
+	beta_bis[          46 ] =    101.99097180740357      ;
+	beta_bis[          47 ] =    10.843991503575749      ;
+	beta_bis[          48 ] =    12.353264410244705      ;
+	beta_bis[          49 ] =    35.027520483583437      ;
+	beta_bis[          50 ] =    4.0072412693393993      ;
+	beta_bis[          51 ] =    2.0762432405857538      ;
+	beta_bis[          52 ] =    104.15706795909465      ;
+	beta_bis[          53 ] =    4.9550605934499217      ;
+	beta_bis[          54 ] =    2.2998750809694619      ;
+	beta_bis[          55 ] =    34.578226353760925      ;
+	beta_bis[          56 ] =    9.8900680298302603      ;
+	beta_bis[          57 ] =    1.4446077116680269      ;
+	beta_bis[          58 ] =    42.932903802767250      ;
+	beta_bis[          59 ] =    2.6445883655031057      ;
+	beta_bis[          60 ] =   0.45347566931960331      ;
+	beta_bis[          61 ] =    55.871692478260861      ;
+	beta_bis[          62 ] =    16.298566106312968      ;
+	beta_bis[          63 ] =   0.78757429933146206      ;
+	beta_bis[          64 ] =    31.020579809589695      ;
+	beta_bis[          65 ] =    1.3550720193231238      ;
+	beta_bis[          66 ] =   0.18094640174908366      ;
+	beta_bis[          67 ] =    114.30418086828358      ;
+	beta_bis[          68 ] =    11.410971975683598      ;
+	beta_bis[          69 ] =    1.3074339632115508      ;
+	beta_bis[          70 ] =    101.99097180740357      ;
+	beta_bis[          71 ] =    10.843991503575749      ;
+	beta_bis[          72 ] =    12.353264410244705      ;
+	beta_bis[          73 ] =    35.027520483583437      ;
+	beta_bis[          74 ] =    4.0072412693393993      ;
+	beta_bis[          75 ] =    2.0762432405857538      ;
+	beta_bis[          76 ] =    104.15706795909465      ;
+	beta_bis[          77 ] =    4.9550605934499217      ;
+	beta_bis[          78 ] =    2.2998750809694619      ;
+	beta_bis[          79 ] =    34.578226353760925      ;
+	beta_bis[          80 ] =    9.8900680298302603      ;
+	beta_bis[          81 ] =    1.4446077116680269      ;
+	beta_bis[          82 ] =    42.932903802767250      ;
+	beta_bis[          83 ] =    2.6445883655031057      ;
+	beta_bis[          84 ] =   0.45347566931960331      ;
+	beta_bis[          85 ] =    55.871692478260861      ;
+	beta_bis[          86 ] =    16.298566106312968      ;
+	beta_bis[          87 ] =   0.78757429933146206      ;
+	beta_bis[          88 ] =    31.020579809589695      ;
+	beta_bis[          89 ] =    1.3550720193231238      ;
+	beta_bis[          90 ] =   0.18094640174908366      ;
+	beta_bis[          91 ] =    114.30418086828358      ;
+	beta_bis[          92 ] =    11.410971975683598      ;
+	beta_bis[          93 ] =    1.3074339632115508      ;
+	beta_bis[          94 ] =    101.99097180740357      ;
+	beta_bis[          95 ] =    10.843991503575749      ;
+	beta_bis[          96 ] =    4.0068963839203171      ;
+	beta_bis[          97 ] =    5.0432528596859632      ;
+	beta_bis[          98 ] =    10.065201681123932      ;
+	beta_bis[          99 ] =    2.6313110093460432      ;
+	beta_bis[         100 ] =    12.000000000000000      ;
+	beta_bis[         101 ] =    1.3556473018797202      ;
+	beta_bis[         102 ] =    10.920313805323946      ;
+	beta_bis[         103 ] =    12.000000000000000      ;
+		}
+		std::cout<<"beta_bis[          71 ] = "<<beta_bis[          71 ]<<std::endl;
+		std::cout<<"M.select_version ="<<M.select_version<<std::endl;
+//		std::cout<<"M.select_version "<<M.select_version<<std::endl;
 
-		if(M.select_version == 0){
+ 		if(M.select_version == 0){
 			for(int i = 0; i<dim_x; i++){
 				for(int j = 0; j<dim_y; j++){
 					for(int k = 0; k<3*M.n_gauss; k++){
@@ -2311,12 +1722,11 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 		free(ub_T);
 		free(beta_T);
 	}
-
 	if(false){//true ){ //&& dim_x == 4){
-		for(int i = 0; i<n; i++){
+		for(int i = 0; i<30; i++){
 			printf("beta[%d] = %.26f\n",i,beta[i]);
 		}
-		exit(0);
+//		exit(0);
 	}
 
 	int exceed_one = 0;
@@ -2346,7 +1756,7 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 				checkCudaErrors(cudaMemset(g_dev, 0., n*sizeof(g_dev[0])));
 				checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(double), cudaMemcpyHostToDevice));
 				checkCudaErrors(cudaDeviceSynchronize());
-				f_g_cube_parallel_lib<double>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
+//				f_g_cube_parallel_lib<double>(M, f, g_dev, int(n), x_dev, int(dim_v), int(dim_y), int(dim_x), std_map_dev, cube_flattened_dev, temps);
 				checkCudaErrors(cudaDeviceSynchronize());
 				checkCudaErrors(cudaMemcpy(g, g_dev, n*sizeof(double), cudaMemcpyDeviceToHost));
 				checkCudaErrors(cudaFree(x_dev));
@@ -2357,6 +1767,14 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 				f_g_cube_cuda_L_clean<double>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened, temps, this->temps_transfert_d, this->temps_mirroirs, this->temps_detail_regu); // expérimentation gradient
 			}
 		}
+	if(false ){ //&& dim_x == 4){
+		for(int i = 0; i<n; i++){
+			printf("g[%d] = %.26f\n",i,g[i]);
+		}
+		printf("f = %f\n",f);
+		exit(0);
+	}
+
 		if (*task==NEW_X ) {
 			if (isave[33] >= M.maxiter) {
 				*task = STOP_ITER;
@@ -2365,184 +1783,6 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 				*task = STOP_GRAD;
 			}
 		}
-/*
-		if (false){
-			printf("g[0] = %.16f\n",g[0]);
-			printf("g[1] = %.16f\n",1, g[1]);
-			printf("g[2] = %.16f\n",2, g[2]);
-			printf("-> f = %.16f\n",f);
-			std::cout<<"x_current["<<0<<"] = "<<beta[0]<<std::endl;
-			std::cout<<"x_current["<<1<<"] = "<<beta[1]<<std::endl;
-			std::cout<<"x_current["<<2<<"] = "<<beta[2]<<std::endl;
-	//		std::cin.ignore();
-		}
-		if(exceed_one == 0 && dim_x == 2){
-			g[        0] =                   -2023.50708976321925547381397337;
-			g[        1] =                      -0.25989298141979277900759371;
-			g[        2] =                      -1.58679675641117690076953295;
-			g[        3] =                       0.11323928543136831115223373;
-			g[        4] =                      -0.18965862205210859414705737;
-			g[        5] =                       0.24291027515206484177490154;
-			g[        6] =                      -0.53749909977686793904894103;
-			g[        7] =                       0.00985064567639839898383070;
-			g[        8] =                      -0.07100570132304993842264906;
-			g[        9] =                       0.14664074449413250222917782;
-			g[       10] =                      -0.01008802932788780033768194;
-			g[       11] =                       0.01272443181947723912783577;
-			g[       12] =                      -0.07216748893643636086903115;
-			g[       13] =                       0.14266065931649754561227894;
-			g[       14] =                      -0.18617371941751109654106244;
-			g[       15] =                      -0.00529541292566290330845469;
-			g[       16] =                       0.00421332735106179443601571;
-			g[       17] =                      -0.00870945612996193094246244;
-			g[       18] =                       0.03194064573833987896733788;
-			g[       19] =                       0.00505905938401324337810872;
-			g[       20] =                       0.01129084773922425094516697;
-			g[       21] =                      -0.04020608319929192681074781;
-			g[       22] =                       0.00037699261806322075917669;
-			g[       23] =                      -0.00225361715163201496367473;
-			g[       24] =                      -0.00537075099829837938197885;
-			g[       25] =                       0.00470762809628310838205856;
-			g[       26] =                      -0.00024054586038830074769257;
-			g[       27] =                      -0.01108321873244897531884945;
-			g[       28] =                       0.00000000000000000000000000;
-			g[       29] =                       0.00000000000000000000000000;
-			g[       30] =                      -0.01108473241734633969735047;
-			g[       31] =                       0.00000000000000000000000000;
-			g[       32] =                       0.00000000000000000000000000;
-			g[       33] =                      -0.01109668476073053314245875;
-			g[       34] =                       0.00000000000000000000000000;
-			g[       35] =                       0.00000000000000000000000000;
-			g[       36] =                    4046.03966125503256989759393036;
-			g[       37] =                       0.18299520138516703338105174;
-			g[       38] =                      -1.44575537555437594328111572;
-			g[       39] =                       0.04401267203692080243193629;
-			g[       40] =                       0.05907484612178820482242259;
-			g[       41] =                       0.16637442088644557869336893;
-			g[       42] =                      -0.39016513558106596937236077;
-			g[       43] =                      -0.01121167405735910317654547;
-			g[       44] =                      -0.03496287186250544160026621;
-			g[       45] =                      -0.02798617483810971959257152;
-			g[       46] =                       0.00120807118572629286663844;
-			g[       47] =                      -0.00535819353682003528260847;
-			g[       48] =                      -0.05685273396439992354967075;
-			g[       49] =                       0.08977296733200997025381440;
-			g[       50] =                      -0.11501716318905731706312423;
-			g[       51] =                       0.05771682282467095054245831;
-			g[       52] =                       0.00267790823633946850623744;
-			g[       53] =                       0.01017064138672219703041222;
-			g[       54] =                      -0.04652915070773726985420282;
-			g[       55] =                       0.01411479698267305814274319;
-			g[       56] =                      -0.02421625749189714252307404;
-			g[       57] =                      -0.02202891914088203617616557;
-			g[       58] =                       0.00187685901011687135235551;
-			g[       59] =                      -0.00325000651183652428111159;
-			g[       60] =                       0.01078686742615750371321326;
-			g[       61] =                       0.00184239213845985771653146;
-			g[       62] =                      -0.00036705179288369952587262;
-			g[       63] =                       0.00779814713482896489787910;
-			g[       64] =                       0.00000000000000000000000000;
-			g[       65] =                       0.00000000000000000000000000;
-			g[       66] =                       0.00779468144836191912522283;
-			g[       67] =                       0.00000000000000000000000000;
-			g[       68] =                       0.00000000000000000000000000;
-			g[       69] =                       0.00779803876753227924456535;
-			g[       70] =                       0.00000000000000000000000000;
-			g[       71] =                       0.00000000000000000000000000;
-			g[       72] =                    4046.39786473710137215675786138;
-			g[       73] =                       0.05319534548320093564344191;
-			g[       74] =                       1.48292952422833845815830500;
-			g[       75] =                      -0.30356376320117905986961659;
-			g[       76] =                       0.43950174220487370213561462;
-			g[       77] =                      -0.69037034499080152105676689;
-			g[       78] =                       0.29866610233249296646462767;
-			g[       79] =                      -0.02020524689530761933142777;
-			g[       80] =                       0.06684773696959360467229061;
-			g[       81] =                      -0.38759636104325850824992017;
-			g[       82] =                       0.03292310340666639717488451;
-			g[       83] =                      -0.00650739563284759986450112;
-			g[       84] =                       0.05001474916592570096884884;
-			g[       85] =                      -0.11006398864506788948247618;
-			g[       86] =                       0.09545356757942767556013308;
-			g[       87] =                      -0.04170171466691552364380868;
-			g[       88] =                       0.00004574054615087081777404;
-			g[       89] =                      -0.00678779797221693362296868;
-			g[       90] =                       0.01567446017669021224305581;
-			g[       91] =                      -0.03493501692802509356328144;
-			g[       92] =                       0.00850652545601715028011913;
-			g[       93] =                      -0.01816722028457017426572584;
-			g[       94] =                      -0.00262286627914013522472336;
-			g[       95] =                      -0.00293631633386449639178117;
-			g[       96] =                      -0.04400374255386609728679659;
-			g[       97] =                      -0.01175773859238693139217524;
-			g[       98] =                      -0.00764762536620252827979094;
-			g[       99] =                      -0.07629241024935901060999299;
-			g[      100] =                       0.00000000000000000000000000;
-			g[      101] =                       0.00000000000000000000000000;
-			g[      102] =                      -0.07629931195159155021823238;
-			g[      103] =                       0.00000000000000000000000000;
-			g[      104] =                       0.00000000000000000000000000;
-			g[      105] =                      -0.07628405844468075236441962;
-			g[      106] =                       0.00000000000000000000000000;
-			g[      107] =                       0.00000000000000000000000000;
-			g[      108] =                   -6068.31947351148301095236092806;
-			g[      109] =                       0.18961109437449960579691322;
-			g[      110] =                       3.28534500970293530386356906;
-			g[      111] =                       0.09354773239850699972919301;
-			g[      112] =                      -0.46018366845666169862028028;
-			g[      113] =                       0.13655512609828879266871127;
-			g[      114] =                       1.53293532867617177117836036;
-			g[      115] =                      -0.01553886044840317726123402;
-			g[      116] =                       0.15415148291928862378519227;
-			g[      117] =                       0.40194719141987900190571281;
-			g[      118] =                      -0.03921606043168676669630202;
-			g[      119] =                       0.01528127370836294962597179;
-			g[      120] =                       0.17392379246907874179584041;
-			g[      121] =                      -0.36047715190583834443671662;
-			g[      122] =                       0.46565770583126253612249457;
-			g[      123] =                      -0.08526420410845814146227895;
-			g[      124] =                      -0.02553051050424617884893053;
-			g[      125] =                       0.01499745171956639276655832;
-			g[      126] =                       0.00253719761016405745066016;
-			g[      127] =                       0.01020195197737637157753277;
-			g[      128] =                       0.02177133202417375415493872;
-			g[      129] =                       0.27124906192423564599280894;
-			g[      130] =                      -0.00206795775055381098397889;
-			g[      131] =                       0.01121877788519220174590085;
-			g[      132] =                       0.08206516688580370311179024;
-			g[      133] =                       0.00190615653620778541764424;
-			g[      134] =                       0.02087129895641774007808422;
-			g[      135] =                       0.20510470684452591916269171;
-			g[      136] =                       0.00000000000000000000000000;
-			g[      137] =                       0.00000000000000000000000000;
-			g[      138] =                       0.20520638196113835660661096;
-			g[      139] =                       0.00000000000000000000000000;
-			g[      140] =                       0.00000000000000000000000000;
-			g[      141] =                       0.20510430317856362392170411;
-			g[      142] =                       0.00000000000000000000000000;
-			g[      143] =                       0.00000000000000000000000000;
-			g[      144] =                      -0.00971586099574039963044925;
-			g[      145] =                      -0.03652865361836177271470660;
-			g[      146] =                       0.00845467274857014672306832;
-			g[      147] =                      -0.01182833143786865548463538;
-			g[      148] =                       0.00875620529505738431907957;
-			g[      149] =                      -0.00052455141030804952606559;
-			g[      150] =                      -0.00027256801171660072213854;
-			g[      151] =                       0.00579149586599214671878144;
-			g[      152] =                      -0.00058255210344526631160988;
-			g[      153] =                       0.00000000000000000000000000;
-			g[      154] =                       0.00000000000000000000000000;
-			g[      155] =                       0.00000000000000000000000000;
-		}
-
-		if(true){ //|| dim_x == 2){
-			for(int i = 0; i<n; i++){
-				printf("beta[%d] = %.26f\n",i, beta[i]);
-			}
-			std::cin.ignore();
-		}
-		exceed_one ++;
-	*/
 	}
 //	std::cin.ignore();
 ///	printf("--> nombre d'itérations dans la boucle d'optimisation (limite à 800) = %d \n", compteur_iter_boucle_optim);
@@ -2572,10 +1812,10 @@ void algo_rohsa<T>::minimize_clean(parameters<double> &M, long n, long m, double
 	checkCudaErrors(cudaFree(cube_flattened_dev));
 
 	if(false){ //|| dim_x == 2){
-		for(int i = 0; i<n; i++){
+		for(int i = 0; i<30; i++){
 			std::cout<<"beta["<<i<<"] = "<<beta[i]<<std::endl;
 		}
-		exit(0);
+//		exit(0);
 	}
 
 	printf("----------------->temps_transfert_boucle = %f \n", temps_transfert_boucle);
@@ -2688,14 +1928,13 @@ void algo_rohsa<T>::minimize_clean_driver(parameters<double> &M, long n_tilde, l
     temps[3] = 0.;
     temps[4] = 0.;
 
-	integer iprint_tilde = 1;
 //    *task = (integer)START;
 //    *task = (long)START;
     *task = START;
 	L111:
 	double temps_temp = omp_get_wtime();
 	setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task,
-				&iprint_tilde, csave, lsave, isave, dsave);
+				&M.iprint, csave, lsave, isave, dsave);
 	temps_setulb += omp_get_wtime() - temps_temp;
 
 
@@ -3671,10 +2910,10 @@ void algo_rohsa<T>::init_spectrum(parameters<T> &M, std::vector<double> &line, s
 
 
 template <typename T>
-void algo_rohsa<T>::mean_array(int power, std::vector<std::vector<std::vector<T>>> &cube_mean)
+void algo_rohsa<T>::mean_array(hypercube<T> &Hypercube, int power, std::vector<std::vector<std::vector<T>>> &cube_mean)
 {
-	std::vector<T> spectrum(file.dim_cube[2],0.);
-	int n = file.dim_cube[1]/power;
+	std::vector<T> spectrum(Hypercube.dim_cube[2],0.);
+	int n = Hypercube.dim_cube[1]/power;
 	for(int i(0); i<cube_mean[0].size(); i++)
 	{
 		for(int j(0); j<cube_mean.size(); j++)
@@ -3683,17 +2922,17 @@ void algo_rohsa<T>::mean_array(int power, std::vector<std::vector<std::vector<T>
 			{
 				for (int l(0); l<n; l++)
 				{
-					for(int m(0); m<file.dim_cube[2]; m++)
+					for(int m(0); m<Hypercube.dim_cube[2]; m++)
 					{
-						spectrum[m] += file.cube[l+j*n][k+i*n][m];
+						spectrum[m] += Hypercube.cube[l+j*n][k+i*n][m];
 					}
 				}
 			}
-			for(int m(0); m<file.dim_cube[2]; m++)
+			for(int m(0); m<Hypercube.dim_cube[2]; m++)
 			{
 				cube_mean[j][i][m] = spectrum[m]/pow(n,2);
 			}
-			for(int p(0); p<file.dim_cube[2]; p++)
+			for(int p(0); p<Hypercube.dim_cube[2]; p++)
 			{
 				spectrum[p] = 0.;
 			}
@@ -3705,6 +2944,8 @@ void algo_rohsa<T>::mean_array(int power, std::vector<std::vector<std::vector<T>
 template<typename T>
 void algo_rohsa<T>::reshape_noise_up(std::vector<std::vector<T>>& std_cube)
 {
+	int pos_x = 730;
+	int pos_y = 650;
 	int d_cube[] = {0,0};
 	int d_map[] = {0,0};
 	d_cube[0] = std_cube.size();
@@ -3712,47 +2953,68 @@ void algo_rohsa<T>::reshape_noise_up(std::vector<std::vector<T>>& std_cube)
 	d_map[0] = this->std_data_map.size();
 	d_map[1] = this->std_data_map[0].size();
 	//compute the offset so that the data file lies in the center of a cube
-	int offset_x = (-d_cube[0]+d_map[0])/2;
-	int offset_y = (-d_cube[1]+d_map[1])/2;
+//	int offset_x = (-d_cube[1]+d_map[1])/2;
+//	int offset_y = (-d_cube[0]+d_map[0])/2;
+
+	int offset_x = pos_x;
+	int offset_y = pos_y;
+	int half_size_0 = d_cube[0]/2;
+	int half_size_1 = d_cube[1]/2;
 
 	std::cout << "d_cube[0] = " <<d_cube[0]<< std::endl;
 	std::cout << "d_cube[1] = " <<d_cube[1]<< std::endl;
 	std::cout << "d_map[0] = " <<d_map[0]<< std::endl;
 	std::cout << "d_map[1] = " <<d_map[1]<< std::endl;
 
-	for(int i=offset_x; i< d_map[0]+offset_x; i++)
+	for(int j=offset_y; j<d_cube[0]+offset_y; j++)
 	{
-		for(int j=offset_y; j<d_map[1]+offset_y; j++)
+		for(int i=offset_x; i< d_cube[1]+offset_x; i++)
 		{
-			std_cube[i-offset_x][j-offset_y]= this->std_data_map[i][j];
+			std_cube[j-offset_y][i-offset_x]= this->std_data_map[j-half_size_0][i-half_size_1];
 		}
 	}
+/*
+	printf("std_cube[0][1] = %f\n",std_cube[0][1]);
+	printf("std_cube[1][0] = %f\n",std_cube[1][0]);
+	printf("std_cube[1][1] = %f\n",std_cube[1][1]);
+	printf("std_cube[2][0] = %f\n",std_cube[2][0]);
+	printf("std_cube[0][2] = %f\n",std_cube[0][2]);
+	printf("std_cube[2][2] = %f\n",std_cube[2][2]);
+	std::cout<<"TEST !"<<std::endl;
+	exit(0);
+*/
 }
 
 
 template <typename T>
-void algo_rohsa<T>::mean_noise_map(int power, std::vector<std::vector<T>> &std_cube, std::vector<std::vector<T>> &std_map)
+void algo_rohsa<T>::mean_noise_map(int n_side, int n, int power, std::vector<std::vector<T>> &std_cube, std::vector<std::vector<T>> &std_map)
 {
 	int dim_x = std_map[0].size();
 	int dim_y = std_map.size();
-	int n = std_cube[0].size() / power;
+	int n_macro = std_cube[0].size() / power;
 	std::cout << "dim_x = " <<dim_x<< std::endl;
 	std::cout << "dim_y = " <<dim_y<< std::endl;
 	std::cout << "n = " <<n<< std::endl;
+	std::cout << "n_macro = " <<n_macro<< std::endl;
 
 	for(int i=0; i<dim_y; i++)
 	{
 		for(int j=0;j<dim_x;j++)
 		{
 			T val = 0.;
-			for(int k=0; k<n; k++)
+			for(int k=0; k<n_macro; k++)
 			{
-				for(int l=0;l<n;l++)
+				for(int l=0;l<n_macro;l++)
 				{
-					val+=std_cube[k+i*n][l+j*n];
+					val+=pow(std_cube[k+i*n_macro][l+j*n_macro],2);
+// 					pow(x,y)=x^y
 				}
 			}
-			std_map[i][j] = val/pow(n,2.);
+			//RMS/sqrt(N) : sqrt(sum(x(i)**2)/N)/sqrt(N) = sqrt(sum(x(i)**2))/N
+			//N = pow(2,2*(n_side-n))
+			//Number of spectra within the macropixel : pow(2,2*(n_side-n))
+			std_map[i][j] = sqrt(val)/(pow(2,2*(n_side-n)));//pow(n,2.);
+//			std_map = sqrt(val)/(2**(2*(n_side-n))))
 		}
 	}
 
@@ -4166,7 +3428,7 @@ T algo_rohsa<T>::mean_2D(const std::vector<std::vector<T>> &map, int dim_y, int 
 
 
 template <typename T>
-void algo_rohsa<T>::std_spectrum(int dim_x, int dim_y, int dim_v)
+void algo_rohsa<T>::std_spectrum(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v)
 {
 	for(int i(0); i<dim_v; i++)
 	{
@@ -4175,7 +3437,7 @@ void algo_rohsa<T>::std_spectrum(int dim_x, int dim_y, int dim_v)
 		{
 			for( int k(0); k<dim_x; k++)
 			{
-				map[k][j] = file.data[k][j][i];
+				map[k][j] = Hypercube.data[k][j][i];
 			}
 		}
 		std_spect.vector<T>::push_back(std_2D(map, dim_y, dim_x));
@@ -4184,7 +3446,7 @@ void algo_rohsa<T>::std_spectrum(int dim_x, int dim_y, int dim_v)
 
 
 template <typename T>
-void algo_rohsa<T>::mean_spectrum(int dim_x, int dim_y, int dim_v)
+void algo_rohsa<T>::mean_spectrum(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v)
 {
 	for(int i(0);i<dim_v;i++)
 	{
@@ -4193,7 +3455,7 @@ void algo_rohsa<T>::mean_spectrum(int dim_x, int dim_y, int dim_v)
 		{
 			for(int k(0); k<dim_x ; k++)
 			{
-				map[k][j] = file.data[k][j][i];
+				map[k][j] = Hypercube.data[k][j][i];
 			}
 		}
 		mean_spect.vector<T>::push_back(mean_2D(map, dim_y, dim_x));
@@ -4203,7 +3465,7 @@ void algo_rohsa<T>::mean_spectrum(int dim_x, int dim_y, int dim_v)
 
 
 template <typename T>
-void algo_rohsa<T>::max_spectrum(int dim_x, int dim_y, int dim_v)
+void algo_rohsa<T>::max_spectrum(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v)
 {
 	for(int i(0); i<dim_v; i++)
 	{
@@ -4212,7 +3474,7 @@ void algo_rohsa<T>::max_spectrum(int dim_x, int dim_y, int dim_v)
 		{
 			for( int k(0); k<dim_x; k++)
 			{
-				map[k][j] = file.data[k][j][i];
+				map[k][j] = Hypercube.data[k][j][i];
 			}
 		}
 		max_spect.vector<T>::push_back(max_2D(map, dim_y, dim_x));
@@ -4221,7 +3483,7 @@ void algo_rohsa<T>::max_spectrum(int dim_x, int dim_y, int dim_v)
 }
 
 template <typename T>
-void algo_rohsa<T>::max_spectrum_norm(int dim_x, int dim_y, int dim_v, T norm_value)
+void algo_rohsa<T>::max_spectrum_norm(hypercube<T> &Hypercube, int dim_x, int dim_y, int dim_v, T norm_value)
 {
 	for(int i(0); i<dim_v; i++)
 	{
@@ -4230,7 +3492,7 @@ void algo_rohsa<T>::max_spectrum_norm(int dim_x, int dim_y, int dim_v, T norm_va
 		{
 			for( int k(0); k<dim_x; k++)
 			{
-				map[k][j] = file.data[k][j][i];
+				map[k][j] = Hypercube.data[k][j][i];
 			}
 		}
 		max_spect_norm.vector<T>::push_back(max_2D(map, dim_y, dim_x));

@@ -54,4 +54,7 @@ template <typename T> void prepare_for_convolution(T* d_IMAGE, T* d_IMAGE_ext, i
 template <typename T> void conv_twice_and_copy(T* d_IMAGE_amp_ext, T* d_conv_amp, T* d_conv_conv_amp, int image_x, int image_y);
 template <typename T> void update_array_f_dev_sort(T lambda, T lambda_var, T* array_f_dev, T* map_image_dev, T* map_conv_dev, int indice_x, int indice_y, int k, T* b_params);
 template <typename T> void update_array_f_dev_sort(T lambda, T* array_f_dev, T* map_dev, int indice_x, int indice_y);
+
+extern double temps_test;
+
 #endif

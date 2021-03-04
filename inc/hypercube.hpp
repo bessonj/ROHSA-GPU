@@ -39,43 +39,35 @@ class hypercube
 	public:
 
 	hypercube();
+	hypercube(int dim_x, int dim_y, int dim_v); //dummy constructor for initialization of an hypercube object
 	hypercube(parameters<T> &M);
 	hypercube(parameters<T> &M,int indice_debut, int indice_fin); // assuming whole_data_in_cube = false (faster and better provided the dimensions are close)
 	hypercube(parameters<T> &M,int indice_debut, int indice_fin, bool one_level);
 	hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square);
-
+	hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square, bool select_spectral_range, bool get_a_square_of_a_given_size, bool larger_power_of_two);
+	
 	int writeImage();
 	int save_noise_map_in_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map);
-	void get_noise_map_from_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map);
+	int save_grid_in_fits(parameters<T> &M, std::vector <std::vector<std::vector<T>>>& grid);
+	void get_noise_map_from_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_data, std::vector <std::vector<T>>& noise_cube);
+	void get_noise_map_from_DHIGLS(parameters<T> &M, std::vector <std::vector<T>>& noise_data, std::vector <std::vector<T>>& noise_cube);
 	void get_noise_map_from_GHIGLS(parameters<T> &M, std::vector <std::vector<T>>& noise_map);
+	void reshape_noise_up(std::vector<std::vector<T>>& std_map_in, std::vector<std::vector<T>>& std_map_out);
+	
+	void reshape_noise_up_data(std::vector<std::vector<T>>& std_data_raw, std::vector<std::vector<T>>& std_data_out, int dim1, int dim0);//!<Given std_data_raw (whole fits noise map), it returns std_data (adapted to the spatial positions of this->data). dim1, dim0 = spatial dimensions of whole fits noise map.
+	void reshape_noise_up_cube(std::vector<std::vector<T>>& std_data, std::vector<std::vector<T>>& std_cube_out); //!<When given std_data (noise map related to the spatial position of this->data), it returns std_cube (the noise map used through multiresolution)
 
-	void display_cube(int rang);
-	void display_data(int rang);
-	void display(std::vector<std::vector<std::vector<T>>> &tab, int rang);
-	void plot_data_line(int ind_x, int ind_y);
-	void plot_line(std::vector<std::vector<std::vector<T>>> &params, int ind_x, int ind_y, int n_gauss_i);
-	void plot_lines(std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<std::vector<T>>> &cube_mean);
-	void plot_multi_lines(std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<std::vector<T>>> &cube_mean);
-	void plot_multi_lines(std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<std::vector<T>>> &cube_mean, std::string some_string);
-	void display_result_and_data(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, bool dat_or_not);
-	void display_avec_et_sans_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par, int plot_numero);
-	void display_2_gaussiennes(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, int n1, int n2);
-	void display_2_gaussiennes_par_par_par(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, int n1, int n2);
 	void mean_parameters(std::vector<std::vector<std::vector<T>>> &params, int num_gauss);
-	void simple_plot_through_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par, int plot_numero, std::string name_bis);
-
-
 
 	T model_function(int x, T a, T m, T s);
-	void display_result(std::vector<std::vector<std::vector<T>>> &params, int rang, int n_gauss_i);
 
 	int dim2nside(); //obtenir les dimensions 2^n
-	void brute_show(const std::vector<std::vector<std::vector<T>>> &z, int depth, int length1, int length2);
 	void multiresolution(int nside); 
 	int get_binary_from_fits();
-	void get_array_from_fits(parameters<T> &M);
+
+	std::vector <std::vector<std::vector<T>>> get_array_from_fits(parameters<T> &M);
+//	void get_array_from_fits(parameters<T> &M);
 	void get_vector_from_binary(std::vector<std::vector<std::vector<T>>> &z);
-	void show_data(); 
 	std::vector<int> get_dim_data();
 	std::vector<int> get_dim_cube();
 	int get_nside() const;
@@ -87,6 +79,7 @@ class hypercube
 	void write_into_binary(parameters<T> &M, std::vector<std::vector<std::vector<T>>> &grid_params);
 	void get_from_file(std::vector<std::vector<std::vector<T>>> &file_out, int dim_0, int dim_1, int dim_2);
 	void write_in_file(std::vector<std::vector<std::vector<T>>> &file_in);
+	void write_in_file(std::vector<std::vector<std::vector<T>>> &file_in, std::string filename);
 
 	void write_vector_to_file(const std::vector<T>& myVector, std::string filename);
 	std::vector<T> read_vector_from_file(std::string filename);
@@ -108,6 +101,15 @@ class hypercube
 	int nside;
 
 	std::string filename; 
+
+	bool select_spectral_range_option;
+	bool get_a_square_of_a_given_size_option;
+	bool larger_power_of_two_option;
+
+	int size_side_square_option;
+	int position_x;
+	int position_y;
+	bool position_given;
 };
 
 
@@ -117,12 +119,354 @@ namespace plt = matplotlibcpp;
 using namespace CCfits;
 
 template<typename T>
+hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square, bool select_spectral_range, bool get_a_square_of_a_given_size, bool larger_power_of_two)
+{
+	this->position_given = true;
+	this->select_spectral_range_option = select_spectral_range;
+	this->get_a_square_of_a_given_size_option = get_a_square_of_a_given_size;
+	this->larger_power_of_two_option = larger_power_of_two;
+	this->size_side_square_option = size_side_square;
+
+	this->indice_debut= indice_debut;
+	this->indice_fin = indice_fin;
+
+	this->position_x = pos_x;
+	this->position_y = pos_y;
+
+	//First we get this->data which is the data array
+	if(M.input_format_fits){
+//		std::cout<<"indice_debut-indice_fin+1 = "<<indice_fin-indice_debut+1<<std::endl;
+//		exit(0);
+
+		this->data = get_array_from_fits(M);
+		if(larger_power_of_two){
+			this->nside = dim2nside()-1;
+		}else{
+			this->nside = dim2nside();
+		}
+
+		std::cout<<"larger_power_of_two = "<<larger_power_of_two<<std::endl;
+
+		std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+		std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+		std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
+		std::cout<<"this->data[0][0][3] = "<<this->data[0][0][2]<<std::endl;
+
+
+//		this->dim_cube[2] = dim_data[2];
+		this->dim_cube[2] = indice_fin-indice_debut+1;
+		int shift = this->size_side_square_option/2;
+
+		std::cout<<"shift = "<<shift<<std::endl;
+		std::cout<<"pos_x = "<<pos_x<<std::endl;
+		std::cout<<"pos_y = "<<pos_y<<std::endl;
+		std::cout<<"size_side_square = "<<size_side_square<<std::endl;
+		std::cout<<" "<<std::endl;
+		std::cout<<" "<<std::endl;
+		std::cout<<" "<<std::endl;
+		std::cout<<" "<<std::endl;
+		std::cout<<"this->data["<<0+pos_x-shift<<"]["<<0+pos_y-shift<<"][0] ="<<this->data[0+pos_x-shift][0+pos_y-shift][0]<<std::endl;
+
+
+		std::cout<<" "<<std::endl;
+		std::cout<<" "<<std::endl;
+		std::cout<<" "<<std::endl;
+
+		std::vector<std::vector<std::vector<T>>> data_reshaped_local(size_side_square, std::vector<std::vector<T>>(size_side_square,std::vector<T>(dim_cube[2],0.)));
+/*
+		for(int i=0; i< this->size_side_square_option; i++)
+		{
+			for(int j=0; j< this->size_side_square_option; j++)
+			{
+				for(int k= 0; k< dim_data[2]; k++)
+				{
+					data_reshaped_local[i][j][k]= this->data[i+pos_x-shift][j+pos_y-shift][k];
+				}
+			}
+		}
+*/
+//AJOUT :
+		this->dim_data[2] = this->dim_cube[2];
+		for(int i=0; i< this->size_side_square_option; i++)
+		{
+			for(int j=0; j< this->size_side_square_option; j++)
+			{
+				for(int k= 0; k< indice_fin-indice_debut+1; k++)
+				{
+					data_reshaped_local[i][j][k]= this->data[i+pos_x-shift][j+pos_y-shift][k+indice_debut];
+				}
+			}
+		}
+
+		std::cout<<"data_reshaped_local[0][0][0] = "<<data_reshaped_local[0][0][0]<<std::endl;
+		std::cout<<"data_reshaped_local[0][0][1] = "<<data_reshaped_local[0][0][1]<<std::endl;
+		std::cout<<"data_reshaped_local[0][0][2] = "<<data_reshaped_local[0][0][2]<<std::endl;
+		std::cout<<"data_reshaped_local[0][0][3] = "<<data_reshaped_local[0][0][2]<<std::endl;
+
+		this->data = data_reshaped_local;
+		data_reshaped_local.clear();// = std::vector<std::vector<std::vector<T>>>();
+
+		this->dim_data[0] = this->size_side_square_option;
+		this->dim_data[1] = this->size_side_square_option;
+		this->nside = dim2nside();
+
+		std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+		std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+		std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
+		std::cout<<"this->data[0][0][3] = "<<this->data[0][0][2]<<std::endl;
+		std::cout<<"this->nside = "<<this->nside<<std::endl;
+
+			this->dim_cube[0] =pow(2.0,this->nside);
+			this->dim_cube[1] =pow(2.0,this->nside);
+			std::cout<<"dim_cube[0] = "<<this->dim_cube[0]<<std::endl;
+			std::cout<<"dim_cube[1] = "<<this->dim_cube[1]<<std::endl;
+
+			int offset_x = abs((-dim_cube[0]+dim_data[0])/2);
+			int offset_y = abs((-dim_cube[1]+dim_data[1])/2);
+
+			std::cout<<"offset_x = "<<offset_x<<std::endl;
+			std::cout<<"offset_y = "<<offset_y<<std::endl;
+
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(this->dim_cube[0], std::vector<std::vector<T>>(this->dim_cube[1],std::vector<T>(this->dim_cube[2],0.)));
+			for(int i=0; i< this->dim_cube[0]; i++)
+			{
+				for(int j=0; j< this->dim_cube[1]; j++)
+				{
+					for(int k=0; k<this->dim_cube[2]; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+					}
+				}
+			}
+			std::cout<<"END 1"<<std::endl;
+
+			this->cube = cube_reshaped_local;
+			cube_reshaped_local.clear();// = std::vector<std::vector<std::vector<T>>>();
+
+			std::cout<<"END 2"<<std::endl;
+	/*
+		if(select_spectral_range){
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =indice_fin-indice_debut+1;
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(dim_data[0], std::vector<std::vector<T>>(dim_data[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_data[0]; i++)
+			{
+				for(int j=0; j< dim_data[1]; j++)
+				{
+					for(int k= indice_debut; k<= indice_fin; k++)
+					{
+					data_reshaped_local[i][j][k-indice_debut]= this->data[i][j][k];
+					}
+				}
+			}
+			this->data = data_reshaped_local;
+			dim_data[2] =indice_fin-indice_debut+1;
+
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<indice_fin-indice_debut+1; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i-offset_x][j-offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+		}else if(select_spectral_range && larger_power_of_two){
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =indice_fin-indice_debut+1;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(dim_data[0], std::vector<std::vector<T>>(dim_data[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_data[0]; i++)
+			{
+				for(int j=0; j< dim_data[1]; j++)
+				{
+					for(int k= indice_debut; k<= indice_fin; k++)
+					{
+					data_reshaped_local[i][j][k-indice_debut]= this->data[i][j][k];
+					}
+				}
+			}
+			this->data = data_reshaped_local;
+			dim_data[2] =indice_fin-indice_debut+1;
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<indice_fin-indice_debut+1; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+			this->data = cube_reshaped_local;
+		}else if(larger_power_of_two){
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =dim_data[2];
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<dim_cube[2]; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+			this->data = cube_reshaped_local;
+		}else if(select_spectral_range && get_a_square_of_a_given_size){
+			dim_cube[2] =indice_fin-indice_debut+1;
+			int shift = size_side_square/2;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(size_side_square, std::vector<std::vector<T>>(size_side_square,std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< size_side_square; i++)
+			{
+				for(int j=0; j< size_side_square; j++)
+				{
+					for(int k= indice_debut; k<= indice_fin; k++)
+					{
+						data_reshaped_local[i][j][k-indice_debut]= this->data[i+pos_x-shift][j+pos_y-shift][k];
+					}
+				}
+			}
+
+			this->data = data_reshaped_local;
+			this->nside = dim2nside();
+
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_data[2] =indice_fin-indice_debut+1;
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<indice_fin-indice_debut+1; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i-offset_x][j-offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+		}else if(get_a_square_of_a_given_size){
+			this->dim_cube[2] = dim_data[2];
+			int shift = size_side_square/2;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(size_side_square, std::vector<std::vector<T>>(size_side_square,std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< size_side_square; i++)
+			{
+				for(int j=0; j< size_side_square; j++)
+				{
+					for(int k= 0; k< dim_data[2]; k++)
+					{
+						data_reshaped_local[i][j][k]= this->data[i+pos_x-shift][j+pos_y-shift][k];
+					}
+				}
+			}
+
+			this->data = data_reshaped_local;
+			this->dim_data[0] = size_side_square;
+			this->dim_data[1] = size_side_square;
+			this->nside = dim2nside();
+
+	std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+	std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+	std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
+	std::cout<<"this->nside = "<<this->nside<<std::endl;
+
+			this->dim_cube[0] =pow(2.0,this->nside);
+			this->dim_cube[1] =pow(2.0,this->nside);
+	std::cout<<"dim_cube[0] = "<<this->dim_cube[0]<<std::endl;
+	std::cout<<"dim_cube[1] = "<<this->dim_cube[1]<<std::endl;
+
+			int offset_x = abs((-dim_cube[0]+dim_data[0])/2);
+			int offset_y = abs((-dim_cube[1]+dim_data[1])/2);
+	std::cout<<"offset_x = "<<offset_x<<std::endl;
+	std::cout<<"offset_y = "<<offset_y<<std::endl;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(this->dim_cube[0], std::vector<std::vector<T>>(this->dim_cube[1],std::vector<T>(this->dim_cube[2],0.)));
+			for(int i=0; i< this->dim_cube[0]; i++)
+			{
+				for(int j=0; j< this->dim_cube[1]; j++)
+				{
+					for(int k=0; k<this->dim_cube[2]; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+					}
+				}
+			}
+	std::cout<<"END 1"<<std::endl;
+
+			this->cube = cube_reshaped_local;
+	std::cout<<"END 2"<<std::endl;
+		}else{
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =dim_data[2];
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+
+
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<dim_cube[2]; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i-offset_x][j-offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+		}
+		*/
+	}else{
+		this->data = use_dat_file(M);
+		this->dim_cube[0] = this->dim_data[0];
+		this->dim_cube[1] = this->dim_data[1];
+		this->dim_cube[2] = this->dim_data[2];
+
+	}
+	std::cout<<"dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
+
+	std::cout<<"dim_cube[0] = "<<dim_cube[0]<<std::endl;
+	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
+	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
+
+	std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+	std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+	std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
+//	exit(0);
+}
+
+template<typename T>
 hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, bool last_level_power_of_two)
 {
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
 	if(M.file_type_fits){
-		get_array_from_fits(M);
+		this->data = get_array_from_fits(M);
 	}
 	if(M.file_type_dat){
 		this->data = use_dat_file(M);
@@ -161,20 +505,6 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, bool
 			dim_cube[0] =pow(2.0,nside-1);
 			dim_cube[1] =pow(2.0,nside-1);
 			cube = reshape_up_for_last_level(indice_debut, indice_fin);
-
-/*
-			for(int i=0; i< this->dim_cube[0]/2; i++)
-				{
-					for(int j=0; j< this->dim_cube[1]/2	; j++)
-					{
-						for(int k= indice_debut; k<= indice_fin; k++)
-						{
-							data_reshaped_local[i][j][k-indice_debut]= this->data[i+this->dim_data[0]/4][j+this->dim_data[1]/4][k];
-						}
-					}
-				}
-			std::cout<<"DEBUG"<<std::endl;
-*/
 			this->data = data_reshaped_local;
 		}else{
 			cube = reshape_up(indice_debut, indice_fin);
@@ -204,33 +534,16 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, bool
 	std::cout<<"dim_cube[0] = "<<dim_cube[0]<<std::endl;
 	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
 	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
-
-
-/*
-	for(int k(0); k<dim_cube[0]; k++)
-	{
-		for(int j(0); j<dim_cube[1]; j++)
-		{
-			for(int i(0); i< dim_cube[2]; i++)
-			{
-			std::cout<<"cube["<<k<<"]["<<j<<"]["<<i<<"] = "<<data[k][j][i]<<std::endl;
-			exit(0);
-			}
-		}
-	}
-*/
 }
 
 template<typename T>
 hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin)
 {
-
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
-	if(M.file_type_fits){
-		get_array_from_fits(M);
-	}
-	if(M.file_type_dat){
+	if(M.input_format_fits){
+		this->data = get_array_from_fits(M);
+	}else{
 		this->data = use_dat_file(M);
 	}
 	this->nside = dim2nside();
@@ -238,7 +551,7 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin)
 	
 	dim_cube[0] =pow(2,nside);
 	dim_cube[1] =pow(2,nside);
-	if(M.file_type_fits){
+	if(M.input_format_fits){
 		dim_cube[2] = indice_fin-indice_debut+1;
 	}
 	else{
@@ -253,7 +566,7 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin)
 	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
 	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
 
-	if(M.file_type_fits){
+	if(M.input_format_fits){
 		cube = reshape_up(indice_debut, indice_fin);
 		std::vector<std::vector<std::vector<T>>> data_reshaped_local(dim_data[0], std::vector<std::vector<T>>(dim_data[1],std::vector<T>(dim_cube[2],0.)));
 		for(int i=0; i< this->dim_data[0]; i++)
@@ -279,10 +592,9 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 {
 	this->indice_debut= indice_debut;
 	this->indice_fin = indice_fin;
-	if(M.file_type_fits){
-		get_array_from_fits(M);
-	}
-	if(M.file_type_dat){
+	if(M.input_format_fits){
+		this->data = get_array_from_fits(M);
+	}else{
 		this->data = use_dat_file(M);
 	}
 	this->nside = ceil(log(size_side_square)/log(2));
@@ -291,7 +603,7 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 	
 	this->dim_cube[0] = size_side_square;
 	this->dim_cube[1] = size_side_square;
-	if(M.file_type_fits){
+	if(M.input_format_fits){
 		dim_cube[2] = indice_fin-indice_debut+1;
 	}
 	else{
@@ -312,7 +624,7 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 	this->dim_data[1] = size_side_square;
 	this->dim_data[2] = this->dim_cube[2];
 
-	if(M.file_type_fits){
+	if(M.input_format_fits){
 		std::vector<std::vector<std::vector<T>>> data_reshaped_local(size_side_square, std::vector<std::vector<T>>(size_side_square,std::vector<T>(dim_cube[2],0.)));
 		for(int i=0; i< size_side_square; i++)
 			{
@@ -339,14 +651,13 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 template<typename T>
 hypercube<T>::hypercube(parameters<T> &M)
 {
-	if(M.file_type_fits){
-		get_array_from_fits(M);
+	if(M.input_format_fits){
+		this->data = get_array_from_fits(M);
 //		get_dimensions_from_fits();
 //		get_binary_from_fits(); // WARNING 
 //		get_vector_from_binary(this->data);
 		this->nside = dim2nside()-1;
-	}
-	if(M.file_type_dat){
+	}else{
 		this->data = use_dat_file(M);
 		this->nside = dim2nside();
 	}
@@ -378,6 +689,13 @@ hypercube<T>::hypercube(parameters<T> &M)
 }
 
 template<typename T>
+hypercube<T>::hypercube(int dim_x, int dim_y, int dim_v) //dummy constructor for initialization of an hypercube object
+{
+	std::vector<std::vector<std::vector<T>>> data_reshaped_local(dim_v, std::vector<std::vector<T>>(dim_y,std::vector<T>(dim_x,0.)));
+	this->data = data_reshaped_local;
+}
+
+template<typename T>
 hypercube<T>::hypercube() //dummy constructor for initialization of an hypercube object
 {
 
@@ -386,6 +704,7 @@ hypercube<T>::hypercube() //dummy constructor for initialization of an hypercube
 template<typename T>
 std::vector<std::vector<std::vector<T>>> hypercube<T>::use_dat_file(parameters<T> &M)
 {
+	printf("DEBUG 1\n");
    	int x,y,z;
 	T res;
 
@@ -403,10 +722,14 @@ std::vector<std::vector<std::vector<T>>> hypercube<T>::use_dat_file(parameters<T
 
 	std::vector<std::vector<std::vector<T>>> data_(this->dim_data[0],std::vector<std::vector<T>>(this->dim_data[1],std::vector<T>(this->dim_data[2], 0.)));
 
+	printf("DEBUG 2\n");
+	int p = 0;
 	while(!fichier.std::ios::eof())
 	{
    		fichier >> z >> y >> x >> res;
 		data_[x][y][z] = res;
+//		printf("DEBUG %d\n",p);
+//		p++;
    	}
 	return data_;
 }
@@ -446,7 +769,7 @@ Parse::~Parse()
 template<typename T>
 int hypercube<T>::dim2nside()
 {
-	return std::max( 0, std::min(int(ceil( log(double(dim_data[0]))/log(2.))), int(ceil( log(double(dim_data[1]))/log(2.))))  ) ;  
+	return std::max( 0, std::min(int(ceil( log(double(this->dim_data[0]))/log(2.))), int(ceil( log(double(this->dim_data[1]))/log(2.))))  ) ;  
 }
 
 //assuming the cube has been reshaped before through the python tool
@@ -467,6 +790,7 @@ std::vector<std::vector<std::vector<T>>> hypercube<T>::reshape_up()
 
 	return cube_;
 }
+
 
 template<typename T>
 std::vector<std::vector<std::vector<T>>> hypercube<T>::reshape_up_for_last_level(int borne_inf, int borne_sup)
@@ -512,19 +836,6 @@ std::vector<std::vector<std::vector<T>>> hypercube<T>::reshape_up(int borne_inf,
 		}
 	}
 	return cube_;
-}
-
-template<typename T>
-void hypercube<T>::brute_show(const std::vector<std::vector<std::vector<T>>> &z, int depth, int length1, int length2)
-{
-
-	for (int k(0); k<length1; k++)
-	{
-		for (int i(0); i<length2; i++)
-		{
-			std::cout << "__résultat["<<i<<"]["<<k<<"]["<<0<<"]= " << z[i][k][0] << std::endl;
-		}
-	}
 }
 
 
@@ -586,6 +897,28 @@ int hypercube<T>::get_binary_from_fits(){
 	objetfichier.close();
 
 	return n;
+}
+
+template<typename T>
+void hypercube<T>::write_in_file(std::vector<std::vector<std::vector<T>>> &file_in, std::string filename){
+	int dim_0 = file_in.size();
+	int dim_1 = file_in[0].size();
+	int dim_2 = file_in[0][0].size();
+
+	std::vector<T> file_in_flat(dim_0*dim_1*dim_2,0.);
+
+	for(int k=0; k<dim_0; k++)
+	{
+		for(int j=0; j<dim_1; j++)
+		{
+			for(int i=0; i<dim_2; i++)
+			{
+				file_in_flat[k*dim_2*dim_1+j*dim_2+i] = file_in[k][j][i];
+			}
+		}
+	}
+
+	write_vector_to_file(file_in_flat, filename);
 }
 
 template<typename T>
@@ -652,51 +985,107 @@ std::vector<T> hypercube<T>::read_vector_from_file(std::string filename)
 }
 
 template<typename T>
-void hypercube<T>::get_array_from_fits(parameters<T> &M){
+std::vector <std::vector<std::vector<T>>> hypercube<T>::get_array_from_fits(parameters<T> &M){
+	std::cout<<" On entre la boucle de lecture !!!!!! "<<std::endl;
+	std::cin.ignore();
+
 	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
 
-        PHDU& image = pInfile->pHDU();
+    PHDU& image = pInfile->pHDU();
 	std::valarray<T> contents;
-        image.readAllKeys();
+    image.readAllKeys();
 
-        image.read(contents);
+    image.read(contents);
 
         // this doesn't print the data, just header info.
-        // std::cout << image << std::endl;
+	std::cout << image << std::endl;
 
-        long ax1(image.axis(0));
-        long ax2(image.axis(1));
-        long ax3(image.axis(2));
-	long ax4(image.axis(3));
+    long ax1(image.axis(0));
+    long ax2(image.axis(1));
+    long ax3(image.axis(2));
+//	long ax4(image.axis(3));
 
 	this->dim_data[0]=ax1;
 	this->dim_data[1]=ax2;
 	this->dim_data[2]=ax3;
 
-	std::vector <std::vector<std::vector<T>>> z(dim_data[0], std::vector<std::vector<T>>(dim_data[1], std::vector<T>(dim_data[2],0.)));
+	std::cout<<"--> dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"--> dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"--> dim_data[2] = "<<dim_data[2]<<std::endl;
 
-	for(int i=0; i<dim_data[2]; i++)
+	std::cout<<"  "<<std::endl;
+	std::cout<<"  "<<std::endl;
+
+	std::cout<<"--> contents[0] = "<<contents[0]<<std::endl;
+	std::cout<<"--> contents[1] = "<<contents[1]<<std::endl;
+	std::cout<<"--> contents[2] = "<<contents[2]<<std::endl;
+	std::cout<<"--> contents[3] = "<<contents[3]<<std::endl;
+	std::cout<<"--> contents[4] = "<<contents[4]<<std::endl;
+	std::cout<<"--> contents[5] = "<<contents[5]<<std::endl;
+
+	std::cout<<"  "<<std::endl;
+	std::cout<<"  "<<std::endl;
+
+	std::cout<<"--> contents[0][0][0] = "<<contents[0]<<std::endl;
+	std::cout<<"--> contents[1][1][0] = "<<contents[1*ax3*ax2+1*ax3]<<std::endl;
+	std::cout<<"--> contents[1][2][0] = "<<contents[1*ax1*ax2+2*ax1]<<std::endl;
+	std::cout<<"--> contents[2][1][0] = "<<contents[2*ax1*ax2+1*ax1]<<std::endl;
+	std::cout<<"--> contents[2][2][0] = "<<contents[2*ax1*ax2+2*ax1]<<std::endl;
+	std::cout<<"--> contents[3][3][0] = "<<contents[3*ax1*ax2+3*ax1]<<std::endl;
+	std::cout<<"--> contents[4][4][0] = "<<contents[4*ax1*ax2+4*ax1]<<std::endl;
+	std::cout<<"--> contents[5][5][0] = "<<contents[5*ax1*ax2+5*ax1]<<std::endl;
+//	exit(0);
+	std::vector <std::vector<std::vector<T>>> z_transpose(ax3, std::vector<std::vector<T>>(ax2, std::vector<T>(ax1,0.)));
+
+	std::cout<<" On entre la boucle de copie !!!!!! "<<std::endl;
+	std::cin.ignore();
+
+	for(int k=0; k<ax3; k++)
 	{
-		for(int j=0; j<dim_data[1]; j++)
+		for(int j=0; j<ax2; j++)
 		{
-		for(int k=0; k<dim_data[0]; k++)
+			for(int i=0; i<ax1; i++)
 			{
-				z[k][j][i] = contents[k*ax3*ax2+j*ax3+i];
+				z_transpose[k][j][i] = contents[k*ax1*ax2+j*ax1+i];
+//				z[k][j][i] = contents[k*ax3*ax2+j*ax3+i];
 			}
 		}
 	}
+	std::cout<<" Ligne suivante !!!!!! "<<std::endl;
 
-	this->data=z;
-	z=std::vector<std::vector<std::vector<T>>>();
+	std::cin.ignore();
+
+	std::vector <std::vector<std::vector<T>>> z(ax1, std::vector<std::vector<T>>(ax2, std::vector<T>(ax3,0.)));
+	for(int k=0; k<ax3; k++)
+	{
+		for(int j=0; j<ax2; j++)
+		{
+			for(int i=0; i<ax1; i++)
+			{
+				z[i][j][k] = z_transpose[k][j][i];
+//				z[k][j][i] = contents[k*ax3*ax2+j*ax3+i];
+			}
+		}
+	}
+	std::cout<<" Ligne suivante !!!!!! "<<std::endl;
+	z_transpose.clear();//=std::vector<std::vector<std::vector<T>>>();
+
+
+	std::cout<<" On a fini ! "<<std::endl;
+
+	return z;
 }
 
 template<typename T>
-void hypercube<T>::get_noise_map_from_GHIGLS(parameters<T> &M, std::vector <std::vector<T>>& noise_map){
+void hypercube<T>::get_noise_map_from_DHIGLS(parameters<T> &M, std::vector <std::vector<T>>& noise_data, std::vector <std::vector<T>>& noise_cube){
+
+	std::cout << "M.filename_fits = " <<M.filename_fits<< std::endl;
+
 	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
 
 	PHDU& image = pInfile->pHDU();
 
-    ExtHDU& extension = pInfile->extension(2);
+    ExtHDU& extension = pInfile->extension(3);
 
 	std::valarray<T> contents;
     extension.readAllKeys();
@@ -713,7 +1102,7 @@ void hypercube<T>::get_noise_map_from_GHIGLS(parameters<T> &M, std::vector <std:
 	dim[0]=ax1;
 	dim[1]=ax2;
 
-	std::vector <std::vector<T>> z(dim[0], std::vector<T>(dim[1],0.));//, std::vector<T>(dim_data[2],0.)));
+	std::vector <std::vector<T>> z(dim[1], std::vector<T>(dim[0],0.));//, std::vector<T>(dim_data[2],0.)));
 
 	int i__=0;
 	for(int j=0; j<dim[1]; j++)
@@ -723,21 +1112,24 @@ void hypercube<T>::get_noise_map_from_GHIGLS(parameters<T> &M, std::vector <std:
 			z[j][k] = contents[dim[0]*j+k];
 		}
 	}
-	noise_map = z;
-	//why not directly noise_map[][] = ... ?
-/*
-	for(int j=0; j<dim[1]; j++)
-	{
-		for(int k=0; k<dim[0]; k++)
-		{
-			printf("z[%d][%d] = %f\n",k,j,z[k][j]);
-		}
-	}
-*/
+
+
+	std::vector <std::vector<T>> z_data(this->dim_data[0], std::vector<T>(this->dim_data[1],0.));//, std::vector<T>(dim_data[2],0.)));
+	reshape_noise_up_data(z, z_data, dim[1], dim[0]);//!<Given std_data_raw (whole fits noise map), it returns std_data (adapted to the spatial positions of this->data). dim1, dim0 = spatial dimensions of whole fits noise map.
+	z=std::vector<std::vector<T>>();
+
+	noise_data = z_data;
+	z_data=std::vector<std::vector<T>>();
+
+	std::vector <std::vector<T>> z_cube(this->dim_cube[0], std::vector<T>(this->dim_cube[1],0.));//, std::vector<T>(dim_data[2],0.)));
+	reshape_noise_up_cube(noise_data, z_cube); //!<When given std_data (noise map related to the spatial position of this->data), it returns std_cube (the noise map used through multiresolution)
+
+	noise_cube = z_cube;
+	z_cube=std::vector<std::vector<T>>();
 }
 
 template<typename T>
-void hypercube<T>::get_noise_map_from_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map){
+void hypercube<T>::get_noise_map_from_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_data, std::vector <std::vector<T>>& noise_cube){
 	std::auto_ptr<FITS> pInfile(new FITS(M.filename_noise,Read,true));
 
     PHDU& image = pInfile->pHDU();
@@ -763,8 +1155,19 @@ void hypercube<T>::get_noise_map_from_fits(parameters<T> &M, std::vector <std::v
 			z[j][k] = contents[dim[1]*j+k];
 		}
 	}
-	noise_map=z;
+
+	std::vector <std::vector<T>> z_data(this->dim_data[0], std::vector<T>(this->dim_data[1],0.));//, std::vector<T>(dim_data[2],0.)));
+	reshape_noise_up_data(z, z_data, dim[1], dim[0]);//!<Given std_data_raw (whole fits noise map), it returns std_data (adapted to the spatial positions of this->data). dim1, dim0 = spatial dimensions of whole fits noise map.
 	z=std::vector<std::vector<T>>();
+
+	noise_data = z_data;
+	z_data=std::vector<std::vector<T>>();
+
+	std::vector <std::vector<T>> z_cube(this->dim_cube[0], std::vector<T>(this->dim_cube[1],0.));//, std::vector<T>(dim_data[2],0.)));
+	reshape_noise_up_cube(noise_data, z_cube); //!<When given std_data (noise map related to the spatial position of this->data), it returns std_cube (the noise map used through multiresolution)
+
+	noise_cube = z_cube;
+	z_cube=std::vector<std::vector<T>>();
 }
 
 template<typename T>
@@ -933,7 +1336,7 @@ int hypercube<T>::save_noise_map_in_fits(parameters<T> &M, std::vector <std::vec
 	long ax1 = long(noise_map.size());
 	long ax2 = long(noise_map[0].size());
     long naxis    =   2;      
-    long naxes[2] = { ax1, ax2 };   
+    long naxes[2] = { ax1, ax2 };   	
     
     // declare auto-pointer to FITS at function scope. Ensures no resources
     // leaked if something fails in dynamic allocation.
@@ -969,14 +1372,14 @@ int hypercube<T>::save_noise_map_in_fits(parameters<T> &M, std::vector <std::vec
     // calculating naxes[0]*naxes[1]) but it demonstrates  use of the 
     // C++ standard library accumulate algorithm.    
     nelements = std::accumulate(&naxes[0],&naxes[naxis],1,std::multiplies<long>());
-    std::valarray<float> array_T(nelements);
-    for (long j = 0; j < vectorLength; ++j){;
+    std::valarray<T> array_T(nelements);
+    for (long j = 0; j < vectorLength; ++j){
     	for (int i = 0; i < numberOfRows; ++i)
     	{
-        	array_T[i+j*numberOfRows] = float(noise_map[i][j]);     
+        	array_T[i+j*numberOfRows] = T(noise_map[j][i]);     
     	}
 	}
-    // create some data for the image extension.
+   // create some data for the image extension.
     long fpixel(1);
     
     //add two keys to the primary header, one long, one complex.
@@ -1001,496 +1404,119 @@ int hypercube<T>::save_noise_map_in_fits(parameters<T> &M, std::vector <std::vec
 }
 
 template<typename T>
-void hypercube<T>::display_cube(int rang)
-{
-	std::vector<float> z(this->dim_cube[0]*this->dim_cube[1],0.);
+int hypercube<T>::save_grid_in_fits(parameters<T> &M, std::vector <std::vector<std::vector<T>>>& grid){
+	long ax1 = long(grid.size()); //3*n_gauss
+	long ax2 = long(grid[0].size()); //dim_y
+	long ax3 = long(grid[0][0].size()); //dim_x
+    long naxis = 3;      
 
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
+//	std::cout<<"naxes : ax1,ax2,ax3 = "<<ax1<<","<<ax2<<","<<ax3<<std::endl;
+//	std::cout<<"grid.size() : " << grid.size() << " , " << grid[0].size() << " , " << grid[0][0].size() <<  std::endl;
+
+    long naxes[3] = { ax1, ax2, ax3 };   
+    long naxes_bis[3] = { ax3, ax2, ax1 };   
+   
+//	std::cout<<"ax1 = "<<ax1<<std::endl;
+//	std::cout<<"ax2 = "<<ax2<<std::endl;
+//	std::cout<<"ax3 = "<<ax3<<std::endl;
+
+	  // declare auto-pointer to FITS at function scope. Ensures no resources
+    // leaked if something fails in dynamic allocation.
+    std::auto_ptr<FITS> pFits(0);
+
+//	std::cout<<"fileout = "<<M.fileout<<std::endl;
+
+	//adding a "!" to the filename, it allows overwritting
+	const std::string fileName = "!" + M.name_without_extension+".fits";
+//	std::cout<<"fileName = "<<fileName<<std::endl;
+
+    try
+    {                
+        // this image is unsigned short data, demonstrating the cfitsio extension
+        // to the FITS standard.
+		if(M.float_mode){
+		    pFits.reset( new FITS(fileName , FLOAT_IMG , naxis , naxes_bis ) );
+		}else if(M.double_mode){
+		    pFits.reset( new FITS(fileName , DOUBLE_IMG , naxis , naxes_bis ) );
 		}
-	}
-
-	const float* zptr = &(z[0]);
-	const int colors = 1;
-	plt::clf();
-	plt::title("Vue en coupe de cube");
-	plt::imshow(zptr, this->dim_cube[0], this->dim_cube[1], colors);
-
-	plt::save("imshow_cube.png");
-	std::cout << "Result saved to 'imshow_cube.png'.\n"<<std::endl;
-}
-
-template<typename T>
-void hypercube<T>::display_data(int rang)
-{
-	std::vector<float> z(this->dim_data[0]*this->dim_data[1],0.);
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z[i*this->dim_data[1]+j] = this->data[i][j][rang];
-		}
-	}
-
-	const float* zptr = &(z[0]);
-	const int colors = 1;
-
-	std::string s_rang = std::to_string(rang);
-	char const *pchar_rang = s_rang.c_str();
-	char str[100];//220
-	strcpy (str,"imshow_data_rang_");
-	strcat (str,pchar_rang);
-	strcat (str,".png");
-	puts (str);
-
-	plt::title("Vue en coupe de data");
-	plt::imshow(zptr, this->dim_data[0], this->dim_data[1], colors);
-
-	plt::save(str);
-	std::cout << "Result saved to "<<str<<std::endl;
-}
-
-
-template<typename T>
-void hypercube<T>::display(std::vector<std::vector<std::vector<T>>> &tab, int rang)
-{
-	int dim_[3];
-	dim_[0]=tab.size();
-	dim_[1]=tab[0].size();
-	dim_[2]=tab[0][0].size();
-	std::vector<float> z(dim_[0]*dim_[1],0.);
-
-	for(int i=0;i<dim_[0];i++){
-		for(int j=0;j<dim_[1];j++){
-			z[i*dim_[1]+j] = tab[i][j][rang];
-		}
-	}
-
-	const float* zptr = &(z[0]);
-	const int colors = 1;
-	plt::clf();
-	plt::title("Vue en coupe de data");
-	plt::imshow(zptr, dim_[0], dim_[1], colors);
-
-	plt::save("imshow.png");
-	std::cout << "Result saved to 'imshow.png'.\n"<<std::endl;
-}
-
-template<typename T>
-void hypercube<T>::plot_line(std::vector<std::vector<std::vector<T>>> &params, int ind_x, int ind_y, int n_gauss_i) {
-
-	std::vector<T> model(this->dim_cube[2],0.);
-	std::vector<T> cube_line(this->dim_cube[2],0.);
-	std::vector<T> params_line(3*n_gauss_i,0.);
-	std::cout<< dim_cube[2] <<std::endl;
-	for(int i=0; i<params_line.size(); i++) {
-		params_line[i]=params[i][ind_y][ind_x];
-	}
-	for(int i=0; i<n_gauss_i; i++) {
-		for(int k=0; k<this->dim_cube[2]; k++) {
-			model[k]+= model_function(k, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
-		}
-	}
-	for(int k=0; k<this->dim_cube[2]; k++) {
-		cube_line[k]= cube[ind_x][ind_y][k];
-	}
-    std::vector<T> x(this->dim_cube[2]);
-    for(int i=0; i<this->dim_cube[2]; ++i) {
-        x.at(i) = i;
     }
-   	plt::clf();
-    // Set the size of output image = 1200x780 pixels
-    plt::figure_size(1200, 780);
-
-    // Plot line from given x and y data. Color is selected automatically.
-    plt::plot(x, cube_line,"r");
-
-    // Plot line from given x and y data. Color is selected automatically.
-    plt::plot(x, model,"b");
-    plt::named_plot("data", x, cube_line);
-    plt::named_plot("model", x, model);
-
-    plt::xlim(0, this->dim_cube[2]);
-
-    // Add graph title
-    plt::title("Model vs Data Plot");
-    // Enable legend.
-    plt::legend();
-
-	std::string s_x = std::to_string(ind_x);
-	char const *pchar_x = s_x.c_str();
-	std::string s_y = std::to_string(ind_y);
-	char const *pchar_y = s_y.c_str();
-
-	char str[100];//220
-	strcpy (str,"./plot_");
-	strcat (str,pchar_x);
-	strcat (str,"_");
-	strcat (str,pchar_y);
-	strcat (str,".png");
-	puts (str);
-
-    // save figure
-    std::cout << "Saving result to " << str << std::endl;;
-    plt::save(str);
-	//plt::show();
-}
-
-template<typename T>
-void hypercube<T>::plot_data_line(int ind_x, int ind_y) {
-	std::vector<T> data_line(this->dim_cube[2],0.);
-
-	for(int k=0; k<this->dim_data[2]; k++) {
-		data_line[k]= this->data[ind_x][ind_y][k];
-	}
-
-    std::vector<T> x(this->dim_data[2]);
-    for(int i=0; i<this->dim_data[2]; ++i) {
-        x.at(i) = i;
+    catch (FITS::CantCreate)
+    {
+          // ... or not, as the case may be.
+          return -1;       
     }
-   	plt::clf();
-    // Set the size of output image = 1200x780 pixels
-    plt::figure_size(1200, 780);
+    
+    // references for clarity.
+    long& vectorLength = naxes[0];
+    long& numberOfRows = naxes[1];
+    long& depth = naxes[2];
+    
+    long nelements(1); 
 
-    // Plot line from given x and y data. Color is selected automatically.
-    plt::plot(x, data_line,"r");
+    // C++ standard library accumulate algorithm.    
+    nelements = std::accumulate(&naxes[0],&naxes[naxis],1,std::multiplies<long>());
+    std::valarray<T> array_T(nelements);
+	/*
+    for (long j = 0; j < depth; ++j){
+    	for (int i = 0; i < numberOfRows; ++i){
+			for (int k = 0; k < vectorLength; ++k){
+        		array_T[k+i*vectorLength + j*numberOfRows*vectorLength] = T(grid[k][i][j]);     
+			}
+    	}
+	}
+	*/
 
-    // Plot line from given x and y data. Color is selected automatically.
-    plt::named_plot("data", x, data_line);
+//	std::cout<<"naxes : vectorLength,numberOfRows,depth = "<<vectorLength<<","<<numberOfRows<<","<<depth<<std::endl;
 
-    plt::xlim(0, this->dim_data[2]);
+    for (long j = 0; j < depth; ++j){
+    	for (int i = 0; i < numberOfRows; ++i){
+			for (int k = 0; k < vectorLength; ++k){
+        		array_T[j+i*depth+k*depth*numberOfRows] = T(grid[k][i][j]);     
+			}
+    	}
+	}
+    // create some data for the image extension.
+    long fpixel(1);
+    
+    //add two keys to the primary header, one long, one complex.
+	int n_y = grid[0].size();
+	int n_x = grid[0][0].size();
+ 
+    pFits->pHDU().addKey("n_gauss", M.n_gauss,"Number of gaussians."); 
+    pFits->pHDU().addKey("dim_y", n_y,"Spatial dimension on the Y axis."); 
+    pFits->pHDU().addKey("dim_x", n_x,"Spatial dimension on the X axis."); 
+    pFits->pHDU().addKey("lambda_amp",M.lambda_amp,"Hyperparameter to be tuned (smoothness).");  
+    pFits->pHDU().addKey("lambda_mu",M.lambda_mu,"Hyperparameter to be tuned (smoothness).");  
+    pFits->pHDU().addKey("lambda_sig",M.lambda_sig,"Hyperparameter to be tuned (smoothness).");  
+    pFits->pHDU().addKey("lambda_var_sig",M.lambda_var_sig,"Hyperparameter to be tuned (smoothness).");  
+    pFits->pHDU().addKey("maxiter",M.maxiter,"Maximum of iterations at each multiresolution level.");
+    pFits->pHDU().addKey("lb_sig",M.lb_sig,"Lower bounds for sigma during multiresolution.");  
+    pFits->pHDU().addKey("ub_sig",M.ub_sig,"Upper bounds for sigma during multiresolution.");
+    pFits->pHDU().addKey("amp_fact_init",M.amp_fact_init,"Amplitude factor for the initial spectrum (if computed with ROHSA).");  
+    pFits->pHDU().addKey("sig_init",M.sig_init,"Sigma value for the initial spectrum (if computed with ROHSA).");  
+    pFits->pHDU().addKey("lb_sig_init",M.lb_sig_init,"Lower bounds for sigma initialization (if computed with ROHSA).");  
+    pFits->pHDU().addKey("ub_sig_init",M.ub_sig_init,"Upper bounds for sigma initialization (if computed with ROHSA).");  
+    pFits->pHDU().addKey("init_option",M.init_option,"Option chosen to initialize the spectrum (if computed with ROHSA).");
+    pFits->pHDU().addKey("maxiter_init",M.maxiter_init,"Maximum of iterations for the initialization of the spectrum (if computed with ROHSA).");
+    pFits->pHDU().addKey("lstd",M.lstd,"Lower index for the computation of the standard deviation map (if the std_map is computed on the fly)"); 
+    pFits->pHDU().addKey("ustd",M.ustd,"Upper index for the computation of the standard deviation map (if the std_map is computed on the fly)"); 
 
-    // Add graph title
-    plt::title("Model vs Data Plot");
-    // Enable legend.
-    plt::legend();
+    // The function PHDU& FITS::pHDU() returns a reference to the object representing 
+    // the primary HDU; PHDU::write( <args> ) is then used to write the data.
+//    pFits->pHDU().write(fpixel,nelements,array_T);
+    pFits->pHDU().write(fpixel,nelements,array_T);
+        
+    // PHDU's friend ostream operator. Doesn't print the entire array, just the
+    // required & user keywords, and is provided largely for testing purposes [see 
+    // readImage() for an example of how to output the image array to a stream].
+    
+//    std::cout << pFits->pHDU() << std::endl;
 
-	std::string s_x = std::to_string(ind_x);
-	char const *pchar_x = s_x.c_str();
-	std::string s_y = std::to_string(ind_y);
-	char const *pchar_y = s_y.c_str();
-
-	char str[100];//220
-	strcpy (str,"./plot_");
-	strcat (str,pchar_x);
-	strcat (str,"_");
-	strcat (str,pchar_y);
-	strcat (str,".png");
-	puts (str);
-
-    // save figure
-    std::cout << "Saving result to " << str << std::endl;;
-    plt::save(str);
-	//plt::show();
+	//	pFits->pHDU().write(fpixel, nelements, noise_map_valarray, nullPtr);
+    return 0;
 }
 
-template<typename T>
-void hypercube<T>::plot_lines(std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<std::vector<T>>> &cube_mean) {
 
-	std::cout<<"params.size() ="<<params.size()<<std::endl;
-	std::cout<<"params[0].size() ="<<params[0].size()<<std::endl;
-	std::cout<<"params[0][0].size() ="<<params[0][0].size()<<std::endl;
-	int nb_gaussian = int(floor(T(params.size())/3.));
-	for(int ind_x=0; ind_x<params[0].size(); ind_x++) {
-		for(int ind_y=0; ind_y<params[0][0].size(); ind_y++) {
-			std::vector<T> model(this->dim_cube[2],0.);
-			std::vector<T> cube_line(this->dim_cube[2],0.);
-			std::vector<T> params_line(params.size(),0.);
-//			std::cout<< dim_cube[2] <<std::endl;
-			for(int i=0; i<params_line.size(); i++) {
-				params_line[i]=params[i][ind_y][ind_x];
-			}
-			for(int i=0; i<params_line.size()/3; i++) {
-				for(int k=0; k<this->dim_cube[2]; k++) {
-					model[k]+= model_function(k+1, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
-				}
-			}
-
-			for(int k=0; k<this->dim_cube[2]; k++) {
-				cube_line[k]= cube_mean[ind_x][ind_y][k];
-			}
-
-			std::vector<T> x(this->dim_cube[2]);
-			for(int i=0; i<this->dim_cube[2]; ++i) {
-				x.at(i) = i;
-			}
-
-			printf("model[%d] = %f \n",3,model[3]);
-			printf("cube_line[%d] = %f \n",3,cube_line[3]);
-
-			plt::clf();
-			// Set the size of output image = 1200x780 pixels
-			plt::figure_size(1200, 780);
-
-			// Plot line from given x and y data. Color is selected automatically.
-			plt::plot(x, cube_line,"r");
-			plt::plot(x, model,"b");
-
-			// Plot line from given x and y data. Color is selected automatically.
-			plt::named_plot("data", x, cube_line);
-			plt::named_plot("model", x, model);
-
-			plt::xlim(0, this->dim_cube[2]);
-
-			// Add graph title
-			plt::title("Model vs Data Plot");
-			// Enable legend.
-			plt::legend();
-
-		//params[0].size()
-
-			std::string s_dimensions_1 = std::to_string(params[0].size());
-			char const *pchar_dimensions_1 = s_dimensions_1.c_str();
-			std::string s_dimensions_2 = std::to_string(params[0][0].size());
-			char const *pchar_dimensions_2 = s_dimensions_2.c_str();
-			std::string s_x = std::to_string(ind_x);
-			char const *pchar_x = s_x.c_str();
-			std::string s_y = std::to_string(ind_y);
-			char const *pchar_y = s_y.c_str();
-
-			char str[100];//220
-			strcpy (str,"./plot_dim_");
-			strcat (str,pchar_dimensions_1);
-			strcat (str,"_by_");
-			strcat (str,pchar_dimensions_2);
-			strcat (str,"_position_");
-			strcat (str,pchar_x);
-			strcat (str,"_by_");
-			strcat (str,pchar_y);
-			strcat (str,".png");
-			puts (str);
-
-			// save figure
-			std::cout << "Saving result to " << str << std::endl;;
-			plt::save(str);
-			//plt::show();
-		}
-	}
-}
-
-template<typename T>
-void hypercube<T>::plot_multi_lines(std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<std::vector<T>>> &cube_mean) {
-
-	std::string color[] = {"g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k",};
-	std::cout<<"params.size() ="<<params.size()<<std::endl;
-	std::cout<<"params[0].size() ="<<params[0].size()<<std::endl;
-	std::cout<<"params[0][0].size() ="<<params[0][0].size()<<std::endl;
-	int nb_gaussian = int(floor(T(params.size())/3.));
-
-	std::vector<T> x(this->dim_cube[2]);
-	for(int i=0; i<this->dim_cube[2]; ++i) {
-		x.at(i) = i;
-	}
-			plt::clf();
-			// Set the size of output image = 1200x780 pixels
-			plt::figure_size(1200, 780);
-	for(int ind_x=0; ind_x<params[0].size(); ind_x++) {
-		for(int ind_y=0; ind_y<params[0][0].size(); ind_y++) {
-
-			std::vector<T> cube_line(this->dim_cube[2],0.);
-			std::vector<T> params_line(params.size(),0.);
-			std::vector<T> model(this->dim_cube[2],0.);
-
-			for(int i=0; i<params_line.size(); i++) {
-				params_line[i]=params[i][ind_y][ind_x];
-			}
-
-		for(int n_g=0; n_g<nb_gaussian; n_g++) {
-			std::vector<T> model_g(this->dim_cube[2],0.);
-			for(int k=0; k<this->dim_cube[2]; k++) {
-				model_g[k]+= model_function(k+1, params_line[3*n_g], params_line[1+3*n_g], params_line[2+3*n_g]);
-			}
-
-/*
-			std::string p_str_number = std::to_string(n_g);
-			char const *p_name_model_g = p_str_number.c_str();
-			char str_number[100];//220
-			strcpy (str_number,"gaussian_number_");
-			strcat (str_number,p_name_model_g);
-			puts (str_number);
-			plt::named_plot(str_number, x, model_g);
-//			std::cout<<"str_number = "<<str_number<<std::endl;
-*/
-
-			plt::plot(x, model_g, color[n_g]);
-
-
-		}
-//			std::cout<< dim_cube[2] <<std::endl;
-			for(int i=0; i<nb_gaussian; i++) {
-				for(int k=0; k<this->dim_cube[2]; k++) {
-					model[k]+= model_function(k+1, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
-				}
-			}
-
-
-			for(int k=0; k<this->dim_cube[2]; k++) {
-				cube_line[k]= cube_mean[ind_x][ind_y][k];
-			}
-
-
-
-
-			// Plot line from given x and y data. Color is selected automatically.
-			plt::plot(x, cube_line, "r--");//color[0]);
-			plt::plot(x, model, "b--");//color[0]);
-
-			// Plot line from given x and y data. Color is selected automatically.
-			plt::named_plot("data", x, cube_line);
-			plt::named_plot("model", x, model);
-
-			plt::xlim(0, this->dim_cube[2]);
-
-			// Add graph title
-			plt::title("Model vs Data Plot");
-			// Enable legend.
-			plt::legend();
-
-		//params[0].size()
-
-			std::string s_dimensions_1 = std::to_string(params[0].size());
-			char const *pchar_dimensions_1 = s_dimensions_1.c_str();
-			std::string s_dimensions_2 = std::to_string(params[0][0].size());
-			char const *pchar_dimensions_2 = s_dimensions_2.c_str();
-			std::string s_x = std::to_string(ind_x);
-			char const *pchar_x = s_x.c_str();
-			std::string s_y = std::to_string(ind_y);
-			char const *pchar_y = s_y.c_str();
-
-			char str[100];//220
-			strcpy (str,"./plot_dim_");
-			strcat (str,pchar_dimensions_1);
-			strcat (str,"_by_");
-			strcat (str,pchar_dimensions_2);
-			strcat (str,"_position_");
-			strcat (str,pchar_x);
-			strcat (str,"_by_");
-			strcat (str,pchar_y);
-			strcat (str,".png");
-			puts (str);
-
-			// save figure
-			std::cout << "Saving result to " << str << std::endl;;
-			plt::save(str);
-			plt::clf();
-			//plt::show();
-
-		}
-	}
-}
-
-template<typename T>
-void hypercube<T>::plot_multi_lines(std::vector<std::vector<std::vector<T>>> &params, std::vector<std::vector<std::vector<T>>> &cube_mean, std::string some_string) {
-
-	std::string color[] = {"g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k","g", "r", "c", "m", "y","k",};
-	std::cout<<"params.size() ="<<params.size()<<std::endl;
-	std::cout<<"params[0].size() ="<<params[0].size()<<std::endl;
-	std::cout<<"params[0][0].size() ="<<params[0][0].size()<<std::endl;
-	int nb_gaussian = int(floor(T(params.size())/3.));
-
-	std::vector<T> x(this->dim_cube[2]);
-	for(int i=0; i<this->dim_cube[2]; ++i) {
-		x.at(i) = i;
-	}
-			plt::clf();
-			// Set the size of output image = 1200x780 pixels
-			plt::figure_size(1200, 780);
-	for(int ind_x=0; ind_x<params[0].size(); ind_x++) {
-		for(int ind_y=0; ind_y<params[0][0].size(); ind_y++) {
-
-			std::vector<T> cube_line(this->dim_cube[2],0.);
-			std::vector<T> params_line(params.size(),0.);
-			std::vector<T> model(this->dim_cube[2],0.);
-
-			for(int i=0; i<params_line.size(); i++) {
-				params_line[i]=params[i][ind_y][ind_x];
-			}
-
-		for(int n_g=0; n_g<nb_gaussian; n_g++) {
-			std::vector<T> model_g(this->dim_cube[2],0.);
-			for(int k=0; k<this->dim_cube[2]; k++) {
-				model_g[k]+= model_function(k+1, params_line[3*n_g], params_line[1+3*n_g], params_line[2+3*n_g]);
-			}
-
-/*
-			std::string p_str_number = std::to_string(n_g);
-			char const *p_name_model_g = p_str_number.c_str();
-			char str_number[100];//220
-			strcpy (str_number,"gaussian_number_");
-			strcat (str_number,p_name_model_g);
-			puts (str_number);
-			plt::named_plot(str_number, x, model_g);
-//			std::cout<<"str_number = "<<str_number<<std::endl;
-*/
-
-			plt::plot(x, model_g, color[n_g]);
-
-
-		}
-//			std::cout<< dim_cube[2] <<std::endl;
-			for(int i=0; i<nb_gaussian; i++) {
-				for(int k=0; k<this->dim_cube[2]; k++) {
-					model[k]+= model_function(k+1, params_line[3*i], params_line[1+3*i], params_line[2+3*i]);
-				}
-			}
-
-
-			for(int k=0; k<this->dim_cube[2]; k++) {
-				cube_line[k]= cube_mean[ind_x][ind_y][k];
-			}
-
-
-
-
-			// Plot line from given x and y data. Color is selected automatically.
-			plt::plot(x, cube_line, "r--");//color[0]);
-			plt::plot(x, model, "b--");//color[0]);
-
-			// Plot line from given x and y data. Color is selected automatically.
-			plt::named_plot("data", x, cube_line);
-			plt::named_plot("model", x, model);
-
-			plt::xlim(0, this->dim_cube[2]);
-
-			// Add graph title
-			plt::title("Model vs Data Plot");
-			// Enable legend.
-			plt::legend();
-
-		//params[0].size()
-
-			std::string s_dimensions_1 = std::to_string(params[0].size());
-			char const *pchar_dimensions_1 = s_dimensions_1.c_str();
-			std::string s_dimensions_2 = std::to_string(params[0][0].size());
-			char const *pchar_dimensions_2 = s_dimensions_2.c_str();
-			std::string s_x = std::to_string(ind_x);
-			char const *pchar_x = s_x.c_str();
-			std::string s_y = std::to_string(ind_y);
-			char const *pchar_y = s_y.c_str();
-			char const *p_some_string = some_string.c_str();
-
-			char str[100];//220
-			strcpy (str,"./plot_dim_");
-			strcat (str,pchar_dimensions_1);
-			strcat (str,"_by_");
-			strcat (str,pchar_dimensions_2);
-			strcat (str,"_position_");
-			strcat (str,pchar_x);
-			strcat (str,"_by_");
-			strcat (str,pchar_y);
-			strcat (str,"_note_");
-			strcat (str,p_some_string);
-			strcat (str,".png");
-			puts (str);
-
-			// save figure
-			std::cout << "Saving result to " << str << std::endl;;
-			plt::save(str);
-			plt::clf();
-			//plt::show();
-
-		}
-	}
-}
 
 template<typename T>
 T hypercube<T>::model_function(int x, T a, T m, T s) {
@@ -1499,359 +1525,6 @@ T hypercube<T>::model_function(int x, T a, T m, T s) {
 
 }
 
-template<typename T>
-void hypercube<T>::display_result(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i)
-{
-	std::vector<std::vector<T>> model(this->dim_cube[0],std::vector<T>(this->dim_cube[1],0.));
-
-	for(int p(0); p<this->dim_cube[0]; p++) {
-		for(int j(0); j<this->dim_cube[1]; j++) {
-			for(int i(0); i<n_gauss_i; i++) {
-		model[p][j]+= model_function(rang+1, params[3*i][j][p], params[1+3*i][j][p], params[2+3*i][j][p]);
-			}
-		}
-	}
-
-	std::vector<float> z_cube(this->dim_cube[0]*this->dim_cube[1],0.);
-
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){ 
-			z_cube[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
-		}
-	}
-
-	const float* zptr = &(z_cube[0]);
-	const int colors = 1;
-	plt::clf();
-	plt::title("Vue en coupe de model");//	plt::title("Vue en coupe de data");
-	plt::imshow(zptr, this->dim_cube[0], this->dim_cube[1], colors);
-	plt::save("imshow_result.png");
-//	plt::show();
-	std::cout << "Result saved to 'imshow_result.png'.\n"<<std::endl;
-}
-
-template<typename T>
-void hypercube<T>::display_result_and_data(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, bool dat_or_not)
-{
-
-	std::cout << "fonction affichage : params.size() : " << params.size() << " , " << params[0].size() << " , " << params[0][0].size() <<  std::endl;
-
-	std::vector<std::vector<T>> model(this->dim_data[0],std::vector<T>(this->dim_data[1],0.));
-
-//	std::cout<< "début de la fonction affichage"<<std::endl;
-
-	for(int p(0); p<this->dim_data[0]; p++) {
-		for(int j(0); j<this->dim_data[1]; j++) {
-			for(int i(0); i<n_gauss_i; i++) {
-		model[p][j]+= model_function(rang+1, params[3*i][j][p], params[1+3*i][j][p], params[2+3*i][j][p]);
-			}
-		}
-	}
-
-//	std::cout<< "milieu du début de la fonction affichage"<<std::endl;
-
-	int offset_0 = (this->dim_cube[0]-this->dim_data[0])/2;
-	int offset_1 = (this->dim_cube[1]-this->dim_data[1])/2;
-
-	if (dat_or_not){
-		offset_0=0;
-		offset_1=0;
-	}
-
-	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
-
-
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_model[(i+offset_1)*this->dim_cube[1]+j+offset_0] = model[i][j];//this->cube[i][j][rang];
-		}
-	}
-
-
-
-	std::vector<float> z_cube(this->dim_cube[0]*this->dim_cube[1],0.);
-
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_cube[i*this->dim_cube[1]+j] = this->cube[i][j][rang]; //index transpose, ordre : i,j 
-		}
-	}
-
-	const float* zptr_model = &(z_model[0]);
-	const float* zptr_cube = &(z_cube[0]);
-	const int colors = 1;
-
-	std::string s = std::to_string(rang);
-	char const *pchar = s.c_str();
-
-	char str[220];
-	strcpy (str,"imshow_data_vs_model_");
-	strcat (str,pchar);
-	strcat (str,".png");
-	puts (str);
-
-
-	plt::clf();
-//	std::cout<<" DEBUG "<<std::endl;
-//	plt::title();
-
-//	plt::suptitle("Données                      Modèle");
-
-	plt::subplot(1, 2, 2);
-		plt::imshow(zptr_model, this->dim_cube[0], this->dim_cube[1], colors);
-//			plt::title("Modèle");
-	plt::subplot(1, 2, 1);
-		plt::imshow(zptr_cube, this->dim_cube[0], this->dim_cube[1], colors);
-//			plt::title("Cube hyperspectral");
-	plt::save(str);
-//	plt::show();
-	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
-
-}
-
-template<typename T>
-void hypercube<T>::display_2_gaussiennes(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, int n1, int n2)
-{
-/*
-	std::vector<std::vector<T>> model(this->dim_cube[0],std::vector<T>(this->dim_cube[1],0.));
-
-	for(int p(0); p<this->dim_cube[0]; p++) {
-		for(int j(0); j<this->dim_cube[1]; j++) {
-		model[p][j]+= model_function(rang+1, params[3*0][j][p], params[1+3*0][j][p], params[2+3*0][j][p]) + model_function(rang+1, params[3*1][j][p], params[1+3*1][j][p], params[2+3*1][j][p]);
-		}
-	}
-
-	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
-
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_model[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
-		}
-	}
-*/
-
-	std::vector<std::vector<T>> model_premiere_gaussienne(this->dim_data[0],std::vector<T>(this->dim_data[1],0.));
-	for(int p(0); p<this->dim_data[0]; p++) {
-		for(int j(0); j<this->dim_data[1]; j++) {
-		model_premiere_gaussienne[p][j]+= model_function(rang+1, params[3*n1][j][p], params[1+3*n1][j][p], params[2+3*n1][j][p]);
-		}
-	}
-
-	std::vector<std::vector<T>> model_deuxieme_gaussienne(this->dim_data[0],std::vector<T>(this->dim_data[1],0.));
-	for(int p(0); p<this->dim_data[0]; p++) {
-		for(int j(0); j<this->dim_data[1]; j++) {
-		model_deuxieme_gaussienne[p][j]+= model_function(rang+1, params[3*n2][j][p], params[1+3*n2][j][p], params[2+3*n2][j][p]);// + model_function(rang+1, params[3*n3][j][p], params[1+3*n3][j][p], params[2+3*n3][j][p]);
-		}
-	}
-
-	std::vector<float> z_model_premiere_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_model_premiere_gaussienne[i*this->dim_data[1]+j] = model_premiere_gaussienne[i][j];//this->cube[i][j][rang];
-		}
-	}
-
-	std::vector<float> z_model_deuxieme_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_model_deuxieme_gaussienne[i*this->dim_data[1]+j] = model_deuxieme_gaussienne[i][j];//this->cube[i][j][rang];
-		}
-	}
-	// max_val = *std::max_element(z_model_deuxieme_gaussienne.begin(), z_model_deuxieme_gaussienne.end());
-
-	std::vector<float> z_model(this->dim_data[0]*this->dim_data[1],0.);
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_model[i*this->dim_data[1]+j] = z_model_premiere_gaussienne[i*this->dim_data[1]+j] + z_model_deuxieme_gaussienne[i*this->dim_data[1]+j];//this->cube[i][j][rang];
-		}
-	}
-
-//	z_model_premiere_gaussienne[0]=max_val;
-/*
-	std::vector<float> z_gauss_1(this->dim_cube[0]*this->dim_cube[1],0.);
-	std::vector<float> z_gauss_2(this->dim_cube[0]*this->dim_cube[1],0.);
-
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
-		}
-	}
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
-		}
-	}
-*/
-	const float* zptr_model = &(z_model[0]);
-	const float* zptr_gauss_1 = &(z_model_premiere_gaussienne[0]);
-	const float* zptr_gauss_2 = &(z_model_deuxieme_gaussienne[0]);
-
-	const int colors = 1;
-
-	std::string s = std::to_string(rang);
-	char const *pchar = s.c_str();
-	std::string s1 = std::to_string(n1);
-	char const *pchar_1 = s1.c_str();
-	std::string s2 = std::to_string(n2);
-	char const *pchar_2 = s2.c_str();
-	std::string s3 = std::to_string(n_gauss_i);
-	char const *pchar_3 = s3.c_str();
-
-	char str[220];
-	strcpy (str,"decomp_two_gauss_");
-	strcat (str,pchar);
-	strcat (str,"_n1_");
-	strcat (str,pchar_1);
-	strcat (str,"_n2_");
-	strcat (str,pchar_2);
-	strcat (str,"_number_");
-	strcat (str,pchar_3);
-	strcat (str,".png");
-	puts (str);
-
-
-	plt::clf();
-//	std::cout<<" DEBUG "<<std::endl;
-//	plt::title();
-
-//	plt::suptitle("Données                      Modèle");
-
-	plt::subplot(3, 1, 1);
-		plt::imshow(zptr_model, this->dim_data[0], this->dim_data[1], colors);
-//			plt::title("Modèle");
-	plt::subplot(3, 1, 2);
-		plt::imshow(zptr_gauss_1, this->dim_data[0], this->dim_data[1], colors);
-
-	plt::subplot(3, 1, 3);
-		plt::imshow(zptr_gauss_2, this->dim_data[0], this->dim_data[1], colors);
-
-//			plt::title("Cube hyperspectral");
-	plt::save(str);
-//	plt::show();
-	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
-}
-
-template<typename T>
-void hypercube<T>::display_2_gaussiennes_par_par_par(std::vector<std::vector<std::vector<T>>> &params,int rang, int n_gauss_i, int n1, int n2)
-{
-/*
-	std::vector<std::vector<T>> model(this->dim_cube[0],std::vector<T>(this->dim_cube[1],0.));
-
-	for(int p(0); p<this->dim_cube[0]; p++) {
-		for(int j(0); j<this->dim_cube[1]; j++) {
-		model[p][j]+= model_function(rang+1, params[3*0][j][p], params[1+3*0][j][p], params[2+3*0][j][p]) + model_function(rang+1, params[3*1][j][p], params[1+3*1][j][p], params[2+3*1][j][p]);
-		}
-	}
-
-	std::vector<float> z_model(this->dim_cube[0]*this->dim_cube[1],0.);
-
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_model[i*this->dim_cube[1]+j] = model[i][j];//this->cube[i][j][rang];
-		}
-	}
-*/
-
-	std::vector<std::vector<T>> model_premiere_gaussienne(this->dim_data[0],std::vector<T>(this->dim_data[1],0.));
-	for(int p(0); p<this->dim_data[0]; p++) {
-		for(int j(0); j<this->dim_data[1]; j++) {
-		model_premiere_gaussienne[p][j]+= model_function(rang+1, params[n1][j][p], params[n1][j][p], params[n1][j][p]);
-		}
-	}
-
-	std::vector<std::vector<T>> model_deuxieme_gaussienne(this->dim_data[0],std::vector<T>(this->dim_data[1],0.));
-	for(int p(0); p<this->dim_data[0]; p++) {
-		for(int j(0); j<this->dim_data[1]; j++) {
-		model_deuxieme_gaussienne[p][j]+= model_function(rang+1, params[n2][j][p], params[n2][j][p], params[n2][j][p]);// + model_function(rang+1, params[3*n3][j][p], params[1+3*n3][j][p], params[2+3*n3][j][p]);
-		}
-	}
-
-	std::vector<float> z_model_premiere_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_model_premiere_gaussienne[i*this->dim_data[1]+j] = model_premiere_gaussienne[i][j];//this->cube[i][j][rang];
-		}
-	}
-
-	std::vector<float> z_model_deuxieme_gaussienne(this->dim_data[0]*this->dim_data[1],0.);
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_model_deuxieme_gaussienne[i*this->dim_data[1]+j] = model_deuxieme_gaussienne[i][j];//this->cube[i][j][rang];
-		}
-	}
-	// max_val = *std::max_element(z_model_deuxieme_gaussienne.begin(), z_model_deuxieme_gaussienne.end());
-
-	std::vector<float> z_model(this->dim_data[0]*this->dim_data[1],0.);
-	for(int i=0;i<this->dim_data[0];i++){
-		for(int j=0;j<this->dim_data[1];j++){
-			z_model[i*this->dim_data[1]+j] = z_model_premiere_gaussienne[i*this->dim_data[1]+j] + z_model_deuxieme_gaussienne[i*this->dim_data[1]+j];//this->cube[i][j][rang];
-		}
-	}
-
-//	z_model_premiere_gaussienne[0]=max_val;
-/*
-	std::vector<float> z_gauss_1(this->dim_cube[0]*this->dim_cube[1],0.);
-	std::vector<float> z_gauss_2(this->dim_cube[0]*this->dim_cube[1],0.);
-
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
-		}
-	}
-	for(int i=0;i<this->dim_cube[0];i++){
-		for(int j=0;j<this->dim_cube[1];j++){
-			z_gauss_1[i*this->dim_cube[1]+j] = this->cube[i][j][rang];
-		}
-	}
-*/
-	const float* zptr_model = &(z_model[0]);
-	const float* zptr_gauss_1 = &(z_model_premiere_gaussienne[0]);
-	const float* zptr_gauss_2 = &(z_model_deuxieme_gaussienne[0]);
-
-	const int colors = 1;
-
-	std::string s = std::to_string(rang);
-	char const *pchar = s.c_str();
-	std::string s1 = std::to_string(n1);
-	char const *pchar_1 = s1.c_str();
-	std::string s2 = std::to_string(n2);
-	char const *pchar_2 = s2.c_str();
-	std::string s3 = std::to_string(n_gauss_i);
-	char const *pchar_3 = s3.c_str();
-
-	char str[220];
-	strcpy (str,"par_par_par_decomp_two_gauss_");
-	strcat (str,pchar);
-	strcat (str,"_n1_");
-	strcat (str,pchar_1);
-	strcat (str,"_n2_");
-	strcat (str,pchar_2);
-	strcat (str,"_number_");
-	strcat (str,pchar_3);
-	strcat (str,".png");
-	puts (str);
-
-
-	plt::clf();
-//	std::cout<<" DEBUG "<<std::endl;
-//	plt::title();
-
-//	plt::suptitle("Données                      Modèle");
-
-	plt::subplot(3, 1, 1);
-		plt::imshow(zptr_model, this->dim_data[0], this->dim_data[1], colors);
-//			plt::title("Modèle");
-	plt::subplot(3, 1, 2);
-		plt::imshow(zptr_gauss_1, this->dim_data[0], this->dim_data[1], colors);
-
-	plt::subplot(3, 1, 3);
-		plt::imshow(zptr_gauss_2, this->dim_data[0], this->dim_data[1], colors);
-
-//			plt::title("Cube hyperspectral");
-	plt::save(str);
-//	plt::show();
-	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
-}
 
 template<typename T>
 void hypercube<T>::mean_parameters(std::vector<std::vector<std::vector<T>>> &params, int num_gauss)
@@ -1873,85 +1546,6 @@ void hypercube<T>::mean_parameters(std::vector<std::vector<std::vector<T>>> &par
 	}
 }
 
-template<typename T>
-void hypercube<T>::display_avec_et_sans_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par,int plot_numero)
-{
-	int dim_0 = params[0][0].size();
-	int dim_1 = params[0].size();
-
-	std::vector<float> z_show(dim_0*dim_1,0.);
-
-	for(int i=0;i<dim_0;i++){
-		for(int j=0;j<dim_1;j++){
-			z_show[i*dim_1+j] = params[num_par+num_gauss*3][j][i];
-		}
-	}
-
-	const float* zptr_cube = &(z_show[0]);
-	const int colors = 1;
-
-	std::string s = std::to_string(plot_numero);
-	char const *pchar = s.c_str();
-
-
-	char str[220];
-	strcpy (str,"essai_plot_param_numero_");
-	strcat (str,pchar);
-	strcat (str,".png");
-	puts (str);
-
-
-	plt::clf();
-
-	plt::imshow(zptr_cube, dim_0, dim_1, colors);
-//			plt::title("Cube hyperspectral");
-	plt::save(str);
-//	plt::show();
-	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
-}
-
-template<typename T>
-void hypercube<T>::simple_plot_through_regu(std::vector<std::vector<std::vector<T>>> &params, int num_gauss, int num_par,int plot_numero, std::string name_bis)
-{
-	int dim_0 = params[0][0].size();
-	int dim_1 = params[0].size();
-
-	std::vector<float> z_show(dim_0*dim_1,0.);
-
-	for(int i=0;i<dim_0;i++){
-		for(int j=0;j<dim_1;j++){
-			z_show[i*dim_1+j] = params[num_par+num_gauss*3][j][i];
-		}
-	}
-
-	const float* zptr_cube = &(z_show[0]);
-	const int colors = 1;
-
-	std::string s_1 = std::to_string(num_par+num_gauss*3);
-	char const *pchar_1 = s_1.c_str();
-	std::string s_2 = std::to_string(plot_numero);
-	char const *pchar_2 = s_2.c_str();
-	char const *pchar_name_bis = name_bis.c_str();
-
-
-	char str[220];
-	strcpy (str,"plot_param_through_regu_resolution_");
-	strcat (str,pchar_2);
-	strcat (str,"_param_numero_");
-	strcat (str,pchar_1);
-	strcat (str,"_");
-	strcat (str,pchar_name_bis);
-	strcat (str,".png");
-	puts (str);
-
-	plt::clf();
-
-	plt::imshow(zptr_cube, dim_0, dim_1, colors);
-//			plt::title("Cube hyperspectral");
-	plt::save(str);
-//	plt::show();
-	std::cout << "Result saved to "<<str<<".\n"<<std::endl;
-}
 
 
 template <typename T> 
@@ -1964,7 +1558,11 @@ void hypercube<T>::save_result(std::vector<std::vector<std::vector<T>>>& grid_pa
 //  std::string space = "           "; 
 
   std::ofstream myfile;
-  myfile.open(M.fileout);//, std::ofstream::out | std::ofstream::trunc);
+
+  std::string filename = M.name_without_extension + ".dat";
+
+  myfile.open(filename);//, std::ofstream::out | std::ofstream::trunc);
+//  myfile.open(M.fileout);//, std::ofstream::out | std::ofstream::trunc);
   myfile << std::setprecision(18);
   myfile << "# \n";
   myfile << "# ______Parameters_____\n";
@@ -1973,8 +1571,6 @@ void hypercube<T>::save_result(std::vector<std::vector<std::vector<T>>>& grid_pa
   myfile << "# lambda_amp = "<< M.lambda_amp<<"\n";
   myfile << "# lambda_mu = "<< M.lambda_mu<<"\n";
   myfile << "# lambda_sig = "<< M.lambda_sig<<"\n";
-  myfile << "# lambda_var_amp = "<< M.lambda_var_amp<<"\n";
-  myfile << "# lambda_var_mu = "<< M.lambda_var_mu<<"\n";
   myfile << "# lambda_var_sig = "<< M.lambda_var_sig<<"\n";
   myfile << "# amp_fact_init = "<< M.amp_fact_init<<"\n";
   myfile << "# sig_init = "<< M.sig_init<<"\n";
@@ -1990,6 +1586,8 @@ void hypercube<T>::save_result(std::vector<std::vector<std::vector<T>>>& grid_pa
   myfile << "# noise = "<< M.noise<<"\n";
   myfile << "# regul = "<< M.regul<<"\n";
   myfile << "# descent = "<< M.descent<<"\n";
+  myfile << "# \n";
+  myfile << "# \n";
   myfile << "# \n";
   myfile << "# \n";
   myfile << "# \n";
@@ -2039,8 +1637,6 @@ hypercube<T>::save_result_multires(std::vector<std::vector<std::vector<T>>>& gri
   myfile << "# lambda_amp = "<< M.lambda_amp<<"\n";
   myfile << "# lambda_mu = "<< M.lambda_mu<<"\n";
   myfile << "# lambda_sig = "<< M.lambda_sig<<"\n";
-  myfile << "# lambda_var_amp = "<< M.lambda_var_amp<<"\n";
-  myfile << "# lambda_var_mu = "<< M.lambda_var_mu<<"\n";
   myfile << "# lambda_var_sig = "<< M.lambda_var_sig<<"\n";
   myfile << "# amp_fact_init = "<< M.amp_fact_init<<"\n";
   myfile << "# sig_init = "<< M.sig_init<<"\n";
@@ -2056,6 +1652,8 @@ hypercube<T>::save_result_multires(std::vector<std::vector<std::vector<T>>>& gri
   myfile << "# noise = "<< M.noise<<"\n";
   myfile << "# regul = "<< M.regul<<"\n";
   myfile << "# descent = "<< M.descent<<"\n";
+  myfile << "# \n";
+  myfile << "# \n";
   myfile << "# \n";
   myfile << "# \n";
   myfile << "# \n";
@@ -2078,6 +1676,184 @@ hypercube<T>::save_result_multires(std::vector<std::vector<std::vector<T>>>& gri
 }
 
 
+template<typename T>
+void hypercube<T>::reshape_noise_up_data(std::vector<std::vector<T>>& std_data_raw, std::vector<std::vector<T>>& std_data_out, int dim1, int dim0)
+{
+	this->position_y = 650;
+	this->position_x = 730;
+		for(int j=0; j< this->dim_data[1]; j++)
+		{
+			for(int i=0; i< this->dim_data[0]; i++)
+			{
+				std_data_out[j][i]= std_data_raw[j+this->position_y-this->dim_data[1]/2][i+this->position_x-this->dim_data[0]/2];
+			}
+		}
+		/*
+	if(this->larger_power_of_two_option){
+		int offset_y = int(abs(dim1-this->dim_data[1])/2);
+		int offset_x = int(abs(dim0-this->dim_data[0])/2);
+		for(int j=0; j< this->dim_cube[1]; j++)
+		{
+			for(int i=0; i< this->dim_cube[0]; i++)
+			{
+				std_data_out[j][i]= std_data_raw[j+offset_y][i+offset_x];
+			}
+		}
+	}else if(this->get_a_square_of_a_given_size_option){
+			int shift = this->size_side_square_option/2;
+			for(int i=0; i< this->size_side_square_option; i++)
+			{
+				for(int j=0; j< this->size_side_square_option; j++)
+				{
+					std_data_out[j][i]= std_data_raw[j+this->position_y-shift][i+this->position_x-shift];
+				}
+			}
+	}else if(true || this->position_given){
+		this->position_y = 650;
+		this->position_x = 730;
+		for(int j=0; j< this->dim_data[1]; j++)
+		{
+			for(int i=0; i< this->dim_data[0]; i++)
+			{
+				std_data_out[j][i]= std_data_raw[j+this->position_y-this->dim_data[1]/2][i+this->position_x-this->dim_data[0]/2];
+			}
+		}
+	}else{
+		for(int j=0; j< this->dim_data[1]; j++)
+		{
+			for(int i=0; i< this->dim_data[0]; i++)
+			{
+				std_data_out[j][i]= std_data_raw[j][i];
+			}
+		}
+	}
+*/
+
+
+
+/*
+
+	int d_cube[] = {0,0};
+	int d_map[] = {0,0};
+	d_cube[0] = std_map_out.size();
+	d_cube[1] = std_map_out[0].size();
+	d_map[0] = this->std_map_in.size();
+	d_map[1] = this->std_map_in[0].size();
+	//compute the offset so that the data file lies in the center of a cube
+//	int offset_x = (-d_cube[1]+d_map[1])/2;
+//	int offset_y = (-d_cube[0]+d_map[0])/2;
+
+	int offset_x = this->position_x;
+	int offset_y = this->position_y;
+	int half_size_0 = d_cube[0]/2;
+	int half_size_1 = d_cube[1]/2;
+
+	std::cout << "d_cube[0] = " <<d_cube[0]<< std::endl;
+	std::cout << "d_cube[1] = " <<d_cube[1]<< std::endl;
+	std::cout << "d_map[0] = " <<d_map[0]<< std::endl;
+	std::cout << "d_map[1] = " <<d_map[1]<< std::endl;
+
+	for(int j=offset_y; j<d_cube[0]+offset_y; j++)
+	{
+		for(int i=offset_x; i< d_cube[1]+offset_x; i++)
+		{
+			std_map_out[j-offset_y][i-offset_x]= std_map_in[j-half_size_0][i-half_size_1];
+		}
+	}
+	*/
+}
+
+template<typename T>
+void hypercube<T>::reshape_noise_up_cube(std::vector<std::vector<T>>& std_data, std::vector<std::vector<T>>& std_cube_out)
+{
+	int offset_y = int(abs(this->dim_cube[1]-this->dim_data[1])/2);
+	int offset_x = int(abs(this->dim_cube[0]-this->dim_data[0])/2);
+	for(int j=0; j< this->dim_cube[1]; j++)
+	{
+		for(int i=0; i< this->dim_cube[0]; i++)
+		{
+			std_cube_out[j][i]= std_data[j+offset_y][i+offset_x];
+		}
+	}
+
+
+/*
+
+	int d_cube[] = {0,0};
+	int d_map[] = {0,0};
+	d_cube[0] = std_map_out.size();
+	d_cube[1] = std_map_out[0].size();
+	d_map[0] = this->std_map_in.size();
+	d_map[1] = this->std_map_in[0].size();
+	//compute the offset so that the data file lies in the center of a cube
+//	int offset_x = (-d_cube[1]+d_map[1])/2;
+//	int offset_y = (-d_cube[0]+d_map[0])/2;
+
+	int offset_x = this->position_x;
+	int offset_y = this->position_y;
+	int half_size_0 = d_cube[0]/2;
+	int half_size_1 = d_cube[1]/2;
+
+	std::cout << "d_cube[0] = " <<d_cube[0]<< std::endl;
+	std::cout << "d_cube[1] = " <<d_cube[1]<< std::endl;
+	std::cout << "d_map[0] = " <<d_map[0]<< std::endl;
+	std::cout << "d_map[1] = " <<d_map[1]<< std::endl;
+
+	for(int j=offset_y; j<d_cube[0]+offset_y; j++)
+	{
+		for(int i=offset_x; i< d_cube[1]+offset_x; i++)
+		{
+			std_map_out[j-offset_y][i-offset_x]= std_map_in[j-half_size_0][i-half_size_1];
+		}
+	}
+	*/
+}
+
+template<typename T>
+void hypercube<T>::get_noise_map_from_GHIGLS(parameters<T> &M, std::vector <std::vector<T>>& noise_map){
+	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
+
+	PHDU& image = pInfile->pHDU();
+
+    ExtHDU& extension = pInfile->extension(2);
+
+	std::valarray<T> contents;
+    extension.readAllKeys();
+
+	int dim[] = {0,0};
+
+    extension.read(contents);
+
+	std::cout << extension << std::endl;
+
+    long ax1(extension.axis(0));
+    long ax2(extension.axis(1));
+
+	dim[0]=ax1;
+	dim[1]=ax2;
+
+	std::vector <std::vector<T>> z(dim[0], std::vector<T>(dim[1],0.));//, std::vector<T>(dim_data[2],0.)));
+
+	int i__=0;
+	for(int j=0; j<dim[1]; j++)
+	{
+		for(int k=0; k<dim[0]; k++)
+		{
+			z[j][k] = contents[dim[0]*j+k];
+		}
+	}
+	noise_map = z;
+	//why not directly noise_map[][] = ... ?
+/*
+	for(int j=0; j<dim[1]; j++)
+	{
+		for(int k=0; k<dim[0]; k++)
+		{
+			printf("z[%d][%d] = %f\n",k,j,z[k][j]);
+		}
+	}
+*/
+}
 
 
 #endif

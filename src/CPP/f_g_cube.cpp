@@ -1179,96 +1179,103 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 
 	double temps1_conv = omp_get_wtime();
 
-	int taille_image_conv[] = {indice_y, indice_x};
-	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
-	size_t size_image_conv = product_image_conv * sizeof(T);
-	T* conv_amp = (T*)malloc(size_image_conv);
-	T* conv_mu = (T*)malloc(size_image_conv);
-	T* conv_sig = (T*)malloc(size_image_conv);
-	T* conv_conv_amp = (T*)malloc(size_image_conv);
-	T* conv_conv_mu = (T*)malloc(size_image_conv);
-	T* conv_conv_sig = (T*)malloc(size_image_conv);
-	T* image_amp = (T*)malloc(size_image_conv);
-	T* image_mu = (T*)malloc(size_image_conv);
-	T* image_sig = (T*)malloc(size_image_conv);
+	if(true){
+		regularisation(beta, deriv, g, b_params, f, indice_x, indice_y, indice_v, M, temps_bis);
+	}else{
+//COMMENT SECTION BELOW	
+		int taille_image_conv[] = {indice_y, indice_x};
+		int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
+		size_t size_image_conv = product_image_conv * sizeof(T);
+		T* conv_amp = (T*)malloc(size_image_conv);
+		T* conv_mu = (T*)malloc(size_image_conv);
+		T* conv_sig = (T*)malloc(size_image_conv);
+		T* conv_conv_amp = (T*)malloc(size_image_conv);
+		T* conv_conv_mu = (T*)malloc(size_image_conv);
+		T* conv_conv_sig = (T*)malloc(size_image_conv);
+		T* image_amp = (T*)malloc(size_image_conv);
+		T* image_mu = (T*)malloc(size_image_conv);
+		T* image_sig = (T*)malloc(size_image_conv);
 
-    T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
-	for(int k=0; k<M.n_gauss; k++){
-		for(int p=0; p<indice_y; p++){
-			for(int q=0; q<indice_x; q++){
-				image_amp[indice_x*p+q]= beta[(0+3*k)*indice_x*indice_y + p*indice_x+q];
-				image_mu[indice_x*p+q]=beta[(1+3*k)*indice_x*indice_y + p*indice_x+q];
-				image_sig[indice_x*p+q]=beta[(2+3*k)*indice_x*indice_y + p*indice_x+q];
+		T Kernel[9] = {0,-0.25,0,-0.25,1,-0.25,0,-0.25,0};
+		for(int k=0; k<M.n_gauss; k++){
+			for(int p=0; p<indice_y; p++){
+				for(int q=0; q<indice_x; q++){
+					image_amp[indice_x*p+q]= beta[(0+3*k)*indice_x*indice_y + p*indice_x+q];
+					image_mu[indice_x*p+q]=beta[(1+3*k)*indice_x*indice_y + p*indice_x+q];
+					image_sig[indice_x*p+q]=beta[(2+3*k)*indice_x*indice_y + p*indice_x+q];
+				}
 			}
-		}
-		if(false){//indice_x>=128 || indice_y>=128){//true){//
-			conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
-			conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
-			conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
+			if(false){//indice_x>=128 || indice_y>=128){//true){//
+				conv2D_GPU(image_amp, Kernel, conv_amp, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
+				conv2D_GPU(image_mu, Kernel, conv_mu, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
+				conv2D_GPU(image_sig, Kernel, conv_sig, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
 
-			conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
-			conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
-			conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
-		} else{
-			convolution_2D_mirror_flat<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
-			convolution_2D_mirror_flat<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
-			convolution_2D_mirror_flat<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
+				conv2D_GPU(conv_amp, Kernel, conv_conv_amp, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
+				conv2D_GPU(conv_mu, Kernel, conv_conv_mu, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
+				conv2D_GPU(conv_sig, Kernel, conv_conv_sig, indice_x, indice_y, temps_transfert_d, temps_mirroirs);
+			} else{
+				convolution_2D_mirror_flat<T>(M, image_amp, conv_amp, indice_y, indice_x,3);
+				convolution_2D_mirror_flat<T>(M, image_mu, conv_mu, indice_y, indice_x,3);
+				convolution_2D_mirror_flat<T>(M, image_sig, conv_sig, indice_y, indice_x,3);
 
-			convolution_2D_mirror_flat<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
-			convolution_2D_mirror_flat<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
-			convolution_2D_mirror_flat<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
-		}
-		T f_1 = 0.;
-		T f_2 = 0.;
-		T f_3 = 0.;
-		for(int i=0; i<indice_y; i++){
-			for(int j=0; j<indice_x; j++){
-				f_1+= 0.5*M.lambda_amp*pow(conv_amp[indice_x*i+j],2);
-				f_2+= 0.5*M.lambda_mu*pow(conv_mu[indice_x*i+j],2);
-				f_3+= 0.5*M.lambda_sig*pow(conv_sig[indice_x*i+j],2) + 0.5*M.lambda_var_sig*pow(image_sig[indice_x*i+j]-b_params[k],2);
-
-				deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*conv_conv_amp[indice_x*i+j];
-				deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*conv_conv_mu[indice_x*i+j];
-				deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*conv_conv_sig[indice_x*i+j]+M.lambda_var_sig*(image_sig[indice_x*i+j]-b_params[k]);
-				g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[indice_x*i+j]);
+				convolution_2D_mirror_flat<T>(M, conv_amp, conv_conv_amp, indice_y, indice_x,3);
+				convolution_2D_mirror_flat<T>(M, conv_mu, conv_conv_mu, indice_y, indice_x,3);
+				convolution_2D_mirror_flat<T>(M, conv_sig, conv_conv_sig, indice_y, indice_x,3);
 			}
-		}
+			T f_1 = 0.;
+			T f_2 = 0.;
+			T f_3 = 0.;
+			for(int i=0; i<indice_y; i++){
+				for(int j=0; j<indice_x; j++){
+					f_1+= 0.5*M.lambda_amp*pow(conv_amp[indice_x*i+j],2);
+					f_2+= 0.5*M.lambda_mu*pow(conv_mu[indice_x*i+j],2);
+					f_3+= 0.5*M.lambda_sig*pow(conv_sig[indice_x*i+j],2) + 0.5*M.lambda_var_sig*pow(image_sig[indice_x*i+j]-b_params[k],2);
 
-	if(print){
-		for(int p=0; p<300; p++){
-			printf("conv_amp[%d] = %.16f\n", p, conv_amp[p]);
+					deriv[(0+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_amp*conv_conv_amp[indice_x*i+j];
+					deriv[(1+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_mu*conv_conv_mu[indice_x*i+j];
+					deriv[(2+3*k)*indice_y*indice_x+i*indice_x+j] += M.lambda_sig*conv_conv_sig[indice_x*i+j]+M.lambda_var_sig*(image_sig[indice_x*i+j]-b_params[k]);
+					g[n_beta-M.n_gauss+k] += M.lambda_var_sig*(b_params[k]-image_sig[indice_x*i+j]);
+				}
+			}
+/*
+			printf("Début print f_1 : %.16f\n", f_1);
+			printf("Début print f_2 : %.16f\n", f_2);
+			printf("Début print f_3 : %.16f\n", f_3);
+			for(int i=0; i<M.n_gauss; i++){
+				printf("b_params[%d] = %.16f\n",i,b_params[i]);
+				}
+			if(print){
+				for(int p=0; p<300; p++){
+					printf("conv_amp[%d] = %.16f\n", p, conv_amp[p]);
+				}
+				printf("Début print f_1 : %.16f\n", f_1);
+				for(int p=0; p<15; p++){
+					printf("conv_amp[%d] = %.16f\n", p, conv_amp[p]);
+				}
+				printf("Début print f_2 : %.16f\n", f_2);
+				for(int p=0; p<15; p++){
+					printf("conv_mu[%d] = %.16f\n", p, conv_mu[p]);
+				}
+				printf("Début print f_3 : %.16f\n", f_3);
+				for(int p=0; p<15; p++){
+					printf("conv_sig[%d] = %.16f\n", p, conv_sig[p]);
+				}
+				std::cin.ignore();
+				}
+*/
+			f+=f_1+f_2+f_3;
 		}
-	    printf("Début print f_1 : %.16f\n", f_1);
-		for(int p=0; p<15; p++){
-			printf("conv_amp[%d] = %.16f\n", p, conv_amp[p]);
-		}
-	    printf("Début print f_2 : %.16f\n", f_2);
-		for(int p=0; p<15; p++){
-			printf("conv_mu[%d] = %.16f\n", p, conv_mu[p]);
-		}
-	    printf("Début print f_3 : %.16f\n", f_3);
-		for(int p=0; p<15; p++){
-			printf("conv_sig[%d] = %.16f\n", p, conv_sig[p]);
-		}
-		std::cin.ignore();
-		}
-		f+=f_1+f_2+f_3;
+		free(conv_amp);
+		free(conv_conv_amp);
+		free(conv_mu);
+		free(conv_conv_mu);
+		free(conv_sig);
+		free(conv_conv_sig);
+		free(image_sig);
+		free(image_mu);
+		free(image_amp);
 	}
-	free(conv_amp);
-	free(conv_conv_amp);
-	free(conv_mu);
-	free(conv_conv_mu);
-	free(conv_sig);
-	free(conv_conv_sig);
-	free(image_sig);
-	free(image_mu);
-	free(image_amp);
-
-//	regularisation(beta, deriv, g, b_params, f, indice_x, indice_y, indice_v, M, temps_bis);
-//	temps_bis[0] = 2.; 
-
-//	printf("temps_bis[1] = %f\n")
-
+	
 	double temps2_conv = omp_get_wtime();
 
 	for(int i=0; i<n_beta-M.n_gauss; i++){
@@ -1280,10 +1287,10 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 		lim = n_beta;
 		for(int i=0; i<lim; i++){
 			printf("g[%d] = %.16f\n",i, g[i]);
-		}
-/*		for(int i=lim-40; i<lim; i++){
+		}/*		for(int i=lim-40; i<lim; i++){
 			printf("g[%d] = %.16f\n",i, g[i]);
 		}*/
+
 		printf("fin -> f = %.16f\n", f);
         std::cin.ignore();
 	}

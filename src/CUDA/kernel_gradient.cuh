@@ -276,8 +276,16 @@ __global__ void sum_reduction(double* a, double* c, int N)
 		c[blockIdx.x] = cache[0];
 }
 
-
-
+/*
+template <typename T>
+__global__ void kernel_conv_g_reduction_sort(int n_beta, T* d_g, T* result_reduction_sig, T lambda_var_sig, int n_gauss, T* b_params_dev, int k, int image_x, int image_y)
+{ 
+	__syncthreads();
+	printf("k = %d\n", k);
+	__syncthreads();
+    d_g[n_beta - n_gauss + k] = lambda_var_sig * (image_x*image_y*b_params_dev[k] - result_reduction_sig[0]);
+}
+*/
 
 __global__ void cpy_first_num_dev(double* array_in, double* array_out){
 	array_out[0] = array_in[0];

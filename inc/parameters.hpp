@@ -1,6 +1,8 @@
 #ifndef DEF_PARAMETERS
 #define DEF_PARAMETERS
 
+
+
 #include "../L-BFGS-B-C/src/lbfgsb.h" //needed for the integer and logical type of the minimize_spec function
 #include <iostream>
 #include <stdio.h>
@@ -29,34 +31,28 @@ template<typename T>
 class parameters
 {
 	public:
-		parameters();
-		parameters(std::string str, std::string str2, std::string str3, std::string str4);
-		inline bool compare_ends(std::string const & value, std::string const & ending);
-//		copy_double_T(parameters<double> &M_d, parameters<T> &M);
-		std::vector<int> dim_data; //inutile : file.dim_data
-		int dim_x;
-		int dim_y;
-		int dim_v;
-		int n_gauss_add; 
+	parameters();
+	parameters(std::string str, std::string str2, std::string str3, std::string str4);
+//	inline bool compare_ends(std::string const & value);
+	inline bool is_true(std::string const & test);
+	std::vector<int> dim_data; //inutile : file.dim_data
+	int dim_x;
+	int dim_y;
+	int dim_v;
 	
 //	parameters
 	int select_version; 
 	std::string filename_dat; //!< Name of the DAT file to be used as hypercube input file.
 	std::string filename_fits; //!< Name of the FITS file to be used as hypercube input file.
-	std::string file_type_dat_check;
-	std::string file_type_fits_check;
+	std::string file_type_check;
 	int slice_index_min; //!< Value of the minimum spectral index.
 	int slice_index_max; //!< Value of the maximum spectral index.
-	bool file_type_dat;
-	bool file_type_fits;
 	std::string fileout; //!< Name of the output file.
 	std::string filename_noise; 
 	int n_gauss; //!< Number of gaussians.
 	T lambda_amp;
 	T lambda_mu;
 	T lambda_sig;
-	T lambda_var_amp;
-	T lambda_var_mu;
 	T lambda_var_sig;
 	T amp_fact_init;
 	T sig_init;
@@ -73,7 +69,6 @@ class parameters
 	int ustd;
 	long iprint; //!< Verbose mode for L-BFGS-B-C.
 	long iprint_init;
-	std::string check_save_grid;
 	bool save_grid;
 	T ub_sig;
 	T lb_sig;
@@ -87,11 +82,24 @@ class parameters
 	std::string is_wrapper;
 	bool wrapper;
 	bool print_mean_parameters;
-	bool noise_map_provided;
 	bool noise;
-
+	bool save_grid_through_multiresolution;
 	std::vector<T> std_spect, mean_spect, max_spect, max_spect_norm;
 
+	std::string name_without_extension;
+
+
+	std::string input_format_fits_check;
+	std::string output_format_fits_check;
+	std::string noise_map_provided_check;
+	std::string give_input_spectrum_check;
+	std::string print_mean_parameters_check;
+	bool input_format_fits;
+	bool output_format_fits;
+	bool noise_map_provided;
+	bool give_input_spectrum;
+	bool save_noise_map_in_fits;
+	bool three_d_noise_mode;
 };
 
 #include "parameters.hpp"
@@ -101,195 +109,120 @@ using namespace std;
 template<typename T>
 parameters<T>::parameters()
 {
-/*
-	n_gauss_add = 0;
-
-	std::string txt, egal;
-        std::ifstream fichier("parameters.txt", std::ios::in);  // on ouvre en lecture
- 
-        if(fichier)  // si l'ouverture a fonctionné
-        {
-		fichier >> txt >> egal >> filename_dat;
-		fichier >> txt >> egal >> filename_fits;
-		fichier >> txt >> egal >> file_type_dat_check;
-		fichier >> txt >> egal >> file_type_fits_check;
-		fichier >> txt >> egal >> slice_index_min;
-		fichier >> txt >> egal >> slice_index_max;
-		fichier >> txt >> egal >> fileout;
-		fichier >> txt >> egal >> filename_noise;
-		fichier >> txt >> egal >> n_gauss;
-		fichier >> txt >> egal >> lambda_amp;
-		fichier >> txt >> egal >> lambda_mu;
-		fichier >> txt >> egal >> lambda_sig;
-		fichier >> txt >> egal >> lambda_var_amp;
-		fichier >> txt >> egal >> lambda_var_mu;
-		fichier >> txt >> egal >> lambda_var_sig;
-		fichier >> txt >> egal >> amp_fact_init;
-		fichier >> txt >> egal >> sig_init;
-		fichier >> txt >> egal >> init_option;
-		fichier >> txt >> egal >> maxiter_init;
-		fichier >> txt >> egal >> maxiter;
-		fichier >> txt >> egal >> m;
-		fichier >> txt >> egal >> check_noise;
-		fichier >> txt >> egal >> check_regul;
-		fichier >> txt >> egal >> check_descent;
-		fichier >> txt >> egal >> lstd;
-		fichier >> txt >> egal >> ustd;
-		fichier >> txt >> egal >> iprint;
-		fichier >> txt >> egal >> iprint_init;
-		fichier >> txt >> egal >> check_save_grid;
-		fichier >> txt >> egal >> ub_sig;
-		fichier >> txt >> egal >> lb_sig;
-		fichier >> txt >> egal >> ub_sig_init;
-		fichier >> txt >> egal >> lb_sig_init;
-		fichier >> txt >> egal >> double_or_float;
-		fichier >> txt >> egal >> is_wrapper;
-		if(file_type_dat_check == "true")
-			file_type_dat = true;
-		else 
-			file_type_dat = false;
-		if(file_type_fits_check == "true")
-			file_type_fits = true;
-		else 
-			file_type_fits = false;
-		if(check_save_grid == "true")
-			save_grid = true;
-		else 
-			save_grid = false;		
-		if(check_noise == "true")
-			noise = true;
-		else
-			noise = false;
-		if(check_regul == "true")
-			regul = true;
-		else
-			regul = false;
-		if(check_descent == "true")
-			descent = true;
-		else
-			descent = false;
-		if(double_or_float == "double" || double_or_float == "Double" || double_or_float == "d" || double_or_float == "D"){
-			double_mode = true;
-			float_mode = false;
-		}else{
-			double_mode = false;
-			float_mode = true;
-		}if(is_wrapper == "wrapper" || is_wrapper == "w" || is_wrapper == "Wrapper"){
-			wrapper = true;
-		}else{
-			wrapper = false;
-		}
-        }else	
-            std::cerr << "Can't open the parameters.txt file !" << std::endl;
-		fichier.close();
-*/
+	//DUMMY CONSTRUCTOR
 }
 
 template<typename T>
 parameters<T>::parameters(std::string str, std::string str2, std::string str3, std::string str4)
 {
-	n_gauss_add = 0;
-
 	std::string txt, egal;
-        std::ifstream fichier(str, std::ios::in);  // on ouvre en lecture
- 
-        if(fichier)  // si l'ouverture a fonctionné
-        {
-		fichier >> txt >> egal >> filename_dat;
-		fichier >> txt >> egal >> filename_fits;
-		fichier >> txt >> egal >> file_type_dat_check;
-		fichier >> txt >> egal >> file_type_fits_check;
-		fichier >> txt >> egal >> slice_index_min;
-		fichier >> txt >> egal >> slice_index_max;
-		fichier >> txt >> egal >> fileout;
-		fichier >> txt >> egal >> filename_noise;
-		fichier >> txt >> egal >> n_gauss;
-		fichier >> txt >> egal >> lambda_amp;
-		fichier >> txt >> egal >> lambda_mu;
-		fichier >> txt >> egal >> lambda_sig;
-		fichier >> txt >> egal >> lambda_var_amp;
-		fichier >> txt >> egal >> lambda_var_mu;
-		fichier >> txt >> egal >> lambda_var_sig;
-		fichier >> txt >> egal >> amp_fact_init;
-		fichier >> txt >> egal >> sig_init;
-		fichier >> txt >> egal >> init_option;
-		fichier >> txt >> egal >> maxiter_init;
-		fichier >> txt >> egal >> maxiter;
-		fichier >> txt >> egal >> m;
-		fichier >> txt >> egal >> check_noise;
-		fichier >> txt >> egal >> check_regul;
-		fichier >> txt >> egal >> check_descent;
-		fichier >> txt >> egal >> lstd;
-		fichier >> txt >> egal >> ustd;
-		fichier >> txt >> egal >> iprint;
-		fichier >> txt >> egal >> iprint_init;
-		fichier >> txt >> egal >> check_save_grid;
-		fichier >> txt >> egal >> ub_sig;
-		fichier >> txt >> egal >> lb_sig;
-		fichier >> txt >> egal >> ub_sig_init;
-		fichier >> txt >> egal >> lb_sig_init;
-		fichier >> txt >> egal >> print_mean_parameters;
-		
-		if(file_type_dat_check == "true")
-			file_type_dat = true;
-		else 
-			file_type_dat = false;
-		if(file_type_fits_check == "true")
-			file_type_fits = true;
-		else 
-			file_type_fits = false;
-		if(check_save_grid == "true")
-			save_grid = true;
-		else 
-			save_grid = false;		
-		if(check_noise == "true")
-			noise = true;
-		else
-			noise = false;
-		if(check_regul == "true")
-			regul = true;
-		else
-			regul = false;
-		if(check_descent == "true")
-			descent = true;
-		else
-			descent = false;
-		if(str2 == "-cpu" || str2 == "-CPU" || str2 == "-Cpu" || str2 == "-c" || str2 == "-C")
-			select_version = 0;
-		else if (str2 == "-gpu" || str2 == "-GPU" || str2 == "-Gpu" || str2 == "-G" || str2 == "-g")
-			select_version = 1;
-		else 
-			select_version = 2;
-		if(str4 == "-double" || str4 == "-Double" || str4 == "-d" || str4 == "-D"){
-			double_mode = true;
-			float_mode = false;
+    std::ifstream fichier(str, std::ios::in);  // on ouvre en lecture
+    if(fichier){
+		fichier >> txt >> egal >> this->input_format_fits_check;
+		fichier >> txt >> egal >> this->filename_dat;
+		fichier >> txt >> egal >> this->filename_fits;
+		fichier >> txt >> egal >> this->output_format_fits_check;
+		fichier >> txt >> egal >> this->fileout;
+		fichier >> txt >> egal >> this->noise_map_provided_check;
+		fichier >> txt >> egal >> this->filename_noise;
+		fichier >> txt >> egal >> this->give_input_spectrum_check;
+		fichier >> txt >> egal >> this->n_gauss;
+		fichier >> txt >> egal >> this->lambda_amp;
+		fichier >> txt >> egal >> this->lambda_mu;
+		fichier >> txt >> egal >> this->lambda_sig;
+		fichier >> txt >> egal >> this->lambda_var_sig;
+		fichier >> txt >> egal >> this->amp_fact_init;
+		fichier >> txt >> egal >> this->sig_init;
+		fichier >> txt >> egal >> this->lstd;
+		fichier >> txt >> egal >> this->ustd;
+		fichier >> txt >> egal >> this->ub_sig;
+		fichier >> txt >> egal >> this->lb_sig;
+		fichier >> txt >> egal >> this->ub_sig_init;
+		fichier >> txt >> egal >> this->lb_sig_init;
+		fichier >> txt >> egal >> this->maxiter_init;
+		fichier >> txt >> egal >> this->maxiter;
+		fichier >> txt >> egal >> this->m;
+		fichier >> txt >> egal >> this->init_option;
+		fichier >> txt >> egal >> this->check_regul;
+		fichier >> txt >> egal >> this->check_descent;
+		fichier >> txt >> egal >> this->print_mean_parameters_check;
+		fichier >> txt >> egal >> this->iprint;
+		fichier >> txt >> egal >> this->iprint_init;
+
+		if(is_true(input_format_fits_check)){
+			this->input_format_fits = true;
 		}else{
-			double_mode = false;
-			float_mode = true;
-		}if(str3 == "-wrapper" || str3 == "-w" || str3 == "-Wrapper"){
-			wrapper = true;
-		}else{
-			wrapper = false;
+			this->input_format_fits = false;
 		}
-        }else
-            std::cerr << "Can't open the parameters.txt file !" << std::endl;
-		fichier.close();
 
-	std::string comp (".fits");
-	std::string COMP (".FITS");
-	bool is_fits_caps_lock = compare_ends(this->filename_noise, COMP);
-	bool is_fits = compare_ends(this->filename_noise, comp);
-	if(is_fits || is_fits_caps_lock){
-		this->noise_map_provided = true;
-	} else {
-		this->noise_map_provided = false;
+		if(is_true(output_format_fits_check)){
+			this->output_format_fits = true;
+		}else{
+			this->output_format_fits = false;
+		}
+
+		if(is_true(noise_map_provided_check)){
+			this->noise_map_provided = true;
+		}else{
+			this->noise_map_provided = false;
+		}
+
+		if(is_true(check_regul)){
+			this->regul = true;
+		}else{
+			this->regul = false;
+		}
+
+		if(is_true(check_descent)){
+			this->descent = true;
+		}else{
+			this->descent = false;
+		}
+
+		if(is_true(this->print_mean_parameters_check)){
+			this->print_mean_parameters = true;
+		}else{
+			this->print_mean_parameters = false;
+		}
+		
+		if(str2 == "-cpu" || str2 == "-CPU" || str2 == "-Cpu" || str2 == "-c" || str2 == "-C"){
+			this->select_version = 0;
+		}else if (str2 == "-gpu" || str2 == "-GPU" || str2 == "-Gpu" || str2 == "-G" || str2 == "-g"){
+			this->select_version = 1;
+		}else{
+			this->select_version = 2;
+		} 
+//		printf("select_version = %d\n",this->select_version);
+//		exit(0);
+		if(str4 == "-double" || str4 == "-Double" || str4 == "-d" || str4 == "-D"){
+			this->double_mode = true;
+			this->float_mode = false;
+		}else{
+			this->double_mode = false;
+			this->float_mode = true;
+		}
+		if(str3 == "-wrapper" || str3 == "-w" || str3 == "-Wrapper"){
+			this->wrapper = true;
+		}else{
+			this->wrapper = false;
+		}
+	}else{
+		std::cerr << "Can't open the parameters.txt file !" << std::endl;
 	}
-	//overwrite verification
-	this->noise_map_provided = this->noise;
+	fichier.close();
 
+//	std::cout<<"fileout = "<<fileout<<std::endl;
+	name_without_extension = fileout;
+	if(this->output_format_fits){
+	    name_without_extension.resize(name_without_extension.size() - 5);
+	}else{
+	    name_without_extension.resize(name_without_extension.size() - 4);
+	}
+//	std::cout<<"fileout = "<<fileout<<std::endl;
 
+	this->save_grid_through_multiresolution = false; 
+//	this->save_grid_through_multiresolution = true; 
 	if(false){
-//	if(true){
 		this->jump_to_last_level = true;
 		this->save_second_to_last_level = false;
 		this->second_to_last_level_grid_name = "right_before_last_level";
@@ -301,12 +234,23 @@ parameters<T>::parameters(std::string str, std::string str2, std::string str3, s
 }
 
 template<typename T>
+inline bool parameters<T>::is_true(std::string const & test)
+{
+    if (test == "true"||test == "True"||test == "TRUE"||test == "T"||test == "yes"||test == "Yes"||test == "YES"){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+/*
+template<typename T>
 inline bool parameters<T>::compare_ends(std::string const & value, std::string const & ending)
 {
     if (ending.size() > value.size()) return false;
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
-
+*/
 
 
 #endif
