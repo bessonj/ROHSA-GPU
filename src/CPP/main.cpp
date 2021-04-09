@@ -6,6 +6,33 @@
 #include <cmath>
 #include <iostream>
 #include <string.h>
+#include <stdio.h>
+
+#include "fortran_to_cpp_conversion.h"
+/*
+extern void fortransub();
+extern int numbers[5];
+module fortmodule
+use, intrinsic :: iso_c_binding
+implicit none
+
+integer(C_INT), bind(C), dimension(5) :: numbers
+
+contains
+
+subroutine fortransub() bind(C)
+
+   print *, "Hello from Fortran!"
+   numbers(1) = 1
+   numbers(2) = 2
+   numbers(3) = 3
+   numbers(4) = 4
+   numbers(5) = 5
+
+end subroutine
+
+end module
+*/
 
 ////VARIABLES TO BE DEFINED BY USER IF REQUIRED////
 ////LEAVE BLANK IF YOU ARE ALREADY USING A PRE-PROCESSED DAT FILE////
@@ -49,6 +76,7 @@
 #define INDEXING_3D(t,x,y,z) t[(t##_SHAPE2)*(t##_SHAPE1)*x+(t##_SHAPE2)*y+z]
 
 double temps_test = 0;
+//extern void test1(int n);
 
 /** \mainpage Main Page
  *
@@ -140,7 +168,37 @@ double temps_test = 0;
 
 template <typename T> 
 void main_routine(parameters<T> &user_parameters){
+
+	/*
+	////RECOVERS THE FITS FILE FROM THE RAW ONE
+	hypercube<T> Hypercube_file(1,1,1);
+	std::vector<T> newVector = Hypercube_file.read_vector_from_file("DHIGLS_UM_Tb_gauss_run_c_1024_hybrid_lambda_gauss_8_lambda_0dot1.raw");
+	printf("newVector.size() = %d\n", newVector.size());
+	int dim_0 = 24;
+	int dim_1 = 1024;
+	int dim_2 = 1024;
+	std::vector <std::vector<std::vector<T>>> grid(dim_0, std::vector<std::vector<T>>(dim_1, std::vector<T>(dim_2,0.)));
+	for(int k=0; k<dim_0; k++)
+	{
+		for(int j=0; j<dim_1; j++)
+		{
+			for(int i=0; i<dim_2; i++)
+			{
+				grid[k][j][i] = newVector[k*dim_2*dim_1+j*dim_2+i];
+			}
+		}
+	}
+	printf("before saving !\n");
+
+	Hypercube_file.save_grid_in_fits(user_parameters, grid);
+	exit(0);
+	*/
 /*
+	hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, 730, 650, SQUARE_SIZE, false, true, false);
+
+	Hypercube_file.save_grid_in_fits(user_parameters, algo.grid_params);
+
+	exit(0);
     hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max); 
 	std::vector<std::vector<T>> std_map_init(Hypercube_file.dim_data[1], std::vector<T>(Hypercube_file.dim_data[0],0.));
 	algo_rohsa<T> algo(std_map_init, user_parameters, Hypercube_file);
@@ -156,9 +214,67 @@ void main_routine(parameters<T> &user_parameters){
 //	user_parameters.size_side_square = SQUARE_SIZE;
 
 	printf("Reading the cube ...\n");
-    hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max); 
-//	hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, 730, 650, SQUARE_SIZE, false, true, false);
-//	cudaSetDevice(0);
+	if (user_parameters.input_format_fits){
+		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, 730, 650, SQUARE_SIZE, false, true, false);
+		printf("Launching the ROHSA algorithm ...\n");
+		algo_rohsa<T> algo(user_parameters, Hypercube_file);
+
+		const std::string filename_raw = user_parameters.name_without_extension+".raw";
+		std::cout<<"filename_raw = "<<filename_raw<<std::endl;	
+
+		printf("Saving the result ...\n");
+		Hypercube_file.save_grid_in_fits(user_parameters, algo.grid_params);
+/*		try{
+			throw 
+		}
+*/
+//		Hypercube_file.write_in_file(algo.grid_params, filename_raw);
+	//	Hypercube_file.save_result(algo.grid_params, user_parameters);
+
+	//	if(user_parameters.output_format_fits){
+	//		Hypercube_file.save_grid_in_fits(user_parameters, algo.grid_params);
+	//		printf("Result saved in fits file !\n");
+	//	}else{
+	//		Hypercube_file.save_result(algo.grid_params, user_parameters);
+	//		printf("Result saved in dat file !\n");
+	//	}
+
+	if(user_parameters.save_noise_map_in_fits){
+/*
+			printf("Saving noise_map ...\n");
+			Hypercube_file.save_noise_map_in_fits(user_parameters, algo.std_data);
+*/
+//			printf("Noise_map saved in fits file!\n");
+		}
+	}else{
+	    hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max); 
+		printf("Launching the ROHSA algorithm ...\n");
+		algo_rohsa<T> algo(user_parameters, Hypercube_file);
+
+		const std::string filename_raw = user_parameters.name_without_extension+".raw";
+		std::cout<<"filename_raw = "<<filename_raw<<std::endl;	
+
+		printf("Saving the result ...\n");
+//		Hypercube_file.write_in_file(algo.grid_params, filename_raw);
+	//	Hypercube_file.save_result(algo.grid_params, user_parameters);
+		Hypercube_file.save_grid_in_fits(user_parameters, algo.grid_params);
+
+	//	if(user_parameters.output_format_fits){
+	//		Hypercube_file.save_grid_in_fits(user_parameters, algo.grid_params);
+	//		printf("Result saved in fits file !\n");
+	//	}else{
+	//		Hypercube_file.save_result(algo.grid_params, user_parameters);
+	//		printf("Result saved in dat file !\n");
+	//	}
+
+
+		if(user_parameters.save_noise_map_in_fits){
+			printf("Saving noise_map ...\n");
+			Hypercube_file.save_noise_map_in_fits(user_parameters, algo.std_data);
+			printf("Noise_map saved in fits file!\n");
+		}
+	}
+/*
 	printf("Launching the ROHSA algorithm ...\n");
 	algo_rohsa<T> algo(user_parameters, Hypercube_file);
 
@@ -185,6 +301,7 @@ void main_routine(parameters<T> &user_parameters){
 		printf("Noise_map saved in fits file!\n");
 	}
 	printf("temps_test = %f\n");
+*/
 }
 
 template void main_routine<double>(parameters<double>&);
@@ -197,6 +314,45 @@ int main(int argc, char * argv[])
 slice_index_min = 0
 slice_index_max = 199
 */
+//	test();
+    printf("Hello from C!\n");
+
+/*
+   int input = 3;
+   int output = 0;
+   printf("TEST 1 !\n");
+   square_(&input,&output); 
+   printf("TEST 2 !\n");
+   std::cout<< output << std::endl;  // returns 9 
+	double f = 3.14159265;
+	print_a_real_(&f);
+
+	int n = 3;
+	double* tab = NULL;
+	tab = (double*)malloc(n*sizeof(double));
+	tab[0] = 1.1;
+	tab[1] = 1.2;
+	tab[2] = 1.3;
+
+	print_an_array_(&n, tab);
+
+	char char_test[] = "blablabla";
+	std::cout<<"Read char_test c++ -> "<<char_test<<std::endl;
+//	unsigned char *char_test;// = 'blablabla';
+
+	print_a_char_(char_test);
+//    fortransub();
+
+    int logical_test[] = {1, 0, 1, 0};
+	std::cout<<"logical_test[0] = "<<logical_test[0]<<std::endl;
+	std::cout<<"logical_test[1] = "<<logical_test[1]<<std::endl;
+	std::cout<<"logical_test[2] = "<<logical_test[2]<<std::endl;
+	std::cout<<"logical_test[3] = "<<logical_test[3]<<std::endl;
+	print_a_logical_(logical_test);
+*/
+
+	minimize();
+   	exit(0);
 
 	std::cout<<"argv = "<<argv[1]<<" , "<<argv[2]<<" , "<<argv[3]<<" , "<<argv[4]<<std::endl;
 	parameters<float> user_parametres_float(argv[1], argv[2], argv[3], argv[4]);
@@ -208,3 +364,4 @@ slice_index_max = 199
 //		main_routine<float>(user_parametres_float);
 	}
 }
+

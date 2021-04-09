@@ -4,9 +4,8 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 #set(CMAKE_PREFIX_PATH /usr/lib)
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-project (ROHSA-GPU LANGUAGES CXX CUDA)
-enable_language( Fortran )
-
+project (ROHSA-GPU LANGUAGES CXX CUDA Fortran)
+#enable_language( Fortran )
 
 list(APPEND HEADER_REP ${CMAKE_CURRENT_SOURCE_DIR}/inc ${CMAKE_CURRENT_SOURCE_DIR}/matplotlib-cpp ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/ ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb/ ${CMAKE_CURRENT_SOURCE_DIR}/src/CUDA ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} "/usr/local/cuda/samples/common/inc/" "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../samples/common/inc")
 
@@ -14,19 +13,22 @@ list(APPEND HEADER_REP_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/*.h)
 file(GLOB CPP_FILES_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/*.cpp)
 
 list(APPEND HEADER_REP_BFGGPUS ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb)
-
 list(APPEND HEADER_REP_BFGS_OTHER ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb_cpp/include/lbfgsb_cpp)
 
 file(GLOB CPP_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/CPP/*.cpp)
 file(GLOB CU_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/CPP/*.cu)
 
+##file(GLOB CPP_FILES_OBJ ${CMAKE_CURRENT_SOURCE_DIR}build/CMakeFiles/ROHSA-GPU.dir/src/CPP/*.cpp.o)
+##file(GLOB CU_FILES_OBJ ${CMAKE_CURRENT_SOURCE_DIR}/main.o)
+#file(GLOB FORTRAN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/lbfgsb.f)# ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/test.f95)
+file(GLOB FORTRAN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/linpack.f ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/timer.f ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/blas.f ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/lbfgsb.f)# ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/test.f95)
+#file(GLOB FORTRAN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/ROHSA/src/test.f95)
+
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
 	set(LIBS ${LIBS} OpenMP::OpenMP_CXX)
 endif()
-###
-###find_package(CCFits REQUIRED)
-###
+
 include_directories("/opt/include")
 include_directories("/usr/local/include")
 
@@ -36,20 +38,21 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb_cpp/)
 
 add_library(BFGS ${CPP_FILES_BFGS})
 
-#add_subdirectory(${CMAKE_SOURCE_DIR}/L-BFGS-B-GPU/)
-#add_library(cuBFGSB STATIC ${CPP_FILES_BFGSGPU} ${CU_FILES_BFGSGPU})
-##add_library(BFGSGPU STATIC IMPORTED)
-##set_property(TARGET BFGSGPU PROPERTY     IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-GPU/libcuLBFGSB.a")
+#ADD_LIBRARY(ORIGINAL_FORTRAN_LBFGSB ${FORTRAN_FILES}) ##FORTRAN LIB
+#SET_TARGET_PROPERTIES(ORIGINAL_FORTRAN_LBFGSB PROPERTIES LINKER_LANGUAGE Fortran) ##FORTRAN LIB
 
-#find_package(CudaLBFGS REQUIRED)
-####include_directories(${CMAKE_CURRENT_SOURCE_DIR}/CudaLBFGS/)
-#target_link_libraries(ROHSA-GPU lbfgsb_cpp)
+##add_subdirectory(${CMAKE_SOURCE_DIR}/L-BFGS-B-GPU/)
+##add_library(cuBFGSB STATIC ${CPP_FILES_BFGSGPU} ${CU_FILES_BFGSGPU})
+##find_package(CudaLBFGS REQUIRED)
+##target_link_libraries(ROHSA-GPU lbfgsb_cpp)
 
-set(LIBS ${LIBS} cfitsio CCfits BFGS cuLBFGSB lbfgsb_cpp)
-# lbfgs)
+set(LIBS ${LIBS} cfitsio CCfits BFGS cuLBFGSB lbfgsb_cpp) # ORIGINAL_FORTRAN_LBFGSB) ##FORTRAN LIB
 
-#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
-add_executable(ROHSA-GPU ${CPP_FILES} ${CU_FILES})
+##set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
+
+##set_property(TARGET ROHSA-GPU PROPERTY LINKER_LANGUAGE Fortran)
+##set(CMAKE_Fortran_FLAGS "${CPP_FILES_OBJ} -lstdc++")
+add_executable(ROHSA-GPU ${CPP_FILES} ${CU_FILES} ${FORTRAN_FILES}) #${FORTRAN_FILES}) ##FORTRAN LIB
 
 set_target_properties(ROHSA-GPU PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(ROHSA-GPU PUBLIC cxx_std_14)
@@ -60,3 +63,9 @@ set(LIBS ${LIBS} python2.7 gomp)
 
 link_directories(/usr/lib) #/usr/lib/x86_64-linux-gnu/)
 target_link_libraries(ROHSA-GPU PUBLIC ${LIBS})
+##TARGET_LINK_LIBRARIES(ROHSA-GPU PUBLIC ) #FORTRAN LIB
+
+##SET_TARGET_PROPERTIES(ROHSA-GPU PROPERTIES LINKER_LANGUAGE Fortran)
+
+
+##add_executable(ROHSA-GPU ${FORTRAN_FILES})
