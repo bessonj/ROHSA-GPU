@@ -1179,7 +1179,7 @@ void f_g_cube_cuda_L_clean(parameters<T> &M, T& f, T* g, int n, std::vector<std:
 
 	double temps1_conv = omp_get_wtime();
 
-	if(true){
+	if(false){
 		regularisation(beta, deriv, g, b_params, f, indice_x, indice_y, indice_v, M, temps_bis);
 	}else{
 //COMMENT SECTION BELOW	

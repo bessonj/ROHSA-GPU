@@ -33,6 +33,7 @@ int minimize() {
     static char task_FG_START_c[60] = "FG_START";  
     static char task_NEW_X_c[60] = "NEW_X";  
     static char task_STOP_c[60] = "STOP";  
+    static char task_STOP_GRAD_c[60] = "STOP_GRAD";  
     static char task_START_c[60] = "START";  
 
 	char task[60];
@@ -136,8 +137,6 @@ L111:
 //	exit(0);
 /////////
 
-	//exit(0);
-
 	std::cout<<"===> task = "<<task <<std::endl;
 //	std::cout<<"===> len(task) = "<<task <<std::endl;
 //	std::cout<<"===> task==START = "<< task=="START" <<std::endl;
@@ -150,8 +149,6 @@ L111:
 	for(int p=0; p<n; p++){
 		printf("-->x[%d] = %f\n", p, x[p]);
 	}
-
-//	exit(0);
 
 /*
 	std::cout<<"compare task and FG_START = "<< std::strncmp(task, task_FG_START, 8)<<std::endl;
