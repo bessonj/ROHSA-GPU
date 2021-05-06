@@ -272,6 +272,71 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
 
 
 template <typename T> 
+T compute_residual_and_f_cheap_memory_trick(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss)
+{
+    T* beta_dev = NULL;
+    T* residual_dev = NULL;
+    T* std_map_dev = NULL;
+
+    checkCudaErrors(cudaMalloc(&beta_dev, product_taille_beta*sizeof(T)));
+    checkCudaErrors(cudaMalloc(&residual_dev, product_taille_residual*sizeof(T)));
+    checkCudaErrors(cudaMalloc(&std_map_dev, product_taille_std_map*sizeof(T)));
+
+    checkCudaErrors(cudaMemcpy(beta_dev, beta, product_taille_beta*sizeof(T), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(residual_dev, cube, product_taille_residual*sizeof(T), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_taille_std_map*sizeof(T), cudaMemcpyHostToDevice));
+    
+    dim3 Dg, Db;
+    Db.x = BLOCK_SIZE_X_BIS; //
+    Db.y = BLOCK_SIZE_Y_BIS; //
+    Db.z = BLOCK_SIZE_Z_BIS; //
+
+    Dg.x = ceil(T(indice_x)/T(BLOCK_SIZE_X_BIS));
+    Dg.y = ceil(T(indice_y)/T(BLOCK_SIZE_Y_BIS));
+    Dg.z = ceil(T(indice_v)/T(BLOCK_SIZE_Z_BIS));
+
+
+    kernel_residual_cheap_memory_trick<T><<<Dg,Db>>>(beta_dev, residual_dev,indice_x, indice_y, indice_v, n_gauss);
+
+    checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
+
+    dim3 Dg_L2, Db_L2;
+    Db_L2.x = BLOCK_SIZE_L2_X;
+    Db_L2.y = BLOCK_SIZE_L2_Y;
+    Db_L2.z = 1;
+    Dg_L2.x = ceil(indice_x/T(BLOCK_SIZE_L2_X));
+    Dg_L2.y = ceil(indice_y/T(BLOCK_SIZE_L2_Y));
+    Dg_L2.z = 1;
+
+
+    T* map_norm_dev = NULL;
+    checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(T)));
+
+    kernel_norm_map_boucle_v<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v);
+
+    T* d_array_f=NULL;
+    checkCudaErrors(cudaMalloc(&d_array_f, 1*sizeof(T))); // ERREUR ICI
+
+    reduction_loop<T>(map_norm_dev, d_array_f, indice_x*indice_y);
+
+    T* array_f = (T*)malloc(1*sizeof(T));
+
+    checkCudaErrors(cudaMemcpy(array_f, d_array_f, 1*sizeof(T), cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
+    T sum1 = array_f[0];
+    free(array_f);
+
+    checkCudaErrors(cudaFree(d_array_f));
+    checkCudaErrors(cudaFree(map_norm_dev));
+    checkCudaErrors(cudaFree(beta_dev));
+    checkCudaErrors(cudaFree(std_map_dev));
+    checkCudaErrors(cudaFree(residual_dev));
+
+    return sum1;
+  }
+
+
+template <typename T> 
 void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int dim_y, int dim_v, parameters<T> &M, double* temps_bis){
   temps_bis[0] = 2.;
 	int n_beta = (3*M.n_gauss*dim_x*dim_y)+M.n_gauss;
@@ -646,6 +711,7 @@ template <typename T> void update_array_f_dev_sort(T lambda, T* array_f_dev, T* 
     checkCudaErrors(cudaFree(array_f_dev_bis));
 }
 
+template double compute_residual_and_f_cheap_memory_trick<double>(double*, int*, int, double*, int*, int, double*, int*, int, double*, int*, int, int, int, int, int);
 template double compute_residual_and_f<double>(double*, int*, int, double*, int*, int, double*, int*, int, double*, int*, int, int, int, int, int);
 template void gradient_L_2_beta<double>(double*, int*, int, double*, int*, int, double*, int*, int, double*, int*, int, int);
 template void reduction_loop<double>(double*, double*, int);
@@ -655,6 +721,7 @@ template void conv_twice_and_copy<double>(double*, double*, double*, int, int);
 template void update_array_f_dev_sort<double>(double, double, double*, double*, double*, int, int, int, double*);
 template void update_array_f_dev_sort<double>(double, double*, double*, int, int);
 
+template float compute_residual_and_f_cheap_memory_trick<float>(float*, int*, int, float*, int*, int, float*, int*, int, float*, int*, int, int, int, int, int);
 template float compute_residual_and_f<float>(float*, int*, int, float*, int*, int, float*, int*, int, float*, int*, int, int, int, int, int);
 template void gradient_L_2_beta<float>(float*, int*, int, float*, int*, int, float*, int*, int, float*, int*, int, int);
 template void reduction_loop<float>(float*, float*, int);

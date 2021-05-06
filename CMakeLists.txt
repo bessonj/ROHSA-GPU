@@ -7,6 +7,13 @@ set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 project (ROHSA-GPU LANGUAGES CXX CUDA Fortran)
 #enable_language( Fortran )
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -funroll-loops")
+
 list(APPEND HEADER_REP ${CMAKE_CURRENT_SOURCE_DIR}/inc ${CMAKE_CURRENT_SOURCE_DIR}/matplotlib-cpp ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/ ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb/ ${CMAKE_CURRENT_SOURCE_DIR}/src/CUDA ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} "/usr/local/cuda/samples/common/inc/" "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../samples/common/inc")
 
 list(APPEND HEADER_REP_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/*.h)
@@ -56,7 +63,8 @@ add_executable(ROHSA-GPU ${CPP_FILES} ${CU_FILES} ${FORTRAN_FILES}) #${FORTRAN_F
 
 set_target_properties(ROHSA-GPU PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(ROHSA-GPU PUBLIC cxx_std_14)
-target_compile_options(ROHSA-GPU PUBLIC -lgfortran -lstdc++) #-O3  -funroll-loops) #-std=c++14)
+#target_compile_options(ROHSA-GPU PUBLIC ) #-lgfortran -O3  ) #-std=c++14)
+
 
 target_include_directories(ROHSA-GPU PUBLIC /usr/include/python2.7/ "${HEADER_REP}")
 set(LIBS ${LIBS} python2.7 gomp)

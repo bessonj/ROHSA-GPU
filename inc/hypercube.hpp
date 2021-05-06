@@ -45,6 +45,7 @@ class hypercube
 	hypercube(parameters<T> &M,int indice_debut, int indice_fin, bool one_level);
 	hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square);
 	hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square, bool select_spectral_range, bool get_a_square_of_a_given_size, bool larger_power_of_two);
+	hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square, int mode);
 	
 	int writeImage();
 	int save_noise_map_in_fits(parameters<T> &M, std::vector <std::vector<T>>& noise_map);
@@ -66,6 +67,7 @@ class hypercube
 	int get_binary_from_fits();
 
 	std::vector <std::vector<std::vector<T>>> get_array_from_fits(parameters<T> &M);
+	std::vector <std::vector<std::vector<T>>> get_array_and_reshape_it_from_fits(parameters<T> &M,int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square);
 //	void get_array_from_fits(parameters<T> &M);
 	void get_vector_from_binary(std::vector<std::vector<std::vector<T>>> &z);
 	std::vector<int> get_dim_data();
@@ -117,6 +119,428 @@ class hypercube
 namespace plt = matplotlibcpp;
 //using namespace std;
 using namespace CCfits;
+
+
+template<typename T>
+std::vector <std::vector<std::vector<T>>> hypercube<T>::get_array_and_reshape_it_from_fits(parameters<T> &M,int start_index, int end_index, int pos_x, int pos_y, int size_side_square){
+//	std::cout<<" On entre la boucle de lecture !!!!!! "<<std::endl;
+//	std::cin.ignore();
+
+	std::auto_ptr<FITS> pInfile(new FITS(M.filename_fits,Read,true));
+
+    PHDU& image = pInfile->pHDU();
+	std::valarray<T> contents;
+    image.readAllKeys();
+
+    image.read(contents);
+
+        // this doesn't print the data, just header info.
+	std::cout << image << std::endl;
+
+    long ax1(image.axis(0));
+    long ax2(image.axis(1));
+    long ax3(image.axis(2));
+//	long ax4(image.axis(3));
+
+	this->dim_data[0]=ax1;
+	this->dim_data[1]=ax2;
+	this->dim_data[2]=ax3;
+
+	int dim_x_data=ax1;
+	int dim_y_data=ax2;
+	int dim_v_data=ax3;
+
+	int dim_x = size_side_square;
+	int dim_y = size_side_square;
+	int dim_v = end_index-start_index+1;
+
+	std::cout<<"--> dim_x_data = "<<dim_x_data<<std::endl;
+	std::cout<<"--> dim_y_data = "<<dim_y_data<<std::endl;
+	std::cout<<"--> dim_v_data = "<<dim_v_data<<std::endl;
+
+	std::cout<<"  "<<std::endl;
+	std::cout<<"  "<<std::endl;
+
+	std::cout<<"--> dim_x = "<<dim_x<<std::endl;
+	std::cout<<"--> dim_y = "<<dim_y<<std::endl;
+	std::cout<<"--> dim_v = "<<dim_v<<std::endl;
+
+	std::cout<<"  "<<std::endl;
+	std::cout<<"  "<<std::endl;
+
+	std::vector <std::vector<std::vector<T>>> z_transpose(dim_v, std::vector<std::vector<T>>(dim_y, std::vector<T>(dim_x,0.)));
+
+//	std::cout<<" On entre la boucle de copie !!!!!! "<<std::endl;
+//	std::cin.ignore();
+
+	for(int k=0; k<dim_v; k++)
+	{
+		for(int j=0; j<dim_y; j++)
+		{
+			for(int i=0; i<dim_x; i++)
+			{
+				z_transpose[k][j][i] = contents[(k+start_index)*dim_y_data*dim_x_data+(j+pos_y-int(dim_y/2))*dim_x_data+(i+pos_x-int(dim_x/2))];
+			}
+		}
+	}
+//	std::cout<<" Ligne suivante !!!!!! "<<std::endl;
+
+//	std::cin.ignore();
+
+	std::vector <std::vector<std::vector<T>>> z(dim_x, std::vector<std::vector<T>>(dim_y, std::vector<T>(dim_v,0.)));
+	for(int k=0; k<dim_v; k++)
+	{
+		for(int j=0; j<dim_y; j++)
+		{
+			for(int i=0; i<dim_x; i++)
+			{
+				z[i][j][k] = z_transpose[k][j][i];
+//				z[k][j][i] = contents[k*ax3*ax2+j*ax3+i];
+			}
+		}
+	}
+//	std::cout<<" Ligne suivante !!!!!! "<<std::endl;
+	z_transpose.clear();//=std::vector<std::vector<std::vector<T>>>();
+
+
+//	std::cout<<" On a fini ! "<<std::endl;
+	this->dim_data[0]=dim_x;
+	this->dim_data[1]=dim_y;
+	this->dim_data[2]=dim_v;
+
+	return z;
+}
+
+
+template<typename T>
+hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square, int mode)
+{
+	this->position_given = true;
+	this->size_side_square_option = size_side_square;
+
+	this->indice_debut= indice_debut;
+	this->indice_fin = indice_fin;
+
+	this->position_x = pos_x;
+	this->position_y = pos_y;
+
+
+	//First we get this->data which is the data array
+	if(M.input_format_fits){
+//		std::cout<<"indice_debut-indice_fin+1 = "<<indice_fin-indice_debut+1<<std::endl;
+//		exit(0);
+
+		this->data = get_array_and_reshape_it_from_fits(M,indice_debut, indice_fin, pos_x, pos_y, size_side_square);
+
+		this->nside = dim2nside();
+
+		std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+		std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+		std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
+		std::cout<<"this->data[0][0][3] = "<<this->data[0][0][3]<<std::endl;
+
+		std::cout<<" "<<std::endl;
+		std::cout<<" "<<std::endl;
+
+		std::cout<<"this->data.size() = "<<this->data.size()<<std::endl;
+		std::cout<<"this->data[0].size() = "<<this->data[0].size()<<std::endl;
+		std::cout<<"this->data[0][0].size() = "<<this->data[0][0].size()<<std::endl;
+
+
+		std::cout<<" "<<std::endl;
+		std::cout<<" "<<std::endl;
+
+//		this->dim_cube[2] = dim_data[2];
+		this->dim_cube[2] = indice_fin-indice_debut+1;
+		int shift = this->size_side_square_option/2;
+
+		this->dim_data[0] = this->size_side_square_option;
+		this->dim_data[1] = this->size_side_square_option;
+		this->nside = dim2nside();
+
+		std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+		std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+		std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
+		std::cout<<"this->data[0][0][3] = "<<this->data[0][0][3]<<std::endl;
+		std::cout<<"this->nside = "<<this->nside<<std::endl;
+
+		this->dim_cube[0] =pow(2.0,this->nside);
+		this->dim_cube[1] =pow(2.0,this->nside);
+		std::cout<<"dim_cube[0] = "<<this->dim_cube[0]<<std::endl;
+		std::cout<<"dim_cube[1] = "<<this->dim_cube[1]<<std::endl;
+
+		int offset_x = abs((-dim_cube[0]+dim_data[0])/2);
+		int offset_y = abs((-dim_cube[1]+dim_data[1])/2);
+
+		std::cout<<"offset_x = "<<offset_x<<std::endl;
+		std::cout<<"offset_y = "<<offset_y<<std::endl;
+
+		std::vector<std::vector<std::vector<T>>> cube_reshaped_local(this->dim_cube[0], std::vector<std::vector<T>>(this->dim_cube[1],std::vector<T>(this->dim_cube[2],0.)));
+		for(int i=0; i< this->dim_cube[0]; i++)
+		{
+			for(int j=0; j< this->dim_cube[1]; j++)
+			{
+				for(int k=0; k<this->dim_cube[2]; k++)
+				{
+				cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+				}
+			}
+		}
+		std::cout<<"END 1"<<std::endl;
+
+		this->cube = cube_reshaped_local;
+		cube_reshaped_local.clear();// = std::vector<std::vector<std::vector<T>>>();
+
+		std::cout<<"END 2"<<std::endl;
+	/*
+		if(select_spectral_range){
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =indice_fin-indice_debut+1;
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(dim_data[0], std::vector<std::vector<T>>(dim_data[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_data[0]; i++)
+			{
+				for(int j=0; j< dim_data[1]; j++)
+				{
+					for(int k= indice_debut; k<= indice_fin; k++)
+					{
+					data_reshaped_local[i][j][k-indice_debut]= this->data[i][j][k];
+					}
+				}
+			}
+			this->data = data_reshaped_local;
+			dim_data[2] =indice_fin-indice_debut+1;
+
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<indice_fin-indice_debut+1; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i-offset_x][j-offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+		}else if(select_spectral_range && larger_power_of_two){
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =indice_fin-indice_debut+1;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(dim_data[0], std::vector<std::vector<T>>(dim_data[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_data[0]; i++)
+			{
+				for(int j=0; j< dim_data[1]; j++)
+				{
+					for(int k= indice_debut; k<= indice_fin; k++)
+					{
+					data_reshaped_local[i][j][k-indice_debut]= this->data[i][j][k];
+					}
+				}
+			}
+			this->data = data_reshaped_local;
+			dim_data[2] =indice_fin-indice_debut+1;
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<indice_fin-indice_debut+1; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+			this->data = cube_reshaped_local;
+		}else if(larger_power_of_two){
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =dim_data[2];
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<dim_cube[2]; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+			this->data = cube_reshaped_local;
+		}else if(select_spectral_range && get_a_square_of_a_given_size){
+			dim_cube[2] =indice_fin-indice_debut+1;
+			int shift = size_side_square/2;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(size_side_square, std::vector<std::vector<T>>(size_side_square,std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< size_side_square; i++)
+			{
+				for(int j=0; j< size_side_square; j++)
+				{
+					for(int k= indice_debut; k<= indice_fin; k++)
+					{
+						data_reshaped_local[i][j][k-indice_debut]= this->data[i+pos_x-shift][j+pos_y-shift][k];
+					}
+				}
+			}
+
+			this->data = data_reshaped_local;
+			this->nside = dim2nside();
+
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_data[2] =indice_fin-indice_debut+1;
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(indice_fin-indice_debut+1,0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<indice_fin-indice_debut+1; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i-offset_x][j-offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+		}else if(get_a_square_of_a_given_size){
+			this->dim_cube[2] = dim_data[2];
+			int shift = size_side_square/2;
+			std::vector<std::vector<std::vector<T>>> data_reshaped_local(size_side_square, std::vector<std::vector<T>>(size_side_square,std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< size_side_square; i++)
+			{
+				for(int j=0; j< size_side_square; j++)
+				{
+					for(int k= 0; k< dim_data[2]; k++)
+					{
+						data_reshaped_local[i][j][k]= this->data[i+pos_x-shift][j+pos_y-shift][k];
+					}
+				}
+			}
+
+			this->data = data_reshaped_local;
+			this->dim_data[0] = size_side_square;
+			this->dim_data[1] = size_side_square;
+			this->nside = dim2nside();
+
+	std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
+	std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
+	std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
+	std::cout<<"this->nside = "<<this->nside<<std::endl;
+
+			this->dim_cube[0] =pow(2.0,this->nside);
+			this->dim_cube[1] =pow(2.0,this->nside);
+	std::cout<<"dim_cube[0] = "<<this->dim_cube[0]<<std::endl;
+	std::cout<<"dim_cube[1] = "<<this->dim_cube[1]<<std::endl;
+
+			int offset_x = abs((-dim_cube[0]+dim_data[0])/2);
+			int offset_y = abs((-dim_cube[1]+dim_data[1])/2);
+	std::cout<<"offset_x = "<<offset_x<<std::endl;
+	std::cout<<"offset_y = "<<offset_y<<std::endl;
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(this->dim_cube[0], std::vector<std::vector<T>>(this->dim_cube[1],std::vector<T>(this->dim_cube[2],0.)));
+			for(int i=0; i< this->dim_cube[0]; i++)
+			{
+				for(int j=0; j< this->dim_cube[1]; j++)
+				{
+					for(int k=0; k<this->dim_cube[2]; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
+					}
+				}
+			}
+	std::cout<<"END 1"<<std::endl;
+
+			this->cube = cube_reshaped_local;
+	std::cout<<"END 2"<<std::endl;
+		}else{
+			dim_cube[0] =pow(2.0,this->nside);
+			dim_cube[1] =pow(2.0,this->nside);
+			dim_cube[2] =dim_data[2];
+
+			int offset_x = (-dim_cube[0]+dim_data[0])/2;
+			int offset_y = (-dim_cube[1]+dim_data[1])/2;
+
+
+			std::vector<std::vector<std::vector<T>>> cube_reshaped_local(dim_cube[0], std::vector<std::vector<T>>(dim_cube[1],std::vector<T>(dim_cube[2],0.)));
+			for(int i=0; i< dim_cube[0]; i++)
+			{
+				for(int j=0; j< dim_cube[1]; j++)
+				{
+					for(int k=0; k<dim_cube[2]; k++)
+					{
+					cube_reshaped_local[i][j][k]= this->data[i-offset_x][j-offset_y][k];
+					}
+				}
+			}
+			this->cube = cube_reshaped_local;
+		}
+		*/
+	}else{
+
+		this->nside = dim2nside();
+
+		this->data = use_dat_file(M);
+		this->dim_cube[0] = this->dim_data[0];
+		this->dim_cube[1] = this->dim_data[1];
+		this->dim_cube[2] = this->dim_data[2];
+		this->cube = this->data;
+
+	}
+	std::cout<<"dim_data[0] = "<<dim_data[0]<<std::endl;
+	std::cout<<"dim_data[1] = "<<dim_data[1]<<std::endl;
+	std::cout<<"dim_data[2] = "<<dim_data[2]<<std::endl;
+
+	std::cout<<"dim_cube[0] = "<<dim_cube[0]<<std::endl;
+	std::cout<<"dim_cube[1] = "<<dim_cube[1]<<std::endl;
+	std::cout<<"dim_cube[2] = "<<dim_cube[2]<<std::endl;
+
+	std::cout<<" "<<std::endl;
+	std::cout<<" "<<std::endl;
+
+	for(int i = 0; i<this->dim_data[2]; i++) 	std::cout<<"this->data[1023][1023]["<<i<<"] = "<<this->data[this->dim_data[0]-1][this->dim_data[1]-1][i]<<std::endl;
+	std::cout<<" "<<std::endl;
+	std::cout<<" "<<std::endl;
+	for(int i = 0; i<this->dim_data[2]; i++) 	std::cout<<"this->data[0][0]["<<i<<"] = "<<this->data[0][0][i]<<std::endl;
+	std::cout<<" "<<std::endl;
+	std::cout<<" "<<std::endl;
+
+	printf("this->data[0][0][0] = %.26f\n",this->data[0][0][0]);
+	printf("this->data[0][0][1] = %.26f\n",this->data[0][0][1]);
+	printf("this->data[0][0][2] = %.26f\n",this->data[0][0][2]);
+	printf("this->data[0][0][3] = %.26f\n",this->data[0][0][3]);
+	std::cout<<" "<<std::endl;
+	printf("this->data[0][0][56] = %.26f\n",this->data[0][0][56]);
+	printf("this->data[0][0][57] = %.26f\n",this->data[0][0][57]);
+	printf("this->data[0][0][58] = %.26f\n",this->data[0][0][58]);
+	printf("this->data[0][0][59] = %.26f\n",this->data[0][0][59]);
+
+	std::cout<<" "<<std::endl;
+	std::cout<<" "<<std::endl;
+
+	printf("this->cube[0][0][0] = %.26f\n",this->cube[0][0][0]);
+	printf("this->cube[0][0][1] = %.26f\n",this->cube[0][0][1]);
+	printf("this->cube[0][0][2] = %.26f\n",this->cube[0][0][2]);
+	printf("this->cube[0][0][3] = %.26f\n",this->cube[0][0][3]);
+	std::cout<<" "<<std::endl;
+	printf("this->cube[0][0][56] = %.26f\n",this->cube[0][0][56]);
+	printf("this->cube[0][0][57] = %.26f\n",this->cube[0][0][57]);
+	printf("this->cube[0][0][58] = %.26f\n",this->cube[0][0][58]);
+	printf("this->cube[0][0][59] = %.26f\n",this->cube[0][0][59]);
+
+}
+
 
 template<typename T>
 hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int pos_x, int pos_y, int size_side_square, bool select_spectral_range, bool get_a_square_of_a_given_size, bool larger_power_of_two)
@@ -465,7 +889,7 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 	std::cout<<" "<<std::endl;
 	std::cout<<" "<<std::endl;
 
-	for(int i = 0; i<this->dim_data[2]; i++) 	std::cout<<"this->data[1023][1023]["<<i<<"] = "<<this->data[1023][1023][i]<<std::endl;
+	for(int i = 0; i<this->dim_data[2]; i++) 	std::cout<<"this->data[1023][1023]["<<i<<"] = "<<this->data[this->dim_data[0]-1][this->dim_data[1]-1][i]<<std::endl;
 	std::cout<<" "<<std::endl;
 	std::cout<<" "<<std::endl;
 	for(int i = 0; i<this->dim_data[2]; i++) 	std::cout<<"this->data[0][0]["<<i<<"] = "<<this->data[0][0][i]<<std::endl;
@@ -473,9 +897,9 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 	std::cout<<" "<<std::endl;
 
 	printf("this->data[0][0][0] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][1] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][2] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][3] = %.26f\n",this->data[0][0][0]);
+	printf("this->data[0][0][1] = %.26f\n",this->data[0][0][1]);
+	printf("this->data[0][0][2] = %.26f\n",this->data[0][0][2]);
+	printf("this->data[0][0][3] = %.26f\n",this->data[0][0][3]);
 	std::cout<<" "<<std::endl;
 	printf("this->data[0][0][56] = %.26f\n",this->data[0][0][56]);
 	printf("this->data[0][0][57] = %.26f\n",this->data[0][0][57]);
@@ -486,9 +910,9 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 	std::cout<<" "<<std::endl;
 
 	printf("this->cube[0][0][0] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][1] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][2] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][3] = %.26f\n",this->cube[0][0][0]);
+	printf("this->cube[0][0][1] = %.26f\n",this->cube[0][0][1]);
+	printf("this->cube[0][0][2] = %.26f\n",this->cube[0][0][2]);
+	printf("this->cube[0][0][3] = %.26f\n",this->cube[0][0][3]);
 	std::cout<<" "<<std::endl;
 	printf("this->cube[0][0][56] = %.26f\n",this->cube[0][0][56]);
 	printf("this->cube[0][0][57] = %.26f\n",this->cube[0][0][57]);
@@ -576,9 +1000,9 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, bool
 	std::cout<<" "<<std::endl;
 
 	printf("this->data[0][0][0] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][1] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][2] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][3] = %.26f\n",this->data[0][0][0]);
+	printf("this->data[0][0][1] = %.26f\n",this->data[0][0][1]);
+	printf("this->data[0][0][2] = %.26f\n",this->data[0][0][2]);
+	printf("this->data[0][0][3] = %.26f\n",this->data[0][0][3]);
 	std::cout<<" "<<std::endl;
 	printf("this->data[0][0][56] = %.26f\n",this->data[0][0][56]);
 	printf("this->data[0][0][57] = %.26f\n",this->data[0][0][57]);
@@ -589,9 +1013,9 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, bool
 	std::cout<<" "<<std::endl;
 
 	printf("this->cube[0][0][0] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][1] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][2] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][3] = %.26f\n",this->cube[0][0][0]);
+	printf("this->cube[0][0][1] = %.26f\n",this->cube[0][0][1]);
+	printf("this->cube[0][0][2] = %.26f\n",this->cube[0][0][2]);
+	printf("this->cube[0][0][3] = %.26f\n",this->cube[0][0][3]);
 	std::cout<<" "<<std::endl;
 	printf("this->cube[0][0][56] = %.26f\n",this->cube[0][0][56]);
 	printf("this->cube[0][0][57] = %.26f\n",this->cube[0][0][57]);
@@ -651,9 +1075,9 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin)
 	std::cout<<" "<<std::endl;
 
 	printf("this->data[0][0][0] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][1] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][2] = %.26f\n",this->data[0][0][0]);
-	printf("this->data[0][0][3] = %.26f\n",this->data[0][0][0]);
+	printf("this->data[0][0][1] = %.26f\n",this->data[0][0][1]);
+	printf("this->data[0][0][2] = %.26f\n",this->data[0][0][2]);
+	printf("this->data[0][0][3] = %.26f\n",this->data[0][0][3]);
 	std::cout<<" "<<std::endl;
 	printf("this->data[0][0][56] = %.26f\n",this->data[0][0][56]);
 	printf("this->data[0][0][57] = %.26f\n",this->data[0][0][57]);
@@ -664,9 +1088,9 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin)
 	std::cout<<" "<<std::endl;
 
 	printf("this->cube[0][0][0] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][1] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][2] = %.26f\n",this->cube[0][0][0]);
-	printf("this->cube[0][0][3] = %.26f\n",this->cube[0][0][0]);
+	printf("this->cube[0][0][1] = %.26f\n",this->cube[0][0][1]);
+	printf("this->cube[0][0][2] = %.26f\n",this->cube[0][0][2]);
+	printf("this->cube[0][0][3] = %.26f\n",this->cube[0][0][3]);
 	std::cout<<" "<<std::endl;
 	printf("this->cube[0][0][56] = %.26f\n",this->cube[0][0][56]);
 	printf("this->cube[0][0][57] = %.26f\n",this->cube[0][0][57]);
@@ -822,15 +1246,20 @@ std::vector<std::vector<std::vector<T>>> hypercube<T>::use_dat_file(parameters<T
 
 	std::ifstream fichier(M.filename_dat);
 
+	printf("DEBUG 1.1\n");
+
 	fichier >> z >> x >> y;
+	printf("DEBUG 1.2\n");
+	printf("x = %d, y = %d, z = %d\n", x,y,z);
 
 	this->dim_data[2]=z;
 	this->dim_data[1]=y;
 	this->dim_data[0]=x;
 
-//	printf("dim_data[0] = %d\n",this->dim_data[0]);
-//	printf("dim_data[1] = %d\n",this->dim_data[1]);
-//	printf("dim_data[2] = %d\n",this->dim_data[2]);
+	printf("DEBUG 1.3\n");
+	printf("dim_data[0] = %d\n",this->dim_data[0]);
+	printf("dim_data[1] = %d\n",this->dim_data[1]);
+	printf("dim_data[2] = %d\n",this->dim_data[2]);
 
 	std::vector<std::vector<std::vector<T>>> data_(this->dim_data[0],std::vector<std::vector<T>>(this->dim_data[1],std::vector<T>(this->dim_data[2], 0.)));
 

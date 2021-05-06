@@ -248,6 +248,28 @@ __global__ void kernel_residual(T* beta, T* cube, T* residual, int indice_x, int
 }
 
 template <typename T> 
+__global__ void kernel_residual_cheap_memory_trick(T* beta, T* residual, int indice_x, int indice_y, int indice_v, int n_gauss)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
+
+	if(index_x<indice_x && index_y<indice_y && index_z<indice_v)
+	{
+  	T model_gaussienne = 0.;
+		for(int g = 0; g<n_gauss; g++)
+		{
+			T par[3];
+			par[0]=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];
+			par[1]=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];
+			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
+			model_gaussienne += par[0]*exp(-pow((T(index_z+1)-par[1]),2.) / (2.*pow(par[2],2.)));
+		}
+		residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]=model_gaussienne-residual[index_z*indice_y*indice_x+index_y*indice_x+index_x];
+	}
+}
+
+template <typename T> 
 __global__ void kernel_norm_map_boucle_v(T* map_norm_dev, T* residual, T* std_map, int indice_x, int indice_y, int indice_v)
 {
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;

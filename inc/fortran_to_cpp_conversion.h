@@ -5,9 +5,12 @@
 #include <stdlib.h>
 #include <cstring>
 #include <iostream>
+#include "parameters.hpp"
+#include "f_g_cube.hpp"
 
 //This converts a C++ string (namely cstring) into a Fortran string (namely fstring). The strings formats are respectively character*60 and char* (char string[60]). 
 void ConvertToFortran(char* fstring, std::size_t fstring_len, const char* cstring);
+void minimize_fortran_test(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
 int minimize();
 
 extern "C" void square_(int *n, int *out);
