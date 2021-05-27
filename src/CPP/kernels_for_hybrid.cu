@@ -248,7 +248,7 @@ __global__ void kernel_residual(T* beta, T* cube, T* residual, int indice_x, int
 }
 
 template <typename T> 
-__global__ void kernel_residual_cheap_memory_trick(T* beta, T* residual, int indice_x, int indice_y, int indice_v, int n_gauss)
+__global__ void kernel_residual_less_memory(T* beta, T* residual, int indice_x, int indice_y, int indice_v, int n_gauss)
 {
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
 	int index_y = blockIdx.y*blockDim.y +threadIdx.y;

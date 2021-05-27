@@ -313,7 +313,7 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
 	//no cube_dev declared before loop 
 	void minimize_clean_double(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
 
-	void minimize_fortran_float_hybrid(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
+	void minimize_fortran_float(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
 
 	//no cube_dev declared before loop 
 	void minimize_fortran_double(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
@@ -455,8 +455,8 @@ algo_rohsa<T>::algo_rohsa(parameters<T> &M, hypercube<T> &Hypercube)
 		}else{
 		std::cout << "this->dim_cube[0] = " <<this->dim_cube[0]<< std::endl;
 		std::cout << "this->dim_cube[1] = " <<this->dim_cube[1]<< std::endl;
-//		Hypercube.get_noise_map_from_fits(M, this->std_data_map);
-		Hypercube.get_noise_map_from_DHIGLS(M, this->std_data, this->std_cube);
+		Hypercube.get_noise_map_from_fits(M, this->std_data, this->std_cube);
+//		Hypercube.get_noise_map_from_DHIGLS(M, this->std_data, this->std_cube);
 		}
 	}else{
 		std::vector<std::vector<T>> std_map_init(this->dim_data[1], std::vector<T>(this->dim_data[0],0.));
@@ -667,6 +667,7 @@ void algo_rohsa<T>::descente(hypercube<T> &Hypercube, parameters<T> &M, std::vec
 						update_clean(Hypercube, M, cube_mean, fit_params, std_map, power, power, dim_v, b_params);
 
 						double temps2_update_pp=omp_get_wtime();
+						printf("Temps niveau %d --> %.10f\n", power, temps2_update_pp-temps1_update_pp);
 						temps_update_pp += temps2_update_pp-temps1_update_pp;
 
 						if(M.print_mean_parameters){
@@ -1093,10 +1094,10 @@ void algo_rohsa<T>::update_clean(hypercube<T> Hypercube, parameters<T> &M, std::
 ////		minimize_clean_driver(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 //		minimize_clean(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 //		printf("Fortan minimize function !!!!!!!!!!!!!!!!!!\n");
-		minimize_fortran(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
-//		minimize_fortran_double(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
+//		minimize_fortran(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
+		minimize_fortran_double(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
+//		minimize_fortran_float(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 //		minimize_clean_double(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
-//		minimize_fortran_float_hybrid(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 
 		if(M.select_version == 0){ //-cpu
 			one_D_to_three_D_inverted_dimensions_double(beta, params, 3*M.n_gauss, indice_y, indice_x);
@@ -1173,6 +1174,7 @@ void algo_rohsa<T>::update_clean(hypercube<T> Hypercube, parameters<T> &M, std::
 		}
 //		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
 		minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
+
 //		void algo_rohsa<T>::minimize_clean_same_dim_test(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
 
 		if(M.select_version == 0){ //-cpu
@@ -2023,7 +2025,8 @@ L111:
 //		setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, &M.iprint, csave, lsave, isave, dsave);
 
 		temps_setulb += omp_get_wtime() - temps_temp;
-
+		
+//		for(int p = 0; p<)
     if (std::strncmp(task, "FG", 2) == 0 || std::strncmp(task, "FG_START", 8) == 0 ){//task == 'FG' || task == 'FG_START'){ //IS_FG(*task) ) {
 		if(false){//dim_x<64){
 //			f_g_cube_fast_unidimensional<double>(M, f, g, n, cube_flattened, cube, beta, dim_v, dim_y, dim_x, std_map_, temps);
@@ -2353,7 +2356,7 @@ void algo_rohsa<T>::minimize_clean_double(parameters<double> &M, long n, long m,
 }
 
 template <typename T>
-void algo_rohsa<T>::minimize_fortran_float_hybrid(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
+void algo_rohsa<T>::minimize_fortran_float(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
 
 		parameters<float> M_f;
 		M_f.input_format_fits = M.input_format_fits;
@@ -2500,7 +2503,7 @@ void algo_rohsa<T>::minimize_fortran_float_hybrid(parameters<double> &M, long n,
 
 	double temps1_f_g_cube = omp_get_wtime();
 
-	std::vector<std::vector<float>> std_map(dim_y, std::vector<double>(dim_x,0.));
+	std::vector<std::vector<float>> std_map(dim_y, std::vector<float>(dim_x,0.));
 	for(int i=0; i<dim_y; i++){
 		for(int j=0; j<dim_x; j++){
 			std_map[i][j] = float(std_map_[i*dim_x+j]);
@@ -2560,7 +2563,7 @@ L111:
 			g_float[i]=0.;
 			beta_float[i] = float(beta[i]);
 		}
-		f_g_cube_cuda_L_clean_f<float>(M_f, f_float, g_float, n, beta_float, dim_v, dim_y, dim_x, std_map, cube_flattened_float, temps, this->temps_transfert_d, this->temps_mirroirs, this->temps_detail_regu); // expérimentation gradient
+		f_g_cube_cuda_L_clean_f(M_f, f_float, g_float, n, beta_float, dim_v, dim_y, dim_x, std_map, cube_flattened_float, temps, this->temps_transfert_d, this->temps_mirroirs, this->temps_detail_regu); // expérimentation gradient
 		for(int i(0); i<n; i++) {
 			g[i] = double(g_float[i]);
 			beta[i] = double(beta_float[i]);

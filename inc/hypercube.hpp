@@ -1,8 +1,9 @@
 #ifndef DEF_HYPERCUBE
 #define DEF_HYPERCUBE
 
-#include "matplotlibcpp.h"
+//#include "matplotlibcpp.h"
 #include "parameters.hpp"
+#include <cstring>
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
@@ -116,7 +117,7 @@ class hypercube
 
 
 
-namespace plt = matplotlibcpp;
+//namespace plt = matplotlibcpp;
 //using namespace std;
 using namespace CCfits;
 
@@ -2231,8 +2232,6 @@ hypercube<T>::save_result_multires(std::vector<std::vector<std::vector<T>>>& gri
 template<typename T>
 void hypercube<T>::reshape_noise_up_data(std::vector<std::vector<T>>& std_data_raw, std::vector<std::vector<T>>& std_data_out, int dim1, int dim0)
 {
-	this->position_y = 650;
-	this->position_x = 730;
 		for(int j=0; j< this->dim_data[1]; j++)
 		{
 			for(int i=0; i< this->dim_data[0]; i++)

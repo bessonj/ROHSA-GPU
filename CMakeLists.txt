@@ -12,9 +12,12 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -funroll-loops")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -funroll-loops -ftree-vectorize -fopt-info-vec-all=vectorization_report.txt -march=native -mtune=native -mavx2")#-fopt-info-loop-all=loops.txt")
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --extra-device-vectorization --restrict")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --use_fast_math --extra-device-vectorization --restrict")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-loops -ftree-vectorize -fopt-info-vec-all=vectorization_report_fortran.txt" )
 
-list(APPEND HEADER_REP ${CMAKE_CURRENT_SOURCE_DIR}/inc ${CMAKE_CURRENT_SOURCE_DIR}/matplotlib-cpp ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/ ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb/ ${CMAKE_CURRENT_SOURCE_DIR}/src/CUDA ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} "/usr/local/cuda/samples/common/inc/" "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../samples/common/inc")
+list(APPEND HEADER_REP ${CMAKE_CURRENT_SOURCE_DIR}/inc ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/ ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb/ ${CMAKE_CURRENT_SOURCE_DIR}/src/CUDA ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} "/usr/local/cuda/samples/common/inc/" "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../samples/common/inc")
 
 list(APPEND HEADER_REP_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/*.h)
 file(GLOB CPP_FILES_BFGS ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/*.cpp)
@@ -63,8 +66,8 @@ add_executable(ROHSA-GPU ${CPP_FILES} ${CU_FILES} ${FORTRAN_FILES}) #${FORTRAN_F
 
 set_target_properties(ROHSA-GPU PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(ROHSA-GPU PUBLIC cxx_std_14)
-#target_compile_options(ROHSA-GPU PUBLIC ) #-lgfortran -O3  ) #-std=c++14)
-
+#target_compile_options(ROHSA-GPU PUBLIC -ftree-vectorizer-verbose=5) #-lgfortran -O3  ) #-std=c++14)
+#set_property(TARGET ROHSA-GPU PROPERTY COMPILE_FLAGS "-O3 -ftree-vectorize")
 
 target_include_directories(ROHSA-GPU PUBLIC /usr/include/python2.7/ "${HEADER_REP}")
 set(LIBS ${LIBS} python2.7 gomp)

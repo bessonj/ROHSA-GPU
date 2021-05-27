@@ -17,11 +17,11 @@
 */
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
-#define BLOCK_SIZE_Z 2
+#define BLOCK_SIZE_Z 3
 
 #define BLOCK_SIZE_X_BIS 16
 #define BLOCK_SIZE_Y_BIS 16
-#define BLOCK_SIZE_Z_BIS 2
+#define BLOCK_SIZE_Z_BIS 3
 
 #define BLOCK_SIZE_L2_X 16
 #define BLOCK_SIZE_L2_Y 16
@@ -49,7 +49,8 @@ template <typename T> void reduction_loop(T* array_in, T* d_array_f, int size_ar
 template <typename T> void reduction_loop_save(T* array_in, T* d_array_f, int size_array);
 template <typename T> void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T* params, int* taille_params, int product_taille_params, T* residual, int* taille_residual, int product_residual, T* std_map, int* taille_std_map, int product_std_map, int n_gauss);
 template <typename T> T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss);
-template <typename T> T compute_residual_and_f_cheap_memory_trick(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss);
+template <typename T> T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss);
+void regularisation_f(float* beta, float* deriv, float* g, float* b_params, float &f, int dim_x, int dim_y, int dim_v, parameters<float> &M, double* temps_bis);
 template <typename T> void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int dim_y, int dim_v, parameters<T> &M, double* temps_bis);
 template <typename T> void prepare_for_convolution(T* d_IMAGE, T* d_IMAGE_ext, int dim_x, int dim_y);
 template <typename T> void conv_twice_and_copy(T* d_IMAGE_amp_ext, T* d_conv_amp, T* d_conv_conv_amp, int image_x, int image_y);

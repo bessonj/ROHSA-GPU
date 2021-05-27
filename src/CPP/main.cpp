@@ -24,16 +24,30 @@
 #define EXTRACT_SQUARE_CENTERED_ON_PIX false
 //~>if EXTRACT_SQUARE_CENTERED_ON_PIX is false, 
 //  leave other lines below with dummy values
+
+	#define SQUARE_SIZE 1024
+	#define PIXEL_AUTOMATICALLY_CENTERED false //
+//	#define PIX_X 762
+	#define PIX_X 512
+	#define PIX_Y 512
+	//Spectral range :
+	#define MIN_INDEX_RANGE_CHANNEL 0
+	#define MAX_INDEX_RANGE_CHANNEL 47
+	//~>end
+
+
 /*
 	#define SQUARE_SIZE 1024
 	#define PIXEL_AUTOMATICALLY_CENTERED false //
+//	#define PIX_X 762
 	#define PIX_X 730
 	#define PIX_Y 650
 	//Spectral range :
-	#define MIN_INDEX_RANGE_CHANNEL 60
+	#define MIN_INDEX_RANGE_CHANNEL 76
 	#define MAX_INDEX_RANGE_CHANNEL 123
 	//~>end
 */
+
 /*
 	#define SQUARE_SIZE 256
 	#define PIXEL_AUTOMATICALLY_CENTERED false //
@@ -44,7 +58,7 @@
 	#define MAX_INDEX_RANGE_CHANNEL 149
 	//~>end
 */
-
+/*
 	#define SQUARE_SIZE 2048
 	#define PIXEL_AUTOMATICALLY_CENTERED false //
 	#define PIX_X 1024
@@ -53,7 +67,7 @@
 	#define MIN_INDEX_RANGE_CHANNEL 0
 	#define MAX_INDEX_RANGE_CHANNEL 219
 	//~>end
-
+*/
 // Second mode :
 #define USE_WHOLE_FITS_FILE false
 
@@ -171,16 +185,14 @@ void main_routine(parameters<T> &user_parameters){
 //		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, 1024, 1024, SQUARE_SIZE, false, true, false);
 		printf("Launching the ROHSA algorithm ...\n");
 		algo_rohsa<T> algo(user_parameters, Hypercube_file);
-
-		const std::string filename_raw = user_parameters.name_without_extension+".raw";
+	
+		const std::string filename_raw = user_parameters.name_without_extension+".fits";
 		std::cout<<"filename_raw = "<<filename_raw<<std::endl;	
 
 		printf("Saving the result ...\n");
 		Hypercube_file.save_grid_in_fits(user_parameters, algo.grid_params);
-/*		try{
-			throw 
-		}
-*/
+
+
 //		Hypercube_file.write_in_file(algo.grid_params, filename_raw);
 	//	Hypercube_file.save_result(algo.grid_params, user_parameters);
 
@@ -204,12 +216,13 @@ void main_routine(parameters<T> &user_parameters){
 		printf("Launching the ROHSA algorithm ...\n");
 		algo_rohsa<T> algo(user_parameters, Hypercube_file);
 
+/*
 		const std::string filename_raw = user_parameters.name_without_extension+".raw";
 		std::cout<<"filename_raw = "<<filename_raw<<std::endl;	
 
 		printf("Saving the result ...\n");
-//		Hypercube_file.write_in_file(algo.grid_params, filename_raw);
-	//	Hypercube_file.save_result(algo.grid_params, user_parameters);
+			//	Hypercube_file.write_in_file(algo.grid_params, filename_raw);
+			//	Hypercube_file.save_result(algo.grid_params, user_parameters);
 		Hypercube_file.save_grid_in_fits(user_parameters, algo.grid_params);
 
 	//	if(user_parameters.output_format_fits){
@@ -226,6 +239,7 @@ void main_routine(parameters<T> &user_parameters){
 			Hypercube_file.save_noise_map_in_fits(user_parameters, algo.std_data);
 			printf("Noise_map saved in fits file!\n");
 		}
+*/
 	}
 /*
 	printf("Launching the ROHSA algorithm ...\n");
@@ -991,8 +1005,8 @@ lb_bis[      155] =       1.0000000000000000000000;
 
 int main(int argc, char * argv[])
 {
-	test_min(argv);
-	exit(0);
+//	test_min(argv);cmake ../ && make &&
+//	exit(0);
 
 /*
 //(double* f, double* g, double* cube, double* beta, int dim_v, int dim_y, int dim_x, int n_gauss, double* kernel, double lambda_amp, double lambda_mu, double lambda_sig, double lambda_var_amp, double lambda_var_mu, double lambda_var_sig, double* std_map);
@@ -1051,5 +1065,7 @@ int main(int argc, char * argv[])
 	}else if(user_parametres_float.float_mode){
 //		main_routine<float>(user_parametres_float);
 	}
+
+	return 0;
 }
 
