@@ -11,8 +11,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -funroll-loops -ftree-vectorize -fopt-info-vec-all=vectorization_report.txt -march=native -mtune=native -mavx2")#-fopt-info-loop-all=loops.txt")
+set(CMAKE_CXX_FLAGS_DEBUG "-g") #-mtune=native
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -O3 -funroll-loops --fast-math -fopenmp-simd -ftree-vectorizer-verbose=7 -march=native -fopt-info-vec-all=vectorization_report.txt ")#--fast-math #-funsafe-math-optimizations #-fopt-info-loop-all=loops.txt") #-floop-parallelize-all -ftree-parallelize-loops=all 
 #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --extra-device-vectorization --restrict")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --use_fast_math --extra-device-vectorization --restrict")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-loops -ftree-vectorize -fopt-info-vec-all=vectorization_report_fortran.txt" )

@@ -98,9 +98,6 @@ template <typename T> void conv_twice_and_copy_sort(T* d_IMAGE_amp_ext, T* d_con
 }
 
 
-
-
-
 //update_array_f_dev_sort(M.lambda_sig, M.lambda_var_sig, array_f_dev, d_IMAGE_sig, d_conv_sig, image_x, image_y, k, b_params_dev);
 template <typename T> void update_array_f_dev_sort(T lambda, T lambda_var, T* array_f_dev, T* map_image_dev, T* map_conv_dev, int indice_x, int indice_y, int k, T* b_params){
 
@@ -227,8 +224,6 @@ template <typename T> void update_array_f_dev_sort(T lambda, T* array_f_dev, T* 
     checkCudaErrors(cudaFree(map_norm_dev));
     checkCudaErrors(cudaFree(array_f_dev_bis));
 }
-
-
 
 
 
@@ -708,6 +703,59 @@ template <typename T> void compute_residual_and_f_parallel(T* array_f_dev, T* be
   }
 
 
+//f = compute_residual_and_f(beta_modif_dev, cube_flattened_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v, M.n_gauss);
+template <typename T> void compute_residual_and_f_parallel_no_reduction(T &f, T* beta_dev, T* cube_dev, T* residual_dev, T* std_map_dev, int indice_x, int indice_y, int indice_v, int n_gauss)
+  {
+    dim3 Dg, Db;
+    Db.x = BLOCK_SIZE_X_SORT; //
+    Db.y = BLOCK_SIZE_Y_SORT; //
+    Db.z = BLOCK_SIZE_Z_SORT; //
+
+    Dg.x = ceil(T(indice_x)/T(BLOCK_SIZE_X_SORT));
+    Dg.y = ceil(T(indice_y)/T(BLOCK_SIZE_Y_SORT));
+    Dg.z = ceil(T(indice_v)/T(BLOCK_SIZE_Z_SORT));
+
+    T* cube_reconstructed = NULL;
+    checkCudaErrors(cudaMalloc(&cube_reconstructed, indice_x*indice_y*indice_v*sizeof(cube_reconstructed[0])));
+	checkCudaErrors(cudaMemset(cube_reconstructed, 0., indice_x*indice_y*indice_v*sizeof(cube_reconstructed[0])));
+  
+    checkCudaErrors(cudaDeviceSynchronize());
+    kernel_hypercube_reconstructed<T><<<Dg,Db>>>(beta_dev, cube_reconstructed, indice_x, indice_y, indice_v, n_gauss);
+    checkCudaErrors(cudaDeviceSynchronize());
+    kernel_residual_simple_difference<T><<<Dg,Db>>>(cube_dev, cube_reconstructed, residual_dev, indice_x, indice_y, indice_v);
+    checkCudaErrors(cudaFree(cube_reconstructed));
+
+//    kernel_residual_sort<T><<<Dg,Db>>>(beta_dev, cube_dev, residual_dev,indice_x, indice_y, indice_v, n_gauss);
+
+    dim3 Dg_L2, Db_L2;
+    Db_L2.x = BLOCK_SIZE_X_2D_SORT;
+    Db_L2.y = BLOCK_SIZE_Y_2D_SORT;
+    Db_L2.z = 1;
+    Dg_L2.x = ceil(T(indice_x)/T(BLOCK_SIZE_X_2D_SORT));
+    Dg_L2.y = ceil(T(indice_y)/T(BLOCK_SIZE_Y_2D_SORT));
+    Dg_L2.z = 1;
+
+
+    T* map_norm_dev_malloc = NULL;
+    checkCudaErrors(cudaMalloc(&map_norm_dev_malloc, indice_x*indice_y*sizeof(map_norm_dev_malloc[0])));
+	checkCudaErrors(cudaMemset(map_norm_dev_malloc, 0., indice_x*indice_y*sizeof(map_norm_dev_malloc[0])));
+
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    kernel_norm_map_boucle_v_sort<T><<<Dg_L2, Db_L2>>>(map_norm_dev_malloc, residual_dev, std_map_dev, indice_x, indice_y, indice_v);
+
+    checkCudaErrors(cudaDeviceSynchronize());
+	thrust::device_ptr<T> map_norm_dev(map_norm_dev_malloc);// = thrust::device_malloc<T>(indice_x*indice_y);
+    checkCudaErrors(cudaDeviceSynchronize());
+    printf("TEST");
+    f = thrust::reduce(map_norm_dev, map_norm_dev + indice_x*indice_y);
+    printf("TEST");
+    checkCudaErrors(cudaDeviceSynchronize());
+//	thrust::device_free(map_norm_dev);	
+    checkCudaErrors(cudaFree(map_norm_dev_malloc));
+  }
+
+
 
 
 
@@ -854,7 +902,7 @@ template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T
 
     checkCudaErrors(cudaDeviceSynchronize());
 
-    conv2D_GPU_all_sort<T>(M, d_g, n_beta, M.lambda_var_sig, b_params_dev, deriv_dev, beta_dev, array_f_dev, indice_x, indice_y, M.n_gauss, 0,0);//temps_transfert, temps_mirroirs);
+//    conv2D_GPU_all_sort<T>(M, d_g, n_beta, M.lambda_var_sig, b_params_dev, deriv_dev, beta_dev, array_f_dev, indice_x, indice_y, M.n_gauss, 0,0);//temps_transfert, temps_mirroirs);
 
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -925,8 +973,205 @@ template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T
 
 }
 
+template <typename T> void f_g_cube_parallel_lib_light(const parameters<T> &M, T &f, T* d_g, const int n, T* beta_dev, const int indice_v, const int indice_y, const int indice_x, T* std_map_dev, T* cube_flattened_dev, double* temps)   
+  {
+    bool print = false;
+//    bool print = true;
+    int rang = 8;
+    int rang_print = 100;
+
+/*
+    if(indice_x>128){
+        print = true;
+    }
+*/
+
+//    dummyInstantiator_sort();
+
+    int i,k,j,l,p;
+
+	int taille_deriv[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_residual[] = {indice_v, indice_y, indice_x};
+	int taille_std_map_[] = {indice_y, indice_x};
+	int taille_beta[] = {3*M.n_gauss, indice_y, indice_x};
+	int taille_cube[] = {indice_v, indice_y, indice_x};
+	int taille_image_conv[] = {indice_y, indice_x};
+
+	int product_residual = taille_residual[0]*taille_residual[1]*taille_residual[2];
+	int product_deriv = taille_deriv[0]*taille_deriv[1]*taille_deriv[2];
+	int product_std_map_ = taille_std_map_[0]*taille_std_map_[1];
+	int product_cube = taille_cube[0]*taille_cube[1]*taille_cube[2]; 
+	int product_beta_modif = taille_beta[0]*taille_beta[1]*taille_beta[2];
+	int product_image_conv = taille_image_conv[0]*taille_image_conv[1];
+
+	size_t size_deriv = product_deriv * sizeof(T);
+	size_t size_res = product_residual * sizeof(T);
+	size_t size_std = product_std_map_ * sizeof(T);
+	size_t size_beta_modif = product_beta_modif * sizeof(T);
+	size_t size_image_conv = product_image_conv * sizeof(T);
+	size_t size_b_params = M.n_gauss * sizeof(T);
+
+	int n_beta = (3*M.n_gauss*indice_x*indice_y)+M.n_gauss;
+//	double temps1_tableaux = omp_get_wtime();
+    //beta est de taille : x,y,3g
+    //params est de taille : 3g,y,x
+
+
+    // Allocate CUDA events that we'll use for timing
+//    cudaEvent_t record_event[5];
+    float time_msec[4];
+
+    // Record the start event
+    checkCudaErrors(cudaDeviceSynchronize());
+//    checkCudaErrors(cudaEventRecord(record_event[0], NULL));
+
+//    double temps2_tableaux = omp_get_wtime();
+
+    T* b_params_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&b_params_dev, M.n_gauss*sizeof(T)));
+	checkCudaErrors(cudaMemset(b_params_dev, 0., M.n_gauss*sizeof(b_params_dev[0])));
+
+    T* residual_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&residual_dev, product_residual*sizeof(T)));
+	checkCudaErrors(cudaMemset(residual_dev, 0., product_residual*sizeof(residual_dev[0])));
+
+/*
+    T* array_f_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&array_f_dev, 1*sizeof(T)));
+	checkCudaErrors(cudaMemset(array_f_dev, 0., 1*sizeof(array_f_dev[0])));
+*/
+
+    T* deriv_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&deriv_dev, product_deriv*sizeof(T)));
+	checkCudaErrors(cudaMemset(deriv_dev, 0., product_deriv*sizeof(deriv_dev[0])));
+
+    int* taille_beta_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&taille_beta_dev, 3*sizeof(int)));
+    checkCudaErrors(cudaMemcpy(taille_beta_dev, taille_beta, 3*sizeof(int), cudaMemcpyHostToDevice));
+
+    int* taille_deriv_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&taille_deriv_dev, 3*sizeof(int)));
+    checkCudaErrors(cudaMemcpy(taille_deriv_dev, taille_deriv, 3*sizeof(int), cudaMemcpyHostToDevice));
+
+    int* taille_residual_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&taille_residual_dev, 3*sizeof(int)));
+    checkCudaErrors(cudaMemcpy(taille_residual_dev, taille_residual, 3*sizeof(int), cudaMemcpyHostToDevice));
+
+    int* taille_std_map_dev = nullptr;
+    checkCudaErrors(cudaMalloc(&taille_std_map_dev, 2*sizeof(int)));
+    checkCudaErrors(cudaMemcpy(taille_std_map_dev, taille_std_map_, 2*sizeof(int), cudaMemcpyHostToDevice));
+
+	checkCudaErrors(cudaMemset(d_g, 0., n_beta*sizeof(d_g[0])));
+    f=0.;
+
+    checkCudaErrors(cudaDeviceSynchronize());
+    //on peut changer 64 en autre chose
+    int grid_initialize_b_params = ceil(T(M.n_gauss)/T(64)); //=1 (trivial)
+    initialize_b_params<T><<<grid_initialize_b_params, 64>>>(b_params_dev, beta_dev, M.n_gauss, n_beta, M.n_gauss);
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    /*
+    if(print)
+    {
+        checkCudaErrors(cudaDeviceSynchronize());
+        printf("début\n");
+        display_dev_complete_sort<T><<<1,1>>>(beta_dev, rang_print);
+//        display_dev_complete_sort<T><<<1,1>>>(array_f_dev, 1);
+//        display_dev_complete_sort<T><<<1,1>>>(beta_dev, 30);
+        std::cin.ignore();
+    }
+    */
+
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    compute_residual_and_f_parallel_no_reduction(f, beta_dev, cube_flattened_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v, M.n_gauss);
+    //compute_residual_and_f_parallel<T>(array_f_dev, beta_dev, cube_flattened_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v, M.n_gauss);
+
+    checkCudaErrors(cudaDeviceSynchronize());
+    
+    gradient_L_2_beta_parallel<T>(deriv_dev, taille_deriv, taille_deriv_dev, beta_dev, taille_beta_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, M.n_gauss);
+
+    /*
+    if(print)
+    {
+        checkCudaErrors(cudaDeviceSynchronize());
+        printf("milieu\n");
+        display_dev_complete_sort<T><<<1,1>>>(deriv_dev, rang_print);
+//        display_dev_complete_sort<T><<<1,1>>>(array_f_dev, 1);
+        std::cin.ignore();
+    }
+    */
+
+    checkCudaErrors(cudaDeviceSynchronize());
+//    conv2D_GPU_all_sort<T>(M, d_g, n_beta, M.lambda_var_sig, b_params_dev, deriv_dev, beta_dev, array_f_dev, indice_x, indice_y, M.n_gauss, 0,0);//temps_transfert, temps_mirroirs);
+//    checkCudaErrors(cudaDeviceSynchronize());
+
+    dim3 Dg_L2, Db_L2;
+    Db_L2.x = 256;
+    Db_L2.y = 1;
+    Db_L2.z = 1;
+    Dg_L2.x = ceil(T(3*M.n_gauss*indice_x*indice_y)/T(256));
+    Dg_L2.y = 1;
+    Dg_L2.z = 1;
+    fill_gpu_sort<T><<<Dg_L2, Db_L2>>>(d_g, deriv_dev, 3*M.n_gauss*indice_x*indice_y);
+
+//    display_dev_sort<T><<<1,1>>>(array_f_dev);
+//    display_dev_complete_sort<T><<<1,1>>>(beta_dev, n_beta);
+//    std::cin.ignore();
+/*
+    T* array_f = NULL;
+    array_f = (T*)(malloc(1*sizeof(T)));
+    checkCudaErrors(cudaMemcpy(array_f, array_f_dev, 1*sizeof(T), cudaMemcpyDeviceToHost));
+
+    f = array_f[0];
+*/
+//    exit(0);
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    time_msec[4]=time_msec[0]+time_msec[1]+time_msec[2]+time_msec[3];
+
+    double total_mem_time 		= time_msec[0]+ time_msec[1]+time_msec[3];
+    double mem_time_0 		= time_msec[0];
+    double mem_time_1 		= time_msec[1];
+    double mem_time_2 		= time_msec[2];
+    double mem_time_3 		= time_msec[3];
+    double mem_time_4 		= time_msec[4];
+
+    temps[0] += mem_time_0;
+    temps[1] += mem_time_1;
+    temps[2] += mem_time_2;
+    temps[3] += mem_time_3;
+    temps[4] += mem_time_4;
+
+    /*
+    if(print)
+    {
+        checkCudaErrors(cudaDeviceSynchronize());
+        printf("fin\n");
+        display_dev_complete_sort<T><<<1,1>>>(d_g, rang_print);
+        display_dev_complete_fin_sort<T><<<1,1>>>(d_g, n_beta, 40);
+//        display_dev_complete_sort<T><<<1,1>>>(array_f_dev, 1);
+//        display_dev_complete_sort<T><<<1,1>>>(beta_dev, 30);
+        std::cin.ignore();
+    }
+    */
+   
+    checkCudaErrors(cudaFree(b_params_dev));
+//    checkCudaErrors(cudaFree(array_f_dev));
+    checkCudaErrors(cudaFree(deriv_dev));
+    checkCudaErrors(cudaFree(taille_beta_dev));
+    checkCudaErrors(cudaFree(taille_deriv_dev));
+    checkCudaErrors(cudaFree(taille_std_map_dev));
+    checkCudaErrors(cudaFree(residual_dev));
+    checkCudaErrors(cudaFree(taille_residual_dev));
+
+//    free(array_f);
+}
+
+ 	template void f_g_cube_parallel_lib_light<double>(const parameters<double>&, double&, double*, const int, double*, const int, const int, const int, double*, double*, double*);
  	template void f_g_cube_parallel_lib<double>(const parameters<double>&, double&, double*, const int, double*, const int, const int, const int, double*, double*, double*);
     template void compute_residual_and_f_parallel<double>(double*, double*, double*, double*, double*, int, int, int, int);
+    template void compute_residual_and_f_parallel_no_reduction<double>(double&, double*, double*, double*, double*, int, int, int, int);
     template void reduction_loop_parallel<double>(double*, double*, int);
     template void gradient_L_2_beta_parallel<double>(double*, int*, int*, double*, int*, double*, int*, double*, int*, int);
     template void conv2D_GPU_all_sort<double>(const parameters<double>&, double*, const int, double, double*, double*, double*, double*, const int, const int, const int, float, float);
@@ -935,8 +1180,10 @@ template <typename T> void f_g_cube_parallel_lib(const parameters<T> &M, T &f, T
     template void conv_twice_and_copy_sort<double>(double*, double*, double*, int, int, dim3, dim3, dim3, dim3, dim3, dim3);
     template void prepare_for_convolution_sort<double>(double*, double*, int, int, dim3, dim3, dim3, dim3);
 
+ 	template void f_g_cube_parallel_lib_light<float>(const parameters<float>&, float&, float*, const int, float*, const int, const int, const int, float*, float*, double*);
  	template void f_g_cube_parallel_lib<float>(const parameters<float>&, float&, float*, const int, float*, const int, const int, const int, float*, float*, double*);
     template void compute_residual_and_f_parallel<float>(float*, float*, float*, float*, float*, int, int, int, int);
+    template void compute_residual_and_f_parallel_no_reduction<float>(float&, float*, float*, float*, float*, int, int, int, int);
     template void reduction_loop_parallel<float>(float*, float*, int);
     template void gradient_L_2_beta_parallel<float>(float*, int*, int*, float*, int*, float*, int*, float*, int*, int);
     template void conv2D_GPU_all_sort<float>(const parameters<float>&, float*, const int, float, float*, float*, float*, float*, const int, const int, const int, float, float);

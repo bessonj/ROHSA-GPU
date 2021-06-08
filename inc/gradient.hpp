@@ -47,15 +47,15 @@
 void init_templates();
 template <typename T> void reduction_loop(T* array_in, T* d_array_f, int size_array);
 template <typename T> void reduction_loop_save(T* array_in, T* d_array_f, int size_array);
-template <typename T> void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T* params, int* taille_params, int product_taille_params, T* residual, int* taille_residual, int product_residual, T* std_map, int* taille_std_map, int product_std_map, int n_gauss);
+template <typename T> void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T* params, int* taille_params, int product_taille_params, T* residual, int* taille_residual, int product_residual, T* std_map, int* taille_std_map, int product_std_map, int n_gauss, float* temps);
 template <typename T> T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss);
-template <typename T> T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss);
-void regularisation_f(float* beta, float* deriv, float* g, float* b_params, float &f, int dim_x, int dim_y, int dim_v, parameters<float> &M, double* temps_bis);
-template <typename T> void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int dim_y, int dim_v, parameters<T> &M, double* temps_bis);
+template <typename T> T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss, float* temps);
+template <typename T> void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int dim_y, int dim_v, parameters<T> &M, float* temps_kernel);
 template <typename T> void prepare_for_convolution(T* d_IMAGE, T* d_IMAGE_ext, int dim_x, int dim_y);
-template <typename T> void conv_twice_and_copy(T* d_IMAGE_amp_ext, T* d_conv_amp, T* d_conv_conv_amp, int image_x, int image_y);
+template <typename T> void conv_twice_and_copy(T* d_IMAGE_amp_ext, T* d_conv_amp, T* d_conv_conv_amp, int image_x, int image_y, float* temps);
 template <typename T> void update_array_f_dev_sort(T lambda, T lambda_var, T* array_f_dev, T* map_image_dev, T* map_conv_dev, int indice_x, int indice_y, int k, T* b_params);
 template <typename T> void update_array_f_dev_sort(T lambda, T* array_f_dev, T* map_dev, int indice_x, int indice_y);
+template <typename T> void update_array_f_dev_sort_fast(T lambda_amp, T lambda_mu, T lambda_sig, T lambda_var_sig, T* array_f_dev, T* map_conv_amp_dev, T* map_conv_mu_dev, T* map_conv_sig_dev, T* map_image_sig_dev, int indice_x, int indice_y, int k, T* b_params_dev, float* temps);
 
 extern double temps_test;
 

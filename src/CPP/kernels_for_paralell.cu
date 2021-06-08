@@ -120,6 +120,25 @@ __global__ void kernel_norm_map_boucle_v_sort(T* map_norm_dev, T* residual, T* s
 }
 
 template <typename T>
+__global__ void kernel_norm_map_boucle_v_sort_no_reduction(thrust::device_ptr<T> &map_norm_dev, T* residual, T* std_map, int indice_x, int indice_y, int indice_v)
+{
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+
+  if(index_x<indice_x && index_y<indice_y && std_map[index_y*indice_x + index_x]>0.)
+  {
+	  T sum_temp = 0.;
+	  for(int index_z = 0; index_z<indice_v ; index_z++) {
+    	 sum_temp += pow(residual[index_z*indice_y*indice_x+index_y*indice_x+index_x],2);
+	  }
+
+	__syncthreads();
+
+	map_norm_dev[index_y*indice_x+index_x] = 0.5*sum_temp/pow(std_map[index_y*indice_x + index_x],2);
+  }
+}
+
+template <typename T>
 __global__ void kernel_norm_map_simple_sort(T lambda, T* map_norm_dev, T* map_dev, int indice_x, int indice_y)
 {
 	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
