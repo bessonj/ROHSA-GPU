@@ -1,6 +1,6 @@
 #include "gradient.hpp"
-#include "kernels_for_hybrid.cu"
 #include "kernel_gradient.cuh"
+#include "kernels_for_hybrid.cu"
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
 #include <cuda.h>
@@ -19,7 +19,7 @@ void init_templates()
 }
 
 template <typename T> 
-void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T* params, int* taille_params, int product_taille_params, T* residual, int* taille_residual, int product_residual, T* std_map, int* taille_std_map, int product_std_map, int n_gauss, float* temps)
+void gradient_L_2_beta(T* deriv_dev, int* taille_deriv, int product_taille_deriv, T* params_dev, int* taille_params, int product_taille_params, T* residual_dev, int* taille_residual, int product_residual, T* std_map_dev, int* taille_std_map, int product_std_map, int n_gauss, float* temps)
 {
     cudaEvent_t record_event[2];
     float time_msec[1];
@@ -27,30 +27,20 @@ void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T*
         checkCudaErrors(cudaEventCreate(record_event+i));   
     }
     
-   T* params_dev = NULL;
-   T* deriv_dev = NULL;
-   T* residual_dev = NULL;
-   T* std_map_dev = NULL;
+    checkCudaErrors(cudaDeviceSynchronize());
 
    int* taille_params_dev = NULL;
    int* taille_deriv_dev = NULL;
    int* taille_residual_dev = NULL;
    int* taille_std_map_dev = NULL;
 
-   checkCudaErrors(cudaMalloc(&deriv_dev, product_taille_deriv*sizeof(T)));
-   checkCudaErrors(cudaMalloc(&residual_dev, product_residual*sizeof(T)));
-   checkCudaErrors(cudaMalloc(&params_dev, product_taille_params*sizeof(T)));
-   checkCudaErrors(cudaMalloc(&std_map_dev, product_std_map*sizeof(T)));
+    checkCudaErrors(cudaDeviceSynchronize());
 
    checkCudaErrors(cudaMalloc(&taille_deriv_dev, 3*sizeof(int)));
    checkCudaErrors(cudaMalloc(&taille_params_dev, 3*sizeof(int)));
    checkCudaErrors(cudaMalloc(&taille_std_map_dev, 2*sizeof(int)));
    checkCudaErrors(cudaMalloc(&taille_residual_dev, 3*sizeof(int)));
-   
-   checkCudaErrors(cudaMemcpy(deriv_dev, deriv, product_taille_deriv*sizeof(T), cudaMemcpyHostToDevice));
-   checkCudaErrors(cudaMemcpy(residual_dev, residual, product_residual*sizeof(T), cudaMemcpyHostToDevice));
-   checkCudaErrors(cudaMemcpy(params_dev, params, product_taille_params*sizeof(T), cudaMemcpyHostToDevice));
-   checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_std_map*sizeof(T), cudaMemcpyHostToDevice));
+   checkCudaErrors(cudaDeviceSynchronize());
    
    checkCudaErrors(cudaMemcpy(taille_deriv_dev, taille_deriv, 3*sizeof(int), cudaMemcpyHostToDevice));
    checkCudaErrors(cudaMemcpy(taille_params_dev, taille_params, 3*sizeof(int), cudaMemcpyHostToDevice));
@@ -82,9 +72,8 @@ void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T*
     // Record the start event
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[0], NULL));
-
-
     checkCudaErrors(cudaDeviceSynchronize());
+
     compute_nabla_Q<T><<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
 //  gradient_kernel_2_beta_with_INDEXING_over_v<<<Dg,Db>>>(deriv_dev, taille_deriv_dev, params_dev, taille_params_dev, residual_dev, taille_residual_dev, std_map_dev, taille_std_map_dev, n_gauss);
     checkCudaErrors(cudaDeviceSynchronize());
@@ -103,15 +92,9 @@ void gradient_L_2_beta(T* deriv, int* taille_deriv, int product_taille_deriv, T*
 
     temps[0] += time_msec[0];
 
-  checkCudaErrors(cudaMemcpy(deriv, deriv_dev, product_taille_deriv*sizeof(T), cudaMemcpyDeviceToHost));
-  cudaDeviceSynchronize();
-  checkCudaErrors(cudaFree(deriv_dev));
   checkCudaErrors(cudaFree(taille_deriv_dev));
-  checkCudaErrors(cudaFree(params_dev));
   checkCudaErrors(cudaFree(taille_params_dev));
-  checkCudaErrors(cudaFree(std_map_dev));
   checkCudaErrors(cudaFree(taille_std_map_dev));
-  checkCudaErrors(cudaFree(residual_dev));
   checkCudaErrors(cudaFree(taille_residual_dev));
 }
 
@@ -310,7 +293,7 @@ T compute_residual_and_f(T* beta, int* taille_beta, int product_taille_beta, T* 
 
 
 template <typename T> 
-T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual, int* taille_residual, int product_taille_residual, T* std_map, int* taille_std_map, int product_taille_std_map, int indice_x, int indice_y, int indice_v, int n_gauss, float* temps)
+T compute_residual_and_f_less_memory(T* beta_dev, int* taille_beta, int product_taille_beta, T* cube, int* taille_cube, int product_taille_cube, T* residual_dev, int* taille_residual, int product_taille_residual, T* std_map_dev, int* taille_std_map, int product_taille_std_map, int dim_x, int dim_y, int dim_v, int n_gauss, float* temps)
 {
 
   cudaEvent_t start, stop;
@@ -324,52 +307,48 @@ T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_tail
         checkCudaErrors(cudaEventCreate(record_event+i));   
     }
 
-    T* beta_dev = NULL;
-    T* residual_dev = NULL;
-    T* std_map_dev = NULL;
-
-    checkCudaErrors(cudaMalloc(&beta_dev, product_taille_beta*sizeof(T)));
-    checkCudaErrors(cudaMalloc(&residual_dev, product_taille_residual*sizeof(T)));
-    checkCudaErrors(cudaMalloc(&std_map_dev, product_taille_std_map*sizeof(T)));
-
-    checkCudaErrors(cudaMemcpy(beta_dev, beta, product_taille_beta*sizeof(T), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(residual_dev, cube, product_taille_residual*sizeof(T), cudaMemcpyHostToDevice));
-    checkCudaErrors(cudaMemcpy(std_map_dev, std_map, product_taille_std_map*sizeof(T), cudaMemcpyHostToDevice));
     
     dim3 Dg, Db;
     Db.x = BLOCK_SIZE_X_BIS; //
     Db.y = BLOCK_SIZE_Y_BIS; //
     Db.z = BLOCK_SIZE_Z_BIS; //
 
-    Dg.x = ceil(T(indice_x)/T(BLOCK_SIZE_X_BIS));
-    Dg.y = ceil(T(indice_y)/T(BLOCK_SIZE_Y_BIS));
-    Dg.z = ceil(T(indice_v)/T(BLOCK_SIZE_Z_BIS));
+    Dg.x = ceil(T(dim_x)/T(BLOCK_SIZE_X_BIS));
+    Dg.y = ceil(T(dim_y)/T(BLOCK_SIZE_Y_BIS));
+    Dg.z = ceil(T(dim_v)/T(BLOCK_SIZE_Z_BIS));
 
     // Record the start event
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[0], NULL));
+    checkCudaErrors(cudaDeviceSynchronize());
 
-    compute_residual<T><<<Dg,Db>>>(beta_dev, residual_dev,indice_x, indice_y, indice_v, n_gauss);
+    //residual_dev was initialized with cube_flattened, we do : residual_dev = model - cube_flattened = model - residual_dev
+    compute_residual<T><<<Dg,Db>>>(beta_dev, residual_dev,dim_x, dim_y, dim_v, n_gauss); 
+
+//    test modulo optim
+//    Dg.z = ceil(T(n_gauss*dim_v)/T(BLOCK_SIZE_Z_BIS));
+//    checkCudaErrors(cudaDeviceSynchronize());
+//    compute_residual_modulo<T><<<Dg,Db>>>(beta_dev, residual_dev, dim_x, dim_y, n_gauss*dim_v, n_gauss); 
+
 
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[1], NULL));
     checkCudaErrors(cudaDeviceSynchronize());
 
-    checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
 
     dim3 Dg_L2, Db_L2;
     Db_L2.x = BLOCK_SIZE_L2_X;
     Db_L2.y = BLOCK_SIZE_L2_Y;
     Db_L2.z = 1;
-    Dg_L2.x = ceil(indice_x/T(BLOCK_SIZE_L2_X));
-    Dg_L2.y = ceil(indice_y/T(BLOCK_SIZE_L2_Y));
+    Dg_L2.x = ceil(dim_x/T(BLOCK_SIZE_L2_X));
+    Dg_L2.y = ceil(dim_y/T(BLOCK_SIZE_L2_Y));
     Dg_L2.z = 1;
 
 
     T* map_norm_dev = NULL;
-    checkCudaErrors(cudaMalloc(&map_norm_dev, indice_x*indice_y*sizeof(T)));
+    checkCudaErrors(cudaMalloc(&map_norm_dev, dim_x*dim_y*sizeof(T)));
 
-    compute_Q_map<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, std_map_dev, indice_x, indice_y, indice_v);
+    compute_Q_map<T><<<Dg_L2, Db_L2>>>(map_norm_dev, residual_dev, std_map_dev, dim_x, dim_y, dim_v);
 
 
 
@@ -381,7 +360,7 @@ T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_tail
     T* d_array_f=NULL;
     checkCudaErrors(cudaMalloc(&d_array_f, 1*sizeof(T))); // ERREUR ICI
 
-    reduction_loop<T>(map_norm_dev, d_array_f, indice_x*indice_y);
+    reduction_loop<T>(map_norm_dev, d_array_f, dim_x*dim_y);
 
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[3], NULL));
@@ -404,15 +383,11 @@ T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_tail
     T* array_f = (T*)malloc(1*sizeof(T));
 
     checkCudaErrors(cudaMemcpy(array_f, d_array_f, 1*sizeof(T), cudaMemcpyDeviceToHost));
-    checkCudaErrors(cudaMemcpy(residual, residual_dev, product_taille_residual*sizeof(T), cudaMemcpyDeviceToHost));
     T sum1 = array_f[0];
     free(array_f);
 
     checkCudaErrors(cudaFree(d_array_f));
     checkCudaErrors(cudaFree(map_norm_dev));
-    checkCudaErrors(cudaFree(beta_dev));
-    checkCudaErrors(cudaFree(std_map_dev));
-    checkCudaErrors(cudaFree(residual_dev));
 
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaEventRecord(stop));
@@ -426,19 +401,19 @@ T compute_residual_and_f_less_memory(T* beta, int* taille_beta, int product_tail
 
 
 template <typename T> 
-void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int dim_y, int dim_v, parameters<T> &M, float* temps_kernel_regu){
+void regularization(T* beta_dev, T* g_dev, T* b_params, T &f, int dim_x, int dim_y, int dim_v, parameters<T> &M, float* temps_kernel_regu){
 //  printf("début f = %.26f\n",f);
+
+  cudaEvent_t start, stop;
+  checkCudaErrors(cudaEventCreate(&start));
+  checkCudaErrors(cudaEventCreate(&stop));
+
+  cudaEventRecord(start);
 
 	int n_beta = (3*M.n_gauss*dim_x*dim_y)+M.n_gauss;
   T* b_params_dev = NULL;
   checkCudaErrors(cudaMalloc(&b_params_dev, M.n_gauss*sizeof(T)));
   checkCudaErrors(cudaMemcpy(b_params_dev, b_params, M.n_gauss*sizeof(T), cudaMemcpyHostToDevice));
-  T* beta_dev = NULL;
-  checkCudaErrors(cudaMalloc(&beta_dev, n_beta*sizeof(T)));
-  checkCudaErrors(cudaMemcpy(beta_dev, beta, n_beta*sizeof(T), cudaMemcpyHostToDevice));
-  T* deriv_dev = NULL;
-  checkCudaErrors(cudaMalloc(&deriv_dev, dim_x*dim_y*3*M.n_gauss*sizeof(T)));
-  checkCudaErrors(cudaMemcpy(deriv_dev, deriv, dim_x*dim_y*3*M.n_gauss*sizeof(T), cudaMemcpyHostToDevice));
 
   T* array_f_dev = NULL;
   checkCudaErrors(cudaMalloc(&array_f_dev, 1*sizeof(T)));
@@ -451,9 +426,6 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
 
 //  checkCudaErrors(cudaMemcpy(array_f_dev, array_f, 1*sizeof(T), cudaMemcpyHostToDevice));
 
-  T* d_g = NULL;
-  checkCudaErrors(cudaMalloc(&d_g, n_beta*sizeof(T)));
-  checkCudaErrors(cudaMemset(d_g, 0., n_beta*sizeof(T)));
   T* d_IMAGE_amp = NULL;
   checkCudaErrors(cudaMalloc(&d_IMAGE_amp, dim_x*dim_y*sizeof(T)));
   checkCudaErrors(cudaMemset(d_IMAGE_amp, 0., dim_x*dim_y*sizeof(T)));
@@ -463,6 +435,27 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
   T* d_IMAGE_sig = NULL;
   checkCudaErrors(cudaMalloc(&d_IMAGE_sig, dim_x*dim_y*sizeof(T)));
   checkCudaErrors(cudaMemset(d_IMAGE_sig, 0., dim_x*dim_y*sizeof(T)));
+
+  T* d_CONV_amp = NULL;
+  checkCudaErrors(cudaMalloc(&d_CONV_amp, (dim_x+4)*(dim_y+4)*sizeof(T)));
+  T* d_CONV_mu = NULL;
+  checkCudaErrors(cudaMalloc(&d_CONV_mu, (dim_x+4)*(dim_y+4)*sizeof(T)));
+  T* d_CONV_sig = NULL;
+  checkCudaErrors(cudaMalloc(&d_CONV_sig, (dim_x+4)*(dim_y+4)*sizeof(T)));
+  T* d_CONV_CONV_amp = NULL;
+  checkCudaErrors(cudaMalloc(&d_CONV_CONV_amp, (dim_x+4)*(dim_y+4)*sizeof(T)));
+  T* d_CONV_CONV_mu = NULL;
+  checkCudaErrors(cudaMalloc(&d_CONV_CONV_mu, (dim_x+4)*(dim_y+4)*sizeof(T)));
+  T* d_CONV_CONV_sig = NULL;
+  checkCudaErrors(cudaMalloc(&d_CONV_CONV_sig, (dim_x+4)*(dim_y+4)*sizeof(T)));
+
+  checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaEventRecord(stop));
+  float tmp = 0.;
+  checkCudaErrors(cudaDeviceSynchronize());
+  checkCudaErrors(cudaEventElapsedTime(&tmp, start, stop));
+  checkCudaErrors(cudaDeviceSynchronize());
+  temps_kernel_regu[8]+=tmp; //reduction
 
   dim3 Dg_2D, Db_2D;
   Db_2D.x = BLOCK_SIZE_L2_X;
@@ -490,24 +483,12 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[1], NULL));
 
-    T* d_CONV_amp = NULL;
-    checkCudaErrors(cudaMalloc(&d_CONV_amp, (dim_x+4)*(dim_y+4)*sizeof(T)));
     checkCudaErrors(cudaMemset(d_CONV_amp, 0., (dim_x+4)*(dim_y+4)*sizeof(T)));
-    T* d_CONV_mu = NULL;
-    checkCudaErrors(cudaMalloc(&d_CONV_mu, (dim_x+4)*(dim_y+4)*sizeof(T)));
     checkCudaErrors(cudaMemset(d_CONV_mu, 0., (dim_x+4)*(dim_y+4)*sizeof(T)));
-    T* d_CONV_sig = NULL;
-    checkCudaErrors(cudaMalloc(&d_CONV_sig, (dim_x+4)*(dim_y+4)*sizeof(T)));
     checkCudaErrors(cudaMemset(d_CONV_sig, 0., (dim_x+4)*(dim_y+4)*sizeof(T)));
 
-    T* d_CONV_CONV_amp = NULL;
-    checkCudaErrors(cudaMalloc(&d_CONV_CONV_amp, (dim_x+4)*(dim_y+4)*sizeof(T)));
     checkCudaErrors(cudaMemset(d_CONV_CONV_amp, 0., (dim_x+4)*(dim_y+4)*sizeof(T)));
-    T* d_CONV_CONV_mu = NULL;
-    checkCudaErrors(cudaMalloc(&d_CONV_CONV_mu, (dim_x+4)*(dim_y+4)*sizeof(T)));
     checkCudaErrors(cudaMemset(d_CONV_CONV_mu, 0., (dim_x+4)*(dim_y+4)*sizeof(T)));
-    T* d_CONV_CONV_sig = NULL;
-    checkCudaErrors(cudaMalloc(&d_CONV_CONV_sig, (dim_x+4)*(dim_y+4)*sizeof(T)));
     checkCudaErrors(cudaMemset(d_CONV_CONV_sig, 0., (dim_x+4)*(dim_y+4)*sizeof(T)));
 
     //Sets d_EXT_* arrays to 0.
@@ -537,7 +518,6 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     Dg_ud.y = ceil(T(dim_y)/T(BLOCK_SIZE_L2_Y));
     Dg_ud.z = 1;
 
-
     checkCudaErrors(cudaDeviceSynchronize());
 
     double temps_test__ = omp_get_wtime();
@@ -546,7 +526,7 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     checkCudaErrors(cudaEventRecord(record_event[2], NULL));
     checkCudaErrors(cudaDeviceSynchronize());
 
-    compute_nabla_R_wrt_theta<T><<<Dg_ud,Db_ud>>>(deriv_dev, M.lambda_amp, M.lambda_mu, M.lambda_sig, M.lambda_var_sig, d_CONV_CONV_amp, d_CONV_CONV_mu, d_CONV_CONV_sig, d_IMAGE_sig, b_params_dev, dim_y, dim_x, k);
+    compute_nabla_R_wrt_theta<T><<<Dg_ud,Db_ud>>>(g_dev, M.lambda_amp, M.lambda_mu, M.lambda_sig, M.lambda_var_sig, d_CONV_CONV_amp, d_CONV_CONV_mu, d_CONV_CONV_sig, d_IMAGE_sig, b_params_dev, dim_y, dim_x, k);
 
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[3], NULL));
@@ -555,14 +535,13 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     temps_test += omp_get_wtime() - temps_test__;
     
 
-    T* d_image_sigma_reduc = NULL;
-    checkCudaErrors(cudaMalloc(&d_image_sigma_reduc, 1*sizeof(T)));
-  	checkCudaErrors(cudaMemset(d_image_sigma_reduc, 0., 1*sizeof(T)));
-
-
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaEventRecord(record_event[4], NULL));
     checkCudaErrors(cudaDeviceSynchronize());
+
+    T* d_image_sigma_reduc = NULL;
+    checkCudaErrors(cudaMalloc(&d_image_sigma_reduc, 1*sizeof(T)));
+  	checkCudaErrors(cudaMemset(d_image_sigma_reduc, 0., 1*sizeof(T)));
 
     reduction_loop<T>(d_IMAGE_sig, d_image_sigma_reduc, dim_y*dim_x);
 
@@ -576,7 +555,7 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
     checkCudaErrors(cudaDeviceSynchronize());
 
 //    kernel_conv_g_reduction_sort<T><<<1,1>>>(n_beta+1, d_g, d_image_sigma_reduc, M.lambda_var_sig, M.n_gauss, b_params_dev, k, dim_x, dim_y);
-    compute_nabla_R_wrt_m<T><<<1,1>>>(n_beta+1, d_g, d_image_sigma_reduc, M.lambda_var_sig, M.n_gauss, b_params_dev, k, dim_x, dim_y);
+    compute_nabla_R_wrt_m<T><<<1,1>>>(n_beta+1, g_dev, d_image_sigma_reduc, M.lambda_var_sig, M.n_gauss, b_params_dev, k, dim_x, dim_y);
 
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaFree(d_image_sigma_reduc));
@@ -609,23 +588,14 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
 
 //init_extended_array_sort(T* d_IMAGE_amp, T* d_EXT_amp, int dim_x, int dim_y){
 
-    checkCudaErrors(cudaFree(d_CONV_amp));
-    checkCudaErrors(cudaFree(d_CONV_mu));
-    checkCudaErrors(cudaFree(d_CONV_sig));
-    checkCudaErrors(cudaFree(d_CONV_CONV_amp));
-    checkCudaErrors(cudaFree(d_CONV_CONV_mu));
-    checkCudaErrors(cudaFree(d_CONV_CONV_sig));
   }
+
 
 //  display_size<<<1,1>>>(d_g, n_beta);
 
   checkCudaErrors(cudaDeviceSynchronize());
 //  exit(0);
 
-  checkCudaErrors(cudaMemcpy(g, d_g, n_beta*sizeof(T), cudaMemcpyDeviceToHost));
-
-  checkCudaErrors(cudaDeviceSynchronize());
-  checkCudaErrors(cudaFree(d_g));
   checkCudaErrors(cudaDeviceSynchronize());
 
   checkCudaErrors(cudaMemcpy(array_f, array_f_dev, 1*sizeof(T), cudaMemcpyDeviceToHost));
@@ -636,14 +606,16 @@ void regularisation(T* beta, T* deriv, T* g, T* b_params, T &f, int dim_x, int d
   checkCudaErrors(cudaFree(array_f_dev));
   free(array_f);
 
-  checkCudaErrors(cudaMemcpy(deriv, deriv_dev, dim_x*dim_y*3*M.n_gauss*sizeof(T), cudaMemcpyDeviceToHost));
-
   checkCudaErrors(cudaFree(b_params_dev));
-  checkCudaErrors(cudaFree(beta_dev));
-  checkCudaErrors(cudaFree(deriv_dev));
   checkCudaErrors(cudaFree(d_IMAGE_amp));
   checkCudaErrors(cudaFree(d_IMAGE_mu));
   checkCudaErrors(cudaFree(d_IMAGE_sig));
+  checkCudaErrors(cudaFree(d_CONV_amp));
+  checkCudaErrors(cudaFree(d_CONV_mu));
+  checkCudaErrors(cudaFree(d_CONV_sig));
+  checkCudaErrors(cudaFree(d_CONV_CONV_amp));
+  checkCudaErrors(cudaFree(d_CONV_CONV_mu));
+  checkCudaErrors(cudaFree(d_CONV_CONV_sig));
 }
 
 
@@ -691,6 +663,10 @@ template <typename T> void conv_twice_and_copy(T* d_IMAGE_amp, T* d_conv_amp, T*
 
     int size_i = (image_x+4)  * (image_y+4)  * sizeof(T);
 
+      checkCudaErrors(cudaDeviceSynchronize());
+      checkCudaErrors(cudaEventRecord(record_event[0], NULL));
+      checkCudaErrors(cudaDeviceSynchronize());
+
     T* d_RESULTAT_first_conv;
     cudaMalloc((void**)&d_RESULTAT_first_conv, size_i);
   	checkCudaErrors(cudaMemset(d_RESULTAT_first_conv, 0., size_i));
@@ -701,10 +677,6 @@ template <typename T> void conv_twice_and_copy(T* d_IMAGE_amp, T* d_conv_amp, T*
     T* d_IMAGE_amp_ext = NULL;
     checkCudaErrors(cudaMalloc(&d_IMAGE_amp_ext, size_i));
     checkCudaErrors(cudaMemset(d_IMAGE_amp_ext, 0., size_i));
-
-      checkCudaErrors(cudaDeviceSynchronize());
-      checkCudaErrors(cudaEventRecord(record_event[0], NULL));
-      checkCudaErrors(cudaDeviceSynchronize());
 
     prepare_for_convolution<T>(d_IMAGE_amp, d_IMAGE_amp_ext, image_x, image_y);
 
@@ -848,6 +820,10 @@ template <typename T> void update_array_f_dev_sort_fast(T lambda_amp, T lambda_m
     }
     bool print = false;
 
+    // Record the start event
+    checkCudaErrors(cudaDeviceSynchronize());
+    checkCudaErrors(cudaEventRecord(record_event[0], NULL));
+
     T* array_f_dev_bis = NULL;
     cudaMalloc((void**)&array_f_dev_bis, 1*sizeof(T));
 	checkCudaErrors(cudaMemset(array_f_dev_bis, 0., 1*sizeof(T)));
@@ -866,10 +842,6 @@ template <typename T> void update_array_f_dev_sort_fast(T lambda_amp, T lambda_m
     Dg_L2.x = ceil(T(indice_x)/T(BLOCK_SIZE_L2_X));
     Dg_L2.y = ceil(T(indice_y)/T(BLOCK_SIZE_L2_Y));
     Dg_L2.z = 1;
-
-    // Record the start event
-    checkCudaErrors(cudaDeviceSynchronize());
-    checkCudaErrors(cudaEventRecord(record_event[0], NULL));
 
     compute_R_map<T><<<Dg_L2,Db_L2>>>(lambda_amp, lambda_mu, lambda_sig, lambda_var_sig, map_norm_dev, map_conv_amp_dev, map_conv_mu_dev, map_conv_sig_dev, map_image_sig_dev, indice_x, indice_y, k, b_params_dev);
 
@@ -934,7 +906,7 @@ template double compute_residual_and_f_less_memory<double>(double*, int*, int, d
 template double compute_residual_and_f<double>(double*, int*, int, double*, int*, int, double*, int*, int, double*, int*, int, int, int, int, int);
 template void gradient_L_2_beta<double>(double*, int*, int, double*, int*, int, double*, int*, int, double*, int*, int, int, float*);
 template void reduction_loop<double>(double*, double*, int);
-template void regularisation<double>(double*, double*, double*, double*, double&, int, int, int, parameters<double>&, float*);
+template void regularization<double>(double*, double*, double*, double&, int, int, int, parameters<double>&, float*);
 template void prepare_for_convolution<double>(double*, double*, int, int);
 template void conv_twice_and_copy<double>(double*, double*, double*, int, int, float*);
 template void update_array_f_dev_sort<double>(double, double, double*, double*, double*, int, int, int, double*);
@@ -945,7 +917,7 @@ template float compute_residual_and_f_less_memory<float>(float*, int*, int, floa
 template float compute_residual_and_f<float>(float*, int*, int, float*, int*, int, float*, int*, int, float*, int*, int, int, int, int, int);
 template void gradient_L_2_beta<float>(float*, int*, int, float*, int*, int, float*, int*, int, float*, int*, int, int, float*);
 template void reduction_loop<float>(float*, float*, int);
-template void regularisation<float>(float*, float*, float*, float*, float&, int, int, int, parameters<float>&, float*);
+template void regularization<float>(float*, float*, float*, float&, int, int, int, parameters<float>&, float*);
 template void prepare_for_convolution<float>(float*, float*, int, int);
 template void conv_twice_and_copy<float>(float*, float*, float*, int, int, float*);
 template void update_array_f_dev_sort<float>(float, float, float*, float*, float*, int, int, int, float*);

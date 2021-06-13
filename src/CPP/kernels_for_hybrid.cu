@@ -350,28 +350,62 @@ __global__ void compute_residual(T* beta, T* residual, int indice_x, int indice_
 	  	T model_gaussienne = 0.;
 		for(int g = 0; g<n_gauss; g++)
 		{
-/*
-			T par_0=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];
-			T par_1=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];
-			T par_2=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
-			model_gaussienne += par_0*exp(-pow((T(index_z+1)-par_1),2.) / (2.*pow(par_2,2.)));
-*/
-/*
 			T par[3];
-			par[0]=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];
-			par[1]=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];
-			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
-			model_gaussienne += par[0]*__expf(-__powf((T(index_z+1)-par[1]),2.) / (2.*__powf(par[2],2.)));
-*/
-			T par[3];
-			par[0]=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];
-			par[1]=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];
-			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];					
+			par[0]=beta[(3*g+0)*indice_y*indice_x+index_y*indice_x+index_x];//beta[3*g+0,y,x]
+			par[1]=beta[(3*g+1)*indice_y*indice_x+index_y*indice_x+index_x];//beta[3*g+1,y,x]
+			par[2]=beta[(3*g+2)*indice_y*indice_x+index_y*indice_x+index_x];//beta[3*g+2,y,x]					
 			model_gaussienne += par[0]*exp(-pow((T(index_z+1)-par[1]),2.) / (2.*pow(par[2],2.)));
 
 		}
+		//residual[z,y,x]
 		residual[index_z*indice_y*indice_x+index_y*indice_x+index_x]=model_gaussienne-residual[index_z*indice_y*indice_x+index_y*indice_x+index_x];
 	}
+}
+
+//We need dim_v <- n_gauss*dim_v for this kernel
+template <typename T> 
+__global__ void compute_residual_modulo(T* beta, T* residual_enlarged, int indice_x, int indice_y, int extended_indice_v, int n_gauss)
+{
+
+	int index_x = blockIdx.x*blockDim.x +threadIdx.x;
+	int index_y = blockIdx.y*blockDim.y +threadIdx.y;
+	int index_z = blockIdx.z*blockDim.z +threadIdx.z;
+
+	if(index_x<indice_x && index_y<indice_y && index_z<extended_indice_v)
+	{
+		int actual_index_v = int(index_z/n_gauss);
+		int actual_g = index_z%n_gauss;
+
+		T par_amp=beta[(3*actual_g+0)*indice_y*indice_x+index_y*indice_x+index_x];//beta[3*g+0,y,x]
+		T par_mu=beta[(3*actual_g+1)*indice_y*indice_x+index_y*indice_x+index_x];//beta[3*g+1,y,x]
+		T par_sig=beta[(3*actual_g+2)*indice_y*indice_x+index_y*indice_x+index_x];//beta[3*g+2,y,x]					
+		T model_gaussienne = par_amp*exp(-pow((T(actual_index_v+1)-par_mu),2.) / (2.*pow(par_sig,2.)));
+
+		//residual[z,y,x]
+		residual_enlarged[index_z*indice_y*indice_x+index_y*indice_x+index_x]=model_gaussienne-residual_enlarged[index_z*indice_y*indice_x+index_y*indice_x+index_x];
+	}
+
+/*
+	__shared__ T cache[3];
+	int tid = threadIdx.x +blockIdx.x * blockDim.x;
+	int cacheIndex = threadIdx.x;
+	T temp = 0.;
+	while (tid<N) {
+		temp += a[tid];
+		tid += blockDim.x*gridDim.x;
+	}
+	cache[cacheIndex] = temp;
+	__syncthreads();
+	int i = blockDim.x/2;
+	while (i != 0) {
+		if (cacheIndex < i)
+			cache[cacheIndex] += cache[cacheIndex + i]; 
+		__syncthreads();
+		i /= 2;
+	}
+	if (cacheIndex == 0)
+		c[blockIdx.x] = cache[0];
+*/
 }
 
 template <typename T> 

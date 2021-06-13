@@ -222,7 +222,7 @@ parameters<T>::parameters(std::string str, std::string str2, std::string str3, s
 
 	this->save_grid_through_multiresolution = false; 
 //	this->save_grid_through_multiresolution = true; 
-	if(false){
+	if(true){
 		this->jump_to_last_level = true;
 		this->save_second_to_last_level = false;
 		this->second_to_last_level_grid_name = "right_before_last_level";

@@ -155,6 +155,11 @@ std::vector <std::vector<std::vector<T>>> hypercube<T>::get_array_and_reshape_it
 	int dim_y = size_side_square;
 	int dim_v = end_index-start_index+1;
 
+	if(size_side_square==0){
+		dim_x = dim_x_data;
+		dim_y = dim_y_data;
+		dim_v = dim_v_data;
+	}
 	std::cout<<"--> dim_x_data = "<<dim_x_data<<std::endl;
 	std::cout<<"--> dim_y_data = "<<dim_y_data<<std::endl;
 	std::cout<<"--> dim_v_data = "<<dim_v_data<<std::endl;
@@ -174,16 +179,30 @@ std::vector <std::vector<std::vector<T>>> hypercube<T>::get_array_and_reshape_it
 //	std::cout<<" On entre la boucle de copie !!!!!! "<<std::endl;
 //	std::cin.ignore();
 
-	for(int k=0; k<dim_v; k++)
-	{
-		for(int j=0; j<dim_y; j++)
+	if(size_side_square==0){
+		for(int k=0; k<dim_v; k++)
 		{
-			for(int i=0; i<dim_x; i++)
+			for(int j=0; j<dim_y; j++)
 			{
-				z_transpose[k][j][i] = contents[(k+start_index)*dim_y_data*dim_x_data+(j+pos_y-int(dim_y/2))*dim_x_data+(i+pos_x-int(dim_x/2))];
+				for(int i=0; i<dim_x; i++)
+				{
+					z_transpose[k][j][i] = contents[k*dim_y_data*dim_x_data+j*dim_x_data+i];
+				}
+			}
+		}
+	} else{
+		for(int k=0; k<dim_v; k++)
+		{
+			for(int j=0; j<dim_y; j++)
+			{
+				for(int i=0; i<dim_x; i++)
+				{
+					z_transpose[k][j][i] = contents[(k+start_index)*dim_y_data*dim_x_data+(j+pos_y-int(dim_y/2))*dim_x_data+(i+pos_x-int(dim_x/2))];
+				}
 			}
 		}
 	}
+
 //	std::cout<<" Ligne suivante !!!!!! "<<std::endl;
 
 //	std::cin.ignore();
@@ -235,6 +254,24 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 
 		this->nside = dim2nside();
 
+//		this->dim_cube[2] = dim_data[2];
+		if(this->size_side_square_option!=0){
+			this->dim_cube[2] = indice_fin-indice_debut+1;
+
+			int shift = this->size_side_square_option/2;
+			this->dim_data[0] = this->size_side_square_option;
+			this->dim_data[1] = this->size_side_square_option;
+		}else{
+			this->dim_cube[2] = this->dim_data[2];
+		}
+		this->nside = dim2nside();
+
+		this->dim_cube[0] =pow(2.0,this->nside);
+		this->dim_cube[1] =pow(2.0,this->nside);
+
+		int offset_x = abs((-dim_cube[0]+dim_data[0])/2);
+		int offset_y = abs((-dim_cube[1]+dim_data[1])/2);
+
 		std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
 		std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
 		std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
@@ -251,42 +288,34 @@ hypercube<T>::hypercube(parameters<T> &M, int indice_debut, int indice_fin, int 
 		std::cout<<" "<<std::endl;
 		std::cout<<" "<<std::endl;
 
-//		this->dim_cube[2] = dim_data[2];
-		this->dim_cube[2] = indice_fin-indice_debut+1;
-		int shift = this->size_side_square_option/2;
-
-		this->dim_data[0] = this->size_side_square_option;
-		this->dim_data[1] = this->size_side_square_option;
-		this->nside = dim2nside();
-
 		std::cout<<"this->data[0][0][0] = "<<this->data[0][0][0]<<std::endl;
 		std::cout<<"this->data[0][0][1] = "<<this->data[0][0][1]<<std::endl;
 		std::cout<<"this->data[0][0][2] = "<<this->data[0][0][2]<<std::endl;
 		std::cout<<"this->data[0][0][3] = "<<this->data[0][0][3]<<std::endl;
 		std::cout<<"this->nside = "<<this->nside<<std::endl;
-
-		this->dim_cube[0] =pow(2.0,this->nside);
-		this->dim_cube[1] =pow(2.0,this->nside);
 		std::cout<<"dim_cube[0] = "<<this->dim_cube[0]<<std::endl;
 		std::cout<<"dim_cube[1] = "<<this->dim_cube[1]<<std::endl;
-
-		int offset_x = abs((-dim_cube[0]+dim_data[0])/2);
-		int offset_y = abs((-dim_cube[1]+dim_data[1])/2);
-
 		std::cout<<"offset_x = "<<offset_x<<std::endl;
 		std::cout<<"offset_y = "<<offset_y<<std::endl;
 
 		std::vector<std::vector<std::vector<T>>> cube_reshaped_local(this->dim_cube[0], std::vector<std::vector<T>>(this->dim_cube[1],std::vector<T>(this->dim_cube[2],0.)));
+		for(int i=0; i< this->dim_data[0]; i++)
+		{
+			for(int j=0; j< this->dim_data[1]; j++)
+			{
+				for(int k=0; k<this->dim_data[2]; k++)
+				{
+				cube_reshaped_local[i+offset_x][j+offset_y][k]= this->data[i][j][k];
+				}
+			}
+		}
+/*
 		for(int i=0; i< this->dim_cube[0]; i++)
 		{
 			for(int j=0; j< this->dim_cube[1]; j++)
 			{
 				for(int k=0; k<this->dim_cube[2]; k++)
-				{
-				cube_reshaped_local[i][j][k]= this->data[i+offset_x][j+offset_y][k];
-				}
-			}
-		}
+*/
 		std::cout<<"END 1"<<std::endl;
 
 		this->cube = cube_reshaped_local;

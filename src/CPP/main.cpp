@@ -179,8 +179,10 @@ void main_routine(parameters<T> &user_parameters){
 
 	printf("Reading the cube ...\n");
 	if (user_parameters.input_format_fits){
+//		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, PIX_X, PIX_Y, 0,0);
+		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, PIX_X, PIX_Y, SQUARE_SIZE,0);//functionning for UM
+
 //		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, 730, 650, SQUARE_SIZE, false, true, false);
-		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, PIX_X, PIX_Y, SQUARE_SIZE,0);
 //		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, PIX_X, PIX_Y, SQUARE_SIZE, false, true, false);
 //		hypercube<T> Hypercube_file(user_parameters, user_parameters.slice_index_min, user_parameters.slice_index_max, 1024, 1024, SQUARE_SIZE, false, true, false);
 		printf("Launching the ROHSA algorithm ...\n");

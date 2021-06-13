@@ -27,6 +27,7 @@
 #include "f_g_cube_gpu.hpp"
 #include "culbfgsb.h"
 #include "f_g_cube.hpp"
+#include "f_g_cube_norm.hpp"
 #include "f_g_cube_vecto.hpp"
 #include "fortran_to_cpp_conversion.h"
 
@@ -322,6 +323,7 @@ exp\left( -\frac{(\nu_z-\mu_{n\_gauss}(\bf{r}))^2}{2\sigma_{n\_gauss}(\bf{r})^2}
 	void minimize_clean_double(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
 
 	void minimize_fortran_float(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
+	void minimize_fortran_float_norm(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
 
 	//no cube_dev declared before loop 
 	void minimize_fortran_double(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened);
@@ -831,6 +833,7 @@ void algo_rohsa<T>::descente(hypercube<T> &Hypercube, parameters<T> &M, std::vec
 		std::cout<< "compute_R_map -> 8 : " << this->temps_kernel[8]  <<std::endl;
 		std::cout<< "compute_nabla_R_wrt_theta -> 9 : " << this->temps_kernel[9]  <<std::endl;
 		std::cout<< "compute_nabla_R_wrt_m -> 10 : " << this->temps_kernel[10]  <<std::endl;
+		std::cout<< "transfers -> 11 : " << this->temps_kernel[11]  <<std::endl;
 
 /*
 		for(int i = 0; i<Nb_time_mes ; i++){
@@ -1198,8 +1201,8 @@ void algo_rohsa<T>::update_clean(hypercube<T> Hypercube, parameters<T> &M, std::
 //			//this->file.simple_plot_through_regu(params, 0,2,number_plot_2D, "début");
 			Hypercube.save_result_multires(params, M, number_plot_2D);
 		}
-//		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
-		minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
+		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
+		//minimize_clean_cpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
 
 //		void algo_rohsa<T>::minimize_clean_same_dim_test(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
 
@@ -2452,6 +2455,12 @@ void algo_rohsa<T>::minimize_fortran_float(parameters<double> &M, long n, long m
 		cube_flattened_float[i]=float(cube_flattened[i]);
     }	
 
+    float* cube_flattened_float_dev = NULL;
+    checkCudaErrors(cudaMalloc(&cube_flattened_float_dev, dim_x*dim_y*dim_v*sizeof(float)));
+    checkCudaErrors(cudaDeviceSynchronize());
+	checkCudaErrors(cudaMemcpy(cube_flattened_float_dev, cube_flattened_float, dim_x*dim_y*dim_v*sizeof(float), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaDeviceSynchronize());
+
     static char task_c[60] = {'S','T','A','R','T', '\0'};
     static char task_STOP_c[60] = "STOP";  
     static char task_STOP_GRAD_c[60] = "STOP_GRAD";  
@@ -2509,6 +2518,8 @@ void algo_rohsa<T>::minimize_fortran_float(parameters<double> &M, long n, long m
 	
 	float* beta_float = NULL;
 	beta_float = (float*)malloc(n*sizeof(float));
+
+
 /*
 	float* lb_float = NULL;
 	lb_float = (float*)malloc(n*sizeof(float));
@@ -2606,7 +2617,8 @@ L111:
 		f_float = 0.;//float(f);
 
 		float temps_kernel_tmp[14]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
-		f_g_cube_cuda_L_clean_templatized<float>(M_f, f_float, g_float, n, beta_float, dim_v, dim_y, dim_x, std_map, cube_flattened_float, temps, this->temps_transfert_d, this->temps_mirroirs, temps_kernel_tmp); // expérimentation gradient
+		//f_g_cube_cuda_L_clean_templatized_less_transfers_norm<float>(M_f, f_float, g_float, n, beta_float, dim_v, dim_y, dim_x, std_map, cube_flattened_float_dev, temps, this->temps_transfert_d, this->temps_mirroirs, temps_kernel_tmp); // expérimentation gradient
+		f_g_cube_cuda_L_clean_templatized_less_transfers<float>(M_f, f_float, g_float, n, beta_float, dim_v, dim_y, dim_x, std_map, cube_flattened_float_dev, temps, this->temps_transfert_d, this->temps_mirroirs, temps_kernel_tmp); // expérimentation gradient
 		
 		for(int i = 0; i<Nb_time_mes; i++){
 			this->temps_kernel[i] += temps_kernel_tmp[i];
@@ -2674,6 +2686,342 @@ L111:
 	free(g);
 	free(g_float);
 	free(beta_float);
+	checkCudaErrors(cudaFree(cube_flattened_float_dev));
+//	free(lb_float);
+//	free(ub_float);
+	free(temps);
+	free(cube_flattened_float);
+	if(false){ //|| dim_x == 2){
+		for(int i = 0; i<500; i++){
+			std::cout<<"beta["<<i<<"] = "<<beta[i]<<std::endl;
+		}
+	}
+//	printf("----------------->temps_transfert_boucle = %f \n", temps_transfert_boucle);
+		std::cout<< "compute_residual -> 0 : " << this->temps_kernel[0]  <<std::endl;
+		std::cout<< "compute_Q_map -> 1 : " << this->temps_kernel[1]  <<std::endl;
+		std::cout<< "reduction_kernel -> 2 : " << this->temps_kernel[2]  <<std::endl;
+		std::cout<< "compute_nabla_Q -> 3 : " << this->temps_kernel[3]  <<std::endl;
+		std::cout<< "get_gaussian_parameter_maps -> 4 : " << this->temps_kernel[4]  <<std::endl;
+		std::cout<< "perform_mirror_effect_before_convolution -> 5 : " << this->temps_kernel[5]  <<std::endl;
+		std::cout<< "ConvKernel -> 6 : " << this->temps_kernel[6]  <<std::endl;
+		std::cout<< "copy_gpu -> 7 : " << this->temps_kernel[7]  <<std::endl;
+		std::cout<< "compute_R_map -> 8 : " << this->temps_kernel[8]  <<std::endl;
+		std::cout<< "compute_nabla_R_wrt_theta -> 9 : " << this->temps_kernel[9]  <<std::endl;
+		std::cout<< "compute_nabla_R_wrt_m -> 10 : " << this->temps_kernel[10]  <<std::endl;
+		float sum = 0.;
+		for(int p = 0; p<Nb_time_mes; p++){
+			sum += this->temps_kernel[p];
+		}
+		std::cout<< "Total : " << sum  <<std::endl;
+
+	printf("----------------->temps_transfert_boucle = %f \n", temps_transfert_boucle);
+	this->temps_transfert_d += temps_transfert_boucle;
+}
+
+
+template <typename T>
+void algo_rohsa<T>::minimize_fortran_float_norm(parameters<double> &M, long n, long m, double* beta, double* lb, double* ub, std::vector<std::vector<std::vector<double>>> &cube, double* std_map_, int dim_x, int dim_y, int dim_v, double* cube_flattened) {
+
+		parameters<float> M_f;
+		M_f.input_format_fits = M.input_format_fits;
+		M_f.filename_dat = M.filename_dat;
+		M_f.filename_fits = M.filename_fits;
+		M_f.output_format_fits = M.output_format_fits;
+		M_f.fileout = M.fileout;
+		M_f.noise_map_provided = M.noise_map_provided;
+		M_f.filename_noise = M.filename_noise;
+		M_f.give_input_spectrum = M.give_input_spectrum;
+		M_f.n_gauss = M.n_gauss;
+		M_f.lambda_amp = float(M.lambda_amp);
+		M_f.lambda_mu = float(M.lambda_mu);
+		M_f.lambda_sig = float(M.lambda_sig);
+		M_f.lambda_var_sig = float(M.lambda_var_sig);
+		M_f.amp_fact_init = float(M.amp_fact_init);
+		M_f.sig_init = float(M.sig_init);
+		M_f.lstd = M.lstd;
+		M_f.ustd = M.ustd;
+		M_f.ub_sig = float(M.ub_sig);
+		M_f.lb_sig = float(M.lb_sig);
+		M_f.ub_sig_init = float(M.ub_sig_init);
+		M_f.lb_sig_init = float(M.lb_sig_init);
+		M_f.maxiter_init = M.maxiter_init;
+		M_f.maxiter = M.maxiter;
+		M_f.m = M.m;
+		M_f.init_option = M.init_option;
+		M_f.regul = M.regul;
+		M_f.descent = M.descent;
+		M_f.print_mean_parameters = M.print_mean_parameters;
+		M_f.iprint = M.iprint;
+		M_f.iprint_init = M.iprint_init;
+		M_f.select_version = M.select_version;
+
+	int n_bis = int(n);
+	int m_bis = int(m);
+	int iprint_bis = int(M.iprint);
+	//if(dim_x==128)	iprint_bis = 1;//
+	//iprint_bis = 1;//
+    int i__1;
+	int  i__c = 0;
+    double d__1, d__2;
+
+    double t1, t2, f;
+
+    int i__;
+    int taille_wa = 2*M.m*n+5*n+11*M.m*M.m+8*M.m;
+    int taille_iwa = 3*n;
+
+    int* nbd = NULL;
+    nbd = (int*)malloc(n*sizeof(int));
+	
+    int* nbd_bis = NULL;
+    nbd_bis = (int*)malloc(n*sizeof(int));
+
+    int* iwa = NULL;
+    iwa = (int*)malloc(taille_iwa*sizeof(int));
+
+	float temps_transfert_boucle = 0.;
+
+    double* wa = NULL;
+    wa = (double*)malloc(taille_wa*sizeof(double));
+
+    float* cube_flattened_float = NULL;
+    cube_flattened_float = (float*)malloc(dim_x*dim_y*dim_v*sizeof(float));
+    for(int i(0); i<dim_x*dim_y*dim_v; i++) {
+		cube_flattened_float[i]=float(cube_flattened[i]);
+    }	
+
+    float* cube_flattened_float_dev = NULL;
+    checkCudaErrors(cudaMalloc(&cube_flattened_float_dev, dim_x*dim_y*dim_v*sizeof(float)));
+    checkCudaErrors(cudaDeviceSynchronize());
+	checkCudaErrors(cudaMemcpy(cube_flattened_float_dev, cube_flattened_float, dim_x*dim_y*dim_v*sizeof(float), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    static char task_c[60] = {'S','T','A','R','T', '\0'};
+    static char task_STOP_c[60] = "STOP";  
+    static char task_STOP_GRAD_c[60] = "STOP_GRAD";  
+	char task[60];
+    ConvertToFortran(task, sizeof task_c, task_c);
+	std::cout<<"===> task_c = "<<task_c <<std::endl;
+//	exit(0);
+
+    float factr_float;
+	double factr;
+    static char csave[60];
+
+//    float dsave_float[29];
+    double dsave[29];
+    int isave[44];
+    int lsave[4];
+    float pgtol_float;
+    double pgtol;
+
+    for(int i(0); i<taille_wa; i++) {
+		wa[i]=0.;
+    }
+    for(int i(0); i<taille_iwa; i++) {
+		iwa[i]=0;
+    }
+    for(int i(0); i<n; i++) {
+		nbd[i]=0;
+    }
+    for(int i(0); i<29; i++) {
+//		dsave_float[i]=0.;
+		dsave[i]=0.;
+    }
+    for(int i(0); i<44; i++) {
+		isave[i]=0;
+    }
+    for(int i(0); i<4; i++) {
+		lsave[i]=true;
+    }
+
+	double temps2_tableau_update = omp_get_wtime();
+
+	double* g = NULL;
+	g = (double*)malloc(n*sizeof(double));
+    for(int i(0); i<n; i++) {
+	g[i]=0.;
+    }
+    f=0.;
+
+	float* g_float = NULL;
+	g_float = (float*)malloc(n*sizeof(float));
+    for(int i(0); i<n; i++) {
+		g_float[i]=0.;
+    }
+    float f_float=0.;
+	
+	float* beta_float = NULL;
+	beta_float = (float*)malloc(n*sizeof(float));
+
+
+/*
+	float* lb_float = NULL;
+	lb_float = (float*)malloc(n*sizeof(float));
+	float* ub_float = NULL;
+	ub_float = (float*)malloc(n*sizeof(float));
+*/
+    for(int i(0); i<n; i++) {
+		beta_float[i] = float(beta[i]);
+//		lb_float[i] = float(lb[i]);
+//		ub_float[i] = float(ub[i]);
+    }
+
+	temps_tableau_update += omp_get_wtime() - temps2_tableau_update;
+
+//    factr = 1e+10;
+//    factr = 8.90e+9;
+    factr_float = 1e+7;
+    factr = 1e+7;
+//    factr = 1e+3;
+//    pgtol = 1e-10;
+    pgtol_float = 1e-5;
+    pgtol = 1e-5;
+
+
+    for (i__ = 0; i__ < n; i__ ++) {
+        nbd[i__] = 2;
+		nbd_bis[i__] = 2;
+    }
+
+	double temps1_f_g_cube = omp_get_wtime();
+
+	std::vector<std::vector<float>> std_map(dim_y, std::vector<float>(dim_x,0.));
+	for(int i=0; i<dim_y; i++){
+		for(int j=0; j<dim_x; j++){
+			std_map[i][j] = float(std_map_[i*dim_x+j]);
+		}
+	}
+
+/*
+	double* std_map_dev = NULL;
+	double* cube_flattened_dev = NULL;
+	checkCudaErrors(cudaMalloc(&std_map_dev, dim_x*dim_y*sizeof(double)));
+	checkCudaErrors(cudaMemcpy(std_map_dev, std_map_, dim_x*dim_y*sizeof(double), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMalloc(&cube_flattened_dev, dim_x*dim_y*dim_v*sizeof(double)));
+	checkCudaErrors(cudaMemcpy(cube_flattened_dev, cube_flattened, dim_x*dim_y*dim_v*sizeof(double), cudaMemcpyHostToDevice));
+*/
+	int compteur_iter_boucle_optim = 0;
+
+	if (print){//dim_x >128){
+		printf("dim_x = %d , dim_y = %d , dim_v = %d \n", dim_x, dim_y, dim_v);
+		printf("n = %d , n_gauss = %d\n", int(n), M.n_gauss);
+		printf("beta[n_beta-1] = %f , beta[n_beta] = %f\n", beta[n-1], beta[n-1]);
+		printf("cube_flattened[dim_x*dim_y*dim_v-1] = %f , cube_flattened[dim_x*dim_y*dim_v] = %f\n", cube_flattened[dim_x*dim_y*dim_v-1], cube_flattened[dim_x*dim_y*dim_v]);
+	}
+
+    double* temps = NULL;
+    temps = (double*)malloc(4*sizeof(double));
+    temps[0] = 0.;
+    temps[1] = 0.;
+    temps[2] = 0.;
+    temps[3] = 0.;
+    temps[4] = 0.;
+
+	if(false){//true ){ //&& dim_x == 4){
+		for(int i = 0; i<30; i++){
+			printf("beta[%d] = %.26f\n",i,beta[i]);
+		}
+//		exit(0);
+	}
+
+	int exceed_one = 0;
+
+//	while(IS_FG(*task) or *task==NEW_X or *task==START){
+//	while(IS_FG(*task_bis) or *task_bis==NEW_X or std::strncmp(task, "FG", 2) == 0 || std::strncmp(task, "FG_START", 8) == 0 ){
+
+L111:
+		double temps_temp = omp_get_wtime();
+	
+//		std::cin.ignore();
+
+//	    setulb_(&n_bis, &m_bis, beta_float, lb_float, ub_float, nbd, &f_float, g_float, &factr_float, &pgtol_float, wa_float, iwa, task, &iprint_bis, csave, lsave, isave, dsave_float);
+
+// fortran and internet wrapper
+	    setulb_(&n_bis, &m_bis, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, &iprint_bis, csave, lsave, isave, dsave);
+//		setulb(&n, &m, beta, lb, ub, nbd, &f, g, &factr, &pgtol, wa, iwa, task, &M.iprint, csave, lsave, isave, dsave);
+
+		temps_setulb += omp_get_wtime() - temps_temp;
+
+    if (std::strncmp(task, "FG", 2) == 0 || std::strncmp(task, "FG_START", 8) == 0 ){//task == 'FG' || task == 'FG_START'){ //IS_FG(*task) ) {
+
+		for(int i = 0; i<n; i++){
+			beta_float[i] = float(beta[i]);
+			g_float[i] = 0.;//float(g[i]);
+		}
+		f_float = 0.;//float(f);
+
+		float temps_kernel_tmp[14]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+		//f_g_cube_cuda_L_clean_templatized<float>(M_f, f_float, g_float, n, beta_float, dim_v, dim_y, dim_x, std_map, cube_flattened_float, temps, this->temps_transfert_d, this->temps_mirroirs, temps_kernel_tmp); // expérimentation gradient
+		f_g_cube_cuda_L_clean_templatized_less_transfers_norm<float>(M_f, f_float, g_float, n, beta_float, dim_v, dim_y, dim_x, std_map, cube_flattened_float_dev, temps, this->temps_transfert_d, this->temps_mirroirs, temps_kernel_tmp); // expérimentation gradient
+		
+		for(int i = 0; i<Nb_time_mes; i++){
+			this->temps_kernel[i] += temps_kernel_tmp[i];
+		}
+
+		for(int i = 0; i<n; i++){
+		//	beta[i] = double(beta_float[i]);
+			g[i] = double(g_float[i]);
+		}
+		f = double(f_float);
+
+		if(false && dim_x==128){
+			for(int i = 0; i<n; i++){
+				printf("g[%d] = %.26f\n",i,g[i]);
+			}
+			printf("f = %.26f\n",f);
+			std::cin.ignore();
+		}
+
+		if(false ){ //&& dim_x == 4){
+			for(int i = 0; i<n; i++){
+				printf("g[%d] = %.26f\n",i,g[i]);
+			}
+			printf("f = %.26f\n",f);
+			std::cin.ignore();
+//			exit(0);
+		}
+        goto L111;
+		}
+
+		if ( std::strncmp(task, "NEW_X", 5) == 0){//task=='NEW_X' ) {
+			if (isave[33] >= M.maxiter) {
+			    ConvertToFortran(task, sizeof task_STOP_c, task_STOP_c);
+//				task = "STOP"; //task_STOP_c;
+			}
+			if (dsave[12] <= (fabs(f) + 1.) * 1e-10) {
+			    ConvertToFortran(task, sizeof task_STOP_GRAD_c, task_STOP_GRAD_c);
+//				task = "STOP_GRAD"; //task_STOP_GRAD_c;
+			}
+	        goto L111;
+		}
+
+//	std::cin.ignore();
+///	printf("--> nombre d'itérations dans la boucle d'optimisation (limite à 800) = %d \n", compteur_iter_boucle_optim);
+	double temps4_tableau_update = omp_get_wtime();
+	temps_tableau_update += omp_get_wtime() - temps4_tableau_update;
+	double temps2_f_g_cube = omp_get_wtime();
+
+	this->temps_conv += temps[3]/1000;
+	this->temps_deriv += temps[2]/1000;
+	this->temps_tableaux += temps[1]/1000;
+	this->temps_copy += temps[0]/1000;
+	this->temps_f_g_cube += (temps[0]+temps[1]+temps[2]+temps[3])/1000;
+
+	printf("this->temps_copy = %f\n", this->temps_copy);
+	printf("this->temps_tableaux = %f\n", this->temps_tableaux);
+	printf("this->temps_deriv = %f\n", this->temps_deriv);
+	printf("this->temps_conv = %f\n", this->temps_conv);
+	printf("this->temps_f_g_cube = %f\n", this->temps_f_g_cube);
+	std::cout<< "Temps de calcul gradient : " << temps2_f_g_cube - temps1_f_g_cube<<std::endl;
+
+	free(wa);
+	free(nbd);
+	free(iwa);
+	free(g);
+	free(g_float);
+	free(beta_float);
+	checkCudaErrors(cudaFree(cube_flattened_float_dev));
 //	free(lb_float);
 //	free(ub_float);
 	free(temps);
@@ -3149,11 +3497,15 @@ void algo_rohsa<T>::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta
 
     lbfgsbcuda::lbfgsbdefaultoption<T>(lbfgsb_options);
     lbfgsb_options.mode = LCM_CUDA;
-    lbfgsb_options.eps_f = static_cast<T>(1e-22);
-    lbfgsb_options.eps_g = static_cast<T>(1e-22);
-    lbfgsb_options.eps_x = static_cast<T>(1e-22);
-    lbfgsb_options.max_iteration = 2000;
-
+    lbfgsb_options.eps_f = static_cast<T>(1e-15);
+    lbfgsb_options.eps_g = static_cast<T>(1e-15);
+    lbfgsb_options.eps_x = static_cast<T>(1e-15);
+    lbfgsb_options.max_iteration = 800;
+	lbfgsb_options.hessian_approximate_dimension = 10;
+	lbfgsb_options.machine_maximum = std::numeric_limits<T>::max();
+	std::cout<<"max = "<<std::numeric_limits<T>::max()<<std::endl;
+	//exit(0);
+	
 	// initialize LBFGSB state
 	LBFGSB_CUDA_STATE<T> state;
 	memset(&state, 0, sizeof(state));
@@ -3200,11 +3552,11 @@ void algo_rohsa<T>::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta
     checkCudaErrors(cudaMemcpy(taille_std_map_dev, taille_std_map_, 2*sizeof(int), cudaMemcpyHostToDevice));
 
 
-///PTR
+	///PTR
 
   	// setup callback function that evaluate function value and its gradient
   	state.m_funcgrad_callback = [&assist_buffer_cuda, &minimal_f, this, &M, n,&cube, &cube_flattened_dev, &cube_flattened,
-&std_map_dev, &std_map, dim_x, dim_y, dim_v, n_gauss, &temps,&beta, &b_params_dev,&residual_dev,&array_f_dev,&deriv_dev,
+&std_map_dev, &std_map, dim_x, dim_y, dim_v, n_gauss, &temps, &b_params_dev,&residual_dev,&array_f_dev,&deriv_dev,
 &taille_beta_dev,&taille_deriv_dev,&taille_residual_dev,&taille_std_map_dev,&taille_deriv,&taille_residual,&taille_std_map_,&taille_beta,&taille_cube](
  T* x_dev, T& f, T* g_dev,const cudaStream_t& stream, const LBFGSB_CUDA_SUMMARY<T>& summary) -> int {
 
@@ -3223,21 +3575,44 @@ void algo_rohsa<T>::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta
 ///PTR
 
 
-
+		T* beta_tmp = NULL;
+		beta_tmp = (T*)malloc(n*sizeof(T));
 		//int temp = 0;
-/*
+	    checkCudaErrors(cudaDeviceSynchronize());
+		checkCudaErrors(cudaMemcpy(beta_tmp, x_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
+	    checkCudaErrors(cudaDeviceSynchronize());
+		printf("n = %d\n",n);
 		for(int ind = 0; ind < n; ind++){
-			if(isnan(beta[ind])){// && temp == 0){
-				checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
-		//		temp=1;
+			//printf("%d\n",ind);
+			if(isnormal(beta_tmp[ind])==0 && beta_tmp[ind]!=0.0){// && temp == 0){
+				printf("beta_tmp[%d] = %.16f\n",ind,beta_tmp[ind]);
+				printf("Nan detected in beta ! (at iteration %d)\n",summary.num_iteration);
+				exit(0);
+				//checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
 			}
 		}
+		free(beta_tmp);
+//		std::cout<<"beta_tmp["<<2*dim_x*dim_y<<"] = "<<beta_tmp[2*dim_x*dim_y]<<std::endl;
+//		std::cout<<"math::isnan(beta_tmp["<<2*dim_x*dim_y<<"]) = "<<isnan(beta_tmp[2*dim_x*dim_y])<<std::endl;
+		if(isnan(f)){
+			printf("BEFORE f_g_cube  !!!!!!! f = %.16f      f=Nan detected !\n",f);
+			exit(0);
+		}
+
+/*
 */
 //		T* g = NULL;
 //		g = (T*)malloc(n*sizeof(T));
 //		f_g_cube_cuda_L_clean<double>(M, f, g, n,cube, beta, dim_v, dim_y, dim_x, std_map, cube_flattened, temps, this->temps_transfert_d, this->temps_mirroirs, this->temps_kernel); // expérimentation gradient
 //	    checkCudaErrors(cudaDeviceSynchronize());
-		f_g_cube_parallel_lib_light<double>(M, f, g_dev, n, x_dev, dim_v, dim_y, dim_x, std_map_dev, cube_flattened_dev, temps);
+//void f_g_cube_cuda_L_clean_templatized_no_transfers(parameters<T> &M, T& f, T* g_dev, int n, T* beta_dev, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened_dev, double* temps, double temps_transfert_d, double temps_mirroirs, float* temps_kernel)
+		f_g_cube_cuda_L_clean_templatized_no_transfers<T>(M, f, g_dev, n, x_dev, dim_v, dim_y, dim_x, std_map_dev, cube_flattened_dev, temps, this->temps_transfert_d, this->temps_mirroirs, this->temps_kernel);
+
+		if(isnan(f)){
+			printf("f = %.16f      f=Nan detected !\n",f);
+			exit(0);
+		}
+				//f_g_cube_parallel_lib_light<T>(M, f, g_dev, n, x_dev, dim_v, dim_y, dim_x, std_map_dev, cube_flattened_dev, temps);
 //	    checkCudaErrors(cudaDeviceSynchronize());
 //		checkCudaErrors(cudaMemcpy(g_dev, g, n*sizeof(T), cudaMemcpyHostToDevice));
 //		checkCudaErrors(cudaMemcpy(beta, x_dev, n*sizeof(T), cudaMemcpyDeviceToHost));
@@ -3276,6 +3651,7 @@ void algo_rohsa<T>::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta
 	checkCudaErrors(cudaMemcpy(xl_dev, lb, n*sizeof(T), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(xu_dev, ub, n*sizeof(T), cudaMemcpyHostToDevice));
 
+
 	// initialize starting point
 	T f_init = 0.;
 //	double f_init = std::numeric_limits<T>::max();
@@ -3296,11 +3672,20 @@ void algo_rohsa<T>::minimize_clean_gpu(parameters<T> &M, long n, long m, T* beta
 	double t1 = omp_get_wtime();
 	printf("Before lbfgsbminimize\n");
 	// call optimization
+	for(int ind = 0; ind < n; ind++){
+		if(!isnormal(beta[ind]) && beta[ind]!=0.0){// && temp == 0){
+			printf("beta[%d] = %.16f\n",ind,beta[ind]);
+			printf("Nan detected in beta ! (before any iteration)\n");
+			exit(0);
+			//checkCudaErrors(cudaMemcpy(x_dev, beta, n*sizeof(T), cudaMemcpyHostToDevice));
+		}
+	}
 	auto start_time = std::chrono::steady_clock::now();
 	lbfgsbcuda::lbfgsbminimize<T>(n, state, lbfgsb_options, x_dev, nbd_dev,
 									xl_dev, xu_dev, summary);
 	auto end_time = std::chrono::steady_clock::now();
 	printf("After lbfgsbminimize\n");
+
 	std::cout << "Timing: "
 				<< (std::chrono::duration<T, std::milli>(end_time - start_time)
 						.count() /
