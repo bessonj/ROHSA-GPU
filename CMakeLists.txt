@@ -12,9 +12,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g") #-mtune=native
-set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -O3 -funroll-loops --fast-math -fopenmp-simd -ftree-vectorizer-verbose=7 -march=native -fopt-info-vec-all=vectorization_report.txt ")#--fast-math #-funsafe-math-optimizations #-fopt-info-loop-all=loops.txt") #-floop-parallelize-all -ftree-parallelize-loops=all 
-#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --extra-device-vectorization --restrict")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --use_fast_math --extra-device-vectorization --restrict")
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -O3 -funroll-loops -fopenmp-simd -ftree-vectorizer-verbose=7 -march=native -fopt-info-vec-all=vectorization_report.txt ")#--fast-math #-funsafe-math-optimizations #-fopt-info-loop-all=loops.txt") #-floop-parallelize-all -ftree-parallelize-loops=all 
+#set(CMAKE_CXX_FLAGS_RELEASE "-Wall -Wextra -O3 -funroll-loops --fast-math -fopenmp-simd -ftree-vectorizer-verbose=7 -march=native -fopt-info-vec-all=vectorization_report.txt ")#--fast-math #-funsafe-math-optimizations #-fopt-info-loop-all=loops.txt") #-floop-parallelize-all -ftree-parallelize-loops=all 
+####set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --extra-device-vectorization --restrict")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops --extra-device-vectorization --restrict")
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler  -funroll-loops  --use_fast_math --extra-device-vectorization --restrict")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-loops -ftree-vectorize -fopt-info-vec-all=vectorization_report_fortran.txt" )
 
 list(APPEND HEADER_REP ${CMAKE_CURRENT_SOURCE_DIR}/inc ${CMAKE_CURRENT_SOURCE_DIR}/L-BFGS-B-C/src/ ${CMAKE_CURRENT_SOURCE_DIR}/lbfgsb-gpu/culbfgsb/ ${CMAKE_CURRENT_SOURCE_DIR}/src/CUDA ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} "/usr/local/cuda/samples/common/inc/" "${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}/../samples/common/inc")

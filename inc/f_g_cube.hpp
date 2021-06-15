@@ -2,7 +2,12 @@
 #include <omp.h>
 #include <stdio.h>
 #include "gradient.hpp"
-#include "convolutions.hpp"
+
+#include <cuda_runtime.h>
+#include <helper_cuda.h>
+#include <helper_functions.h>
+
+//#include "convolutions.hpp"
 
 template <typename T> void f_g_cube_fast_unidimensional(parameters<T> &M, T &f, T* __restrict__ g, int n, T* __restrict__ cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* __restrict__ beta, int indice_v, int indice_y, int indice_x, T* __restrict__ std_map, double* temps);	
 template <typename T> void f_g_cube_fast_unidimensional_test(parameters<T> &M, T &f, T* g, int n, T* cube, std::vector<std::vector<std::vector<T>>>& cube_for_cache, T* beta, int indice_v, int indice_y, int indice_x, T* std_map, double* temps);	

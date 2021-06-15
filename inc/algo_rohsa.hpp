@@ -21,10 +21,14 @@
 #include <array>
 #include <chrono>
 #include <algorithm>
+
 #include <cuda_runtime.h>
+#include <helper_cuda.h>
+#include <helper_functions.h>
+
 #include "gradient.hpp"
-#include "convolutions.hpp"
-#include "f_g_cube_gpu.hpp"
+//#include "convolutions.hpp"
+//#include "f_g_cube_gpu.hpp"
 #include "culbfgsb.h"
 #include "f_g_cube.hpp"
 #include "f_g_cube_norm.hpp"
@@ -1124,7 +1128,8 @@ void algo_rohsa<T>::update_clean(hypercube<T> Hypercube, parameters<T> &M, std::
 //		printf("Fortan minimize function !!!!!!!!!!!!!!!!!!\n");
 //		minimize_fortran(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 //		minimize_fortran_double(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
-		minimize_fortran_float(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
+//		minimize_fortran_float(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
+		minimize_fortran_float_norm(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 //		minimize_clean_double(M_d, n_beta, M.m, beta, lb, ub, cube_avgd_or_data_double, std_map_, indice_x, indice_y, indice_v, cube_flattened);
 //		minimize_clean_gpu(M, n_beta, M.m, beta, lb, ub, cube_avgd_or_data, std_map, indice_x, indice_y, indice_v, cube_flattened);
 
@@ -2759,7 +2764,7 @@ void algo_rohsa<T>::minimize_fortran_float_norm(parameters<double> &M, long n, l
 	int m_bis = int(m);
 	int iprint_bis = int(M.iprint);
 	//if(dim_x==128)	iprint_bis = 1;//
-	//iprint_bis = 1;//
+	iprint_bis = 1;//
     int i__1;
 	int  i__c = 0;
     double d__1, d__2;
@@ -2871,9 +2876,9 @@ void algo_rohsa<T>::minimize_fortran_float_norm(parameters<double> &M, long n, l
 
 //    factr = 1e+10;
 //    factr = 8.90e+9;
-    factr_float = 1e+7;
-    factr = 1e+7;
-//    factr = 1e+3;
+    factr_float = 1e+1;
+//    factr = 1e+7;
+    factr = 1e+1;
 //    pgtol = 1e-10;
     pgtol_float = 1e-5;
     pgtol = 1e-5;
@@ -2989,6 +2994,7 @@ L111:
 			    ConvertToFortran(task, sizeof task_STOP_c, task_STOP_c);
 //				task = "STOP"; //task_STOP_c;
 			}
+
 			if (dsave[12] <= (fabs(f) + 1.) * 1e-10) {
 			    ConvertToFortran(task, sizeof task_STOP_GRAD_c, task_STOP_GRAD_c);
 //				task = "STOP_GRAD"; //task_STOP_GRAD_c;

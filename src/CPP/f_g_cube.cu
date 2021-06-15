@@ -1,5 +1,5 @@
 #include "f_g_cube.hpp"
-#include "f_g_cube_gpu.hpp"
+//#include "f_g_cube_gpu.hpp"
 #include "kernels_for_hybrid.cu"
 
 #define print false
@@ -1203,7 +1203,7 @@ double temps1_deriv = omp_get_wtime();
 template <typename T> 
 void f_g_cube_cuda_L_clean_templatized(parameters<T> &M, T& f, T* g, int n, T* beta, int indice_v, int indice_y, int indice_x, std::vector<std::vector<T>> &std_map, T* cube_flattened, double* temps, double temps_transfert_d, double temps_mirroirs, float* temps_kernel)
 {
-	dummyInstantiator_sort();
+//	dummyInstantiator_sort();
 	double temps_conv;
 	double temps_deriv;
 	double temps_tableaux;
@@ -1400,7 +1400,7 @@ void f_g_cube_cuda_L_clean_templatized_less_transfers(parameters<T> &M, T& f, T*
 
   cudaEventRecord(start);
 
-	dummyInstantiator_sort();
+//	dummyInstantiator_sort();
 	double temps_conv;
 	double temps_deriv;
 	double temps_tableaux;
@@ -1606,7 +1606,7 @@ void f_g_cube_cuda_L_clean_templatized_no_transfers(parameters<T> &M, T& f, T* g
 
   cudaEventRecord(start);
 
-	dummyInstantiator_sort();
+//	dummyInstantiator_sort();
 	double temps_conv;
 	double temps_deriv;
 	double temps_tableaux;
@@ -1687,16 +1687,17 @@ void f_g_cube_cuda_L_clean_templatized_no_transfers(parameters<T> &M, T& f, T* g
 
 
 	double temps1_tableaux = omp_get_wtime();
-
+/*
 		if(isnan(f)){
 			printf("before compute_residual f = %.16f      f=Nan detected !\n",f);
 			exit(0);
 		}
+*/
 	float tmp_temps_kernel_res[3] = {0.,0.,0.};
 	f =  compute_residual_and_f_less_memory<T>(beta_dev, taille_beta_modif, product_beta, cube_flattened_dev, taille_cube, product_cube, residual_dev, taille_residual, product_residual, std_map_dev, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss,tmp_temps_kernel_res);
 //	f =  compute_residual_and_f<T>(beta, taille_beta_modif, product_beta, cube_flattened, taille_cube, product_cube, residual, taille_residual, product_residual, std_map_, taille_std_map_, product_std_map_, indice_x, indice_y, indice_v, M.n_gauss);
 	double temps2_tableaux = omp_get_wtime();
-
+/*
 		if(isnan(f)){
 			printf("after compute_residual f = %.16f      f=Nan detected !\n",f);
 		T* beta_tmp = NULL;
@@ -1723,6 +1724,7 @@ void f_g_cube_cuda_L_clean_templatized_no_transfers(parameters<T> &M, T& f, T* g
 		free(beta_tmp);
 			exit(0);
 		}
+*/
 	temps_kernel[0] += tmp_temps_kernel_res[0]/1000;//compute_residual
 	temps_kernel[1] += tmp_temps_kernel_res[1]/1000;//compute_Q_map
 	temps_kernel[2] += tmp_temps_kernel_res[2]/1000;//reduction_loop
